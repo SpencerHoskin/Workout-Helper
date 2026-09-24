@@ -7,90 +7,136 @@
 <title>5am Workout</title>
 <style>
   :root {
-    --bg: #111418; --card: #1b2027; --line: #2b323c; --text: #e8ecf1; --muted: #9aa5b1;
-    --accent: #4fb3ff; --good: #3ecf8e; --warn: #ffb547; --danger: #ff5a5f;
+    --bg: #0b0e13; --bg2: #121722; --card: #161c27; --card2: #1c2431; --line: #263041; --text: #eef2f7; --muted: #8e9bb0;
+    --accent: #ff8a3d; --accent2: #ffb86b; --good: #35d49a; --warn: #ffbe4d; --danger: #ff5c63;
+    --radius: 16px; --shadow: 0 6px 20px rgba(0,0,0,.35);
   }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; background: var(--bg); color: var(--text);
-    font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-  header { position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--line);
-    display: flex; align-items: center; gap: 8px; padding: 10px 16px; padding-top: max(10px, env(safe-area-inset-top)); }
-  header h1 { font-size: 18px; margin: 0; flex: 1; }
-  .safety-btn { background: var(--danger); color: #fff; border: 0; border-radius: 20px; padding: 8px 14px; font-weight: 700; font-size: 15px; }
-  nav { display: flex; overflow-x: auto; gap: 4px; padding: 8px 16px; border-bottom: 1px solid var(--line); }
-  nav button { flex: 1 0 auto; background: transparent; color: var(--muted); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 14px; }
-  nav button.on { color: var(--text); border-color: var(--accent); background: #1d2a38; }
-  main { padding: 12px 16px 80px; max-width: 640px; margin: 0 auto; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
-  .card h2 { font-size: 17px; margin: 0 0 6px; }
-  .card h3 { font-size: 15px; margin: 10px 0 4px; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; color: var(--text);
+    background: radial-gradient(1200px 500px at 80% -10%, #2a1a10 0%, transparent 60%), var(--bg);
+    background-attachment: fixed;
+    font: 16px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
+  header { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top));
+    background: rgba(11,14,19,.82); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,.06); }
+  .brand { flex: 1; min-width: 0; }
+  .brand h1 { font-size: 20px; margin: 0; font-weight: 800; letter-spacing: -.3px; }
+  .brand h1 span { background: linear-gradient(90deg, var(--accent), var(--accent2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .brand .sub { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .safety-btn { background: rgba(255,92,99,.14); color: var(--danger); border: 1px solid rgba(255,92,99,.5); border-radius: 999px;
+    padding: 8px 14px; font-weight: 700; font-size: 14px; }
+  nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex; justify-content: space-around;
+    padding: 6px 8px; padding-bottom: max(8px, env(safe-area-inset-bottom));
+    background: rgba(18,23,34,.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(255,255,255,.06); }
+  nav button { flex: 1; background: none; border: 0; color: var(--muted); font-size: 11px; font-weight: 600;
+    display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; border-radius: 12px; }
+  nav button .ic { font-size: 20px; line-height: 1; filter: grayscale(1) opacity(.7); }
+  nav button.on { color: var(--accent); background: rgba(255,138,61,.1); }
+  nav button.on .ic { filter: none; }
+  main { padding: 14px 16px 110px; max-width: 640px; margin: 0 auto; }
+  .card { background: linear-gradient(180deg, var(--card2), var(--card)); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 14px; margin-bottom: 12px; box-shadow: var(--shadow); }
+  .card h2 { font-size: 17px; margin: 0 0 6px; letter-spacing: -.2px; }
+  .card h3 { font-size: 13px; margin: 14px 0 6px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); }
+  .hero { background: linear-gradient(135deg, #3a1f0e, #1c2431 70%); border-color: rgba(255,138,61,.35); }
+  .hero .big { font-size: 24px; font-weight: 800; letter-spacing: -.4px; margin: 2px 0; }
+  .stats { display: flex; gap: 8px; margin-top: 10px; }
+  .stat { flex: 1; background: rgba(0,0,0,.25); border-radius: 12px; padding: 8px 10px; }
+  .stat b { display: block; font-size: 18px; }
+  .stat span { font-size: 12px; color: var(--muted); }
   .muted { color: var(--muted); font-size: 14px; }
-  .cue { font-size: 13px; color: var(--good); margin: 4px 0 8px; }
-  .flag { font-size: 13px; color: var(--warn); margin: 4px 0; }
+  .cue { font-size: 13px; color: var(--good); background: rgba(53,212,154,.08); border-radius: 10px; padding: 6px 10px; margin: 8px 0; }
+  .flag { font-size: 13px; color: var(--warn); background: rgba(255,190,77,.08); border-radius: 10px; padding: 6px 10px; margin: 6px 0; }
   .pending { color: var(--warn); font-weight: 600; }
-  label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px; }
-  input, select, textarea { width: 100%; background: #0e1115; color: var(--text); border: 1px solid var(--line);
-    border-radius: 8px; padding: 10px; font-size: 16px; }
-  textarea { min-height: 60px; }
-  button.primary { background: var(--accent); color: #04121f; border: 0; border-radius: 10px; padding: 12px 16px; font-weight: 700; font-size: 16px; width: 100%; }
-  button.small { background: #26303b; color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 14px; }
-  button.danger { color: var(--danger); }
+  .ex-head { display: flex; gap: 10px; align-items: flex-start; }
+  .num { flex: 0 0 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 14px;
+    background: rgba(255,138,61,.15); color: var(--accent); }
+  .ex.done { border-color: rgba(53,212,154,.55); }
+  .ex.done .num { background: var(--good); color: #062; }
+  .ex.done .num::after { content: "✓"; }
+  .ex.done .num b { display: none; }
+  .ex-head h2 { margin: 3px 0 2px; }
+  .target { display: inline-block; font-size: 12px; font-weight: 700; color: var(--accent2); background: rgba(255,138,61,.12);
+    border-radius: 999px; padding: 2px 8px; margin-right: 6px; }
+  .cardio { display: flex; align-items: center; gap: 12px; }
+  .cardio .ic { font-size: 26px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 5px; font-weight: 600; }
+  input, select, textarea { width: 100%; background: #0c1017; color: var(--text); border: 1px solid var(--line);
+    border-radius: 12px; padding: 11px 12px; font-size: 16px; outline: none; transition: border-color .15s; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  input::placeholder, textarea::placeholder { color: #566275; }
+  textarea { min-height: 70px; resize: vertical; }
+  button { font-family: inherit; cursor: pointer; }
+  button.primary { background: linear-gradient(90deg, var(--accent), var(--accent2)); color: #1d0e02; border: 0; border-radius: 14px;
+    padding: 15px 16px; font-weight: 800; font-size: 16px; width: 100%; box-shadow: 0 8px 24px rgba(255,138,61,.3); }
+  button.primary:active { transform: scale(.98); }
+  button.small { background: #243042; color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 14px; font-weight: 600; }
+  button.danger { color: var(--danger); background: transparent; border-color: transparent; }
   .row { display: flex; gap: 8px; align-items: center; }
   .row > * { flex: 1; }
-  .sets { width: 100%; border-collapse: collapse; margin-top: 6px; }
-  .sets th { font-size: 12px; color: var(--muted); font-weight: 500; text-align: left; padding: 2px 4px; }
-  .sets td { padding: 3px 4px; }
-  .sets td:first-child { width: 28px; color: var(--muted); font-size: 14px; }
-  .sets input { padding: 8px 6px; text-align: center; }
+  .sets { width: 100%; border-collapse: separate; border-spacing: 0 6px; margin-top: 4px; }
+  .sets th { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; text-align: center; padding: 0 4px; }
+  .sets td { padding: 0 3px; }
+  .sets td:first-child { width: 30px; text-align: center; color: var(--muted); font-weight: 700; font-size: 14px; }
+  .sets input { padding: 10px 4px; text-align: center; font-weight: 600; }
   table.hist { width: 100%; border-collapse: collapse; font-size: 14px; }
-  table.hist th, table.hist td { border-bottom: 1px solid var(--line); padding: 6px 4px; text-align: left; vertical-align: top; }
-  .check { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--line); }
-  .check input[type=checkbox] { width: 22px; height: 22px; flex: 0 0 22px; margin-top: 2px; }
-  .check .body { flex: 1; }
-  .check input[type=text] { margin-top: 6px; padding: 6px 8px; font-size: 14px; }
-  .pill { display: inline-block; font-size: 12px; border-radius: 10px; padding: 2px 8px; border: 1px solid var(--line); margin-left: 6px; }
-  .pill.ok { color: var(--good); border-color: var(--good); }
-  .pill.pend { color: var(--warn); border-color: var(--warn); }
-  .pill.no { color: var(--danger); border-color: var(--danger); }
-  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--good); color: #062; padding: 10px 16px;
-    border-radius: 20px; font-weight: 700; display: none; z-index: 30; }
-  #safety { position: fixed; inset: 0; background: rgba(0,0,0,.75); z-index: 20; display: none; overflow-y: auto; padding: 16px; }
-  #safety .card { max-width: 600px; margin: 20px auto; border-color: var(--danger); }
-  #safety li { margin: 6px 0; }
-  .today-tag { color: var(--accent); font-size: 13px; font-weight: 600; }
+  table.hist th { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; font-weight: 700; }
+  table.hist th, table.hist td { border-bottom: 1px solid var(--line); padding: 8px 4px; text-align: left; vertical-align: top; }
+  table.hist tr:last-child td { border-bottom: 0; }
+  .check { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .check:last-of-type { border-bottom: 0; }
+  .check input[type=checkbox] { width: 22px; height: 22px; flex: 0 0 22px; margin-top: 2px; accent-color: var(--accent); }
+  .check .body { flex: 1; min-width: 0; }
+  .check input[type=text] { margin-top: 6px; padding: 8px 10px; font-size: 14px; }
+  .pill { display: inline-block; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 8px; margin-left: 6px; vertical-align: 1px; }
+  .pill.ok { color: var(--good); background: rgba(53,212,154,.12); }
+  .pill.pend { color: var(--warn); background: rgba(255,190,77,.12); }
+  .pill.no { color: var(--danger); background: rgba(255,92,99,.12); }
+  ul { padding-left: 20px; margin: 6px 0; }
+  li { margin: 4px 0; }
+  .toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); background: var(--good); color: #042;
+    padding: 10px 18px; border-radius: 999px; font-weight: 800; display: none; z-index: 30; box-shadow: var(--shadow); }
+  #safety { position: fixed; inset: 0; background: rgba(0,0,0,.7); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    z-index: 20; display: none; overflow-y: auto; padding: 16px; }
+  #safety .card { max-width: 600px; margin: 20px auto; border-color: rgba(255,92,99,.6); }
+  #safety h3.red { color: var(--danger); }
+  #safety h3.amber { color: var(--warn); }
+  .today-tag { color: #1d0e02; background: var(--accent); font-size: 11px; font-weight: 800; border-radius: 999px; padding: 2px 8px; margin-left: 6px; vertical-align: 2px; }
 </style>
 </head>
 <body>
 <header>
-  <h1>5am Workout</h1>
+  <div class="brand"><h1><span>5am</span> Workout</h1><div class="sub" id="subline"></div></div>
   <button class="safety-btn" id="safetyBtn">⚠ Safety</button>
 </header>
 <nav id="tabs">
-  <button data-tab="session" class="on">Session</button>
-  <button data-tab="plan">Plan</button>
-  <button data-tab="history">History</button>
-  <button data-tab="daily">Daily</button>
-  <button data-tab="doctor">Doctor</button>
+  <button data-tab="session" class="on"><span class="ic">🏋️</span>Session</button>
+  <button data-tab="plan"><span class="ic">🗓️</span>Plan</button>
+  <button data-tab="history"><span class="ic">📈</span>History</button>
+  <button data-tab="daily"><span class="ic">⚖️</span>Daily</button>
+  <button data-tab="doctor"><span class="ic">🩺</span>Doctor</button>
 </nav>
 <main id="view"></main>
 
 <div id="safety" role="dialog" aria-modal="true">
   <div class="card">
     <div class="row"><h2 style="flex:1">Safety</h2><button class="small" id="safetyClose" style="flex:0">Close</button></div>
-    <h3 style="color:var(--danger)">STOP and get help (call 911) if:</h3>
+    <h3 class="red">STOP and get help (call 911) if:</h3>
     <ul>
       <li>Chest pain, pressure, or tightness</li>
       <li>Unusual shortness of breath</li>
       <li>Dizziness or light-headedness</li>
       <li>Palpitations / racing or irregular heartbeat</li>
     </ul>
-    <h3 style="color:var(--warn)">Bleeding risk</h3>
+    <h3 class="amber">Bleeding risk</h3>
     <ul>
       <li>Hard hit to the head → get checked, <b>even if you feel fine</b></li>
       <li>Black / tarry stools → get help</li>
       <li>Nosebleed not stopping after ~10–15 min of pressure → get help</li>
     </ul>
-    <h3 style="color:var(--warn)">Report to doctor</h3>
+    <h3 class="amber">Report to doctor</h3>
     <ul>
       <li>Unusual muscle pain — out of proportion to the workout, in muscles you didn't train, or with dark urine</li>
     </ul>
@@ -238,6 +284,9 @@ let historyEx = null;
 
 function render() {
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === currentTab));
+  const sug = suggestedSession();
+  $('#subline').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }) +
+    ' · ' + (sug ? SESSIONS[sug].name + ' today' : 'Rest day');
   const v = $('#view');
   if (currentTab === 'session') v.innerHTML = viewSession();
   else if (currentTab === 'plan') v.innerHTML = viewPlan();
@@ -271,7 +320,12 @@ function viewPlan() {
 function viewSession() {
   const draft = load(KEYS.draft, null);
   const sid = pickedSession || (draft && draft.sessionId) || suggestedSession();
-  let h = `<div class="card"><label>Session</label><select id="sessionPick">
+  const s0 = sid && SESSIONS[sid];
+  const lifts = s0 ? s0.ex.filter(e => !EX[e].cardio).length : 0;
+  let h = `<div class="card hero"><div class="muted">${s0 ? DAYS[s0.day] + (sid === suggestedSession() ? ' · today' : '') : 'No session today'}</div>
+    <div class="big">${s0 ? esc(s0.name) : 'Rest day'}</div>
+    ${s0 ? `<div class="stats"><div class="stat"><b>~45</b><span>minutes</span></div><div class="stat"><b>${lifts}</b><span>exercises</span></div><div class="stat"><b>5–7</b><span>target RPE</span></div></div>` : ''}
+    <label>Session</label><select id="sessionPick">
     <option value="">— choose —</option>
     ${Object.entries(SESSIONS).map(([id, s]) => `<option value="${id}" ${id === sid ? 'selected' : ''}>${DAYS[s.day]} — ${esc(s.name)}</option>`).join('')}
     </select>
@@ -280,16 +334,20 @@ function viewSession() {
 
   const s = SESSIONS[sid];
   const d = (draft && draft.sessionId === sid && draft.date === todayStr()) ? draft.data : {};
+  let num = 0;
   s.ex.forEach(exId => {
     const x = EX[exId];
     if (x.cardio) {
-      h += `<div class="card"><h2>${esc(x.name)}</h2><div class="muted">${esc(x.target)}</div></div>`;
+      h += `<div class="card cardio"><span class="ic">${exId === 'bike' ? '🚴' : '🚶'}</span><div><h2 style="margin:0">${esc(x.name)}</h2><div class="muted">${esc(x.target)}</div></div></div>`;
       return;
     }
+    num++;
     const last = lastEntry(exId);
     const saved = d[exId] || {};
-    h += `<div class="card" data-ex="${exId}"><h2>${esc(x.name)}</h2>
-      <div class="muted">${x.sets} × ${esc(x.reps)}${last ? ` · last (${last.date}): ${esc(fmtSets(last.sets))}` : ''}</div>
+    const isDone = (saved.sets || []).some(z => z && z.r);
+    h += `<div class="card ex${isDone ? ' done' : ''}" data-ex="${exId}"><div class="ex-head"><div class="num"><b>${num}</b></div><div>
+      <h2>${esc(x.name)}</h2>
+      <div class="muted"><span class="target">${x.sets} × ${esc(x.reps)}</span>${last ? `Last ${esc(last.date.slice(5))}: ${esc(fmtSets(last.sets))}` : 'First time — start light'}</div></div></div>
       <div class="cue">🫁 ${BREATH}</div>
       ${x.flag ? `<div class="flag">⚠ ${esc(x.flag)}</div>` : ''}
       <table class="sets"><tr><th>#</th><th>${x.bodyweight ? 'Load' : 'lbs'}</th><th>Reps</th><th>RPE</th></tr>`;
@@ -493,6 +551,8 @@ $('#view').addEventListener('change', e => {
 $('#view').addEventListener('input', e => {
   const t = e.target;
   if (currentTab === 'session' && t.closest('[data-ex]')) {
+    const card = t.closest('[data-ex]');
+    card.classList.toggle('done', [...card.querySelectorAll('input[data-f=r]')].some(i => i.value.trim()));
     const d = collectSession(); if (d) save(KEYS.draft, d);
   }
   else if (t.dataset.clnote) {
@@ -507,7 +567,10 @@ $('#view').addEventListener('input', e => {
 
 /* ---------- Boot ---------- */
 migrate();
-console.assert(Object.values(SESSIONS).every(s => s.ex.every(id => EX[id])), 'Session references unknown exercise');
+function check(cond, msg) {
+  if (!cond) { const m = 'Bug check failed: ' + msg; console.error(m); alert(m); }
+}
+check(Object.values(SESSIONS).every(s => s.ex.every(id => EX[id])), 'Session references unknown exercise');
 render();
 </script>
 </body>
