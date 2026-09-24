@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111418">
+<title>5am Workout</title>
+<style>
+  :root {
+    --bg: #111418; --card: #1b2027; --line: #2b323c; --text: #e8ecf1; --muted: #9aa5b1;
+    --accent: #4fb3ff; --good: #3ecf8e; --warn: #ffb547; --danger: #ff5a5f;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  header { position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 8px; padding: 10px 16px; padding-top: max(10px, env(safe-area-inset-top)); }
+  header h1 { font-size: 18px; margin: 0; flex: 1; }
+  .safety-btn { background: var(--danger); color: #fff; border: 0; border-radius: 20px; padding: 8px 14px; font-weight: 700; font-size: 15px; }
+  nav { display: flex; overflow-x: auto; gap: 4px; padding: 8px 16px; border-bottom: 1px solid var(--line); }
+  nav button { flex: 1 0 auto; background: transparent; color: var(--muted); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 14px; }
+  nav button.on { color: var(--text); border-color: var(--accent); background: #1d2a38; }
+  main { padding: 12px 16px 80px; max-width: 640px; margin: 0 auto; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+  .card h2 { font-size: 17px; margin: 0 0 6px; }
+  .card h3 { font-size: 15px; margin: 10px 0 4px; }
+  .muted { color: var(--muted); font-size: 14px; }
+  .cue { font-size: 13px; color: var(--good); margin: 4px 0 8px; }
+  .flag { font-size: 13px; color: var(--warn); margin: 4px 0; }
+  .pending { color: var(--warn); font-weight: 600; }
+  label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px; }
+  input, select, textarea { width: 100%; background: #0e1115; color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 10px; font-size: 16px; }
+  textarea { min-height: 60px; }
+  button.primary { background: var(--accent); color: #04121f; border: 0; border-radius: 10px; padding: 12px 16px; font-weight: 700; font-size: 16px; width: 100%; }
+  button.small { background: #26303b; color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 14px; }
+  button.danger { color: var(--danger); }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row > * { flex: 1; }
+  .sets { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  .sets th { font-size: 12px; color: var(--muted); font-weight: 500; text-align: left; padding: 2px 4px; }
+  .sets td { padding: 3px 4px; }
+  .sets td:first-child { width: 28px; color: var(--muted); font-size: 14px; }
+  .sets input { padding: 8px 6px; text-align: center; }
+  table.hist { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.hist th, table.hist td { border-bottom: 1px solid var(--line); padding: 6px 4px; text-align: left; vertical-align: top; }
+  .check { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .check input[type=checkbox] { width: 22px; height: 22px; flex: 0 0 22px; margin-top: 2px; }
+  .check .body { flex: 1; }
+  .check input[type=text] { margin-top: 6px; padding: 6px 8px; font-size: 14px; }
+  .pill { display: inline-block; font-size: 12px; border-radius: 10px; padding: 2px 8px; border: 1px solid var(--line); margin-left: 6px; }
+  .pill.ok { color: var(--good); border-color: var(--good); }
+  .pill.pend { color: var(--warn); border-color: var(--warn); }
+  .pill.no { color: var(--danger); border-color: var(--danger); }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--good); color: #062; padding: 10px 16px;
+    border-radius: 20px; font-weight: 700; display: none; z-index: 30; }
+  #safety { position: fixed; inset: 0; background: rgba(0,0,0,.75); z-index: 20; display: none; overflow-y: auto; padding: 16px; }
+  #safety .card { max-width: 600px; margin: 20px auto; border-color: var(--danger); }
+  #safety li { margin: 6px 0; }
+  .today-tag { color: var(--accent); font-size: 13px; font-weight: 600; }
+</style>
+</head>
+<body>
+<header>
+  <h1>5am Workout</h1>
+  <button class="safety-btn" id="safetyBtn">⚠ Safety</button>
+</header>
+<nav id="tabs">
+  <button data-tab="session" class="on">Session</button>
+  <button data-tab="plan">Plan</button>
+  <button data-tab="history">History</button>
+  <button data-tab="daily">Daily</button>
+  <button data-tab="doctor">Doctor</button>
+</nav>
+<main id="view"></main>
+
+<div id="safety" role="dialog" aria-modal="true">
+  <div class="card">
+    <div class="row"><h2 style="flex:1">Safety</h2><button class="small" id="safetyClose" style="flex:0">Close</button></div>
+    <h3 style="color:var(--danger)">STOP and get help (call 911) if:</h3>
+    <ul>
+      <li>Chest pain, pressure, or tightness</li>
+      <li>Unusual shortness of breath</li>
+      <li>Dizziness or light-headedness</li>
+      <li>Palpitations / racing or irregular heartbeat</li>
+    </ul>
+    <h3 style="color:var(--warn)">Bleeding risk</h3>
+    <ul>
+      <li>Hard hit to the head → get checked, <b>even if you feel fine</b></li>
+      <li>Black / tarry stools → get help</li>
+      <li>Nosebleed not stopping after ~10–15 min of pressure → get help</li>
+    </ul>
+    <h3 style="color:var(--warn)">Report to doctor</h3>
+    <ul>
+      <li>Unusual muscle pain — out of proportion to the workout, in muscles you didn't train, or with dark urine</li>
+    </ul>
+    <h3>Every session</h3>
+    <ul>
+      <li><b>Talk test:</b> you should be able to speak in short sentences</li>
+      <li><b>Breathe:</b> exhale on the effort — never hold your breath or strain</li>
+      <li>Machines &amp; cables over free weights; collars on barbells; no jumping/drop risk</li>
+      <li>Soreness: no ibuprofen / naproxen (NSAIDs). Ask the pharmacist what's OK.</li>
+    </ul>
+    <h3>Cleared limits</h3>
+    <div id="safetyLimits" class="muted"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+/* ---------- Storage (keys are STABLE — never rename or drop; migrate instead) ---------- */
+const KEYS = {
+  schema: 'wh_schema',       // number
+  log: 'wh_log',             // array of {id, date, sessionId, exId, sets:[{w,r,rpe}], note}
+  daily: 'wh_daily',         // object date -> {weight, supps:{protein:true,...}, note}
+  checklist: 'wh_checklist', // array of {id, text, done, note}
+  limits: 'wh_limits',       // {load, intensity, other}
+  supps: 'wh_supps',         // object id -> 'ok' | 'pending' | 'no'
+  draft: 'wh_draft'          // in-progress session {date, sessionId, data:{exId:{sets,note}}}
+};
+const SCHEMA = 1;
+
+function load(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw == null ? fallback : JSON.parse(raw);
+  } catch (e) { console.error('load failed', key, e); return fallback; }
+}
+function save(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); }
+  catch (e) { alert('Could not save (' + key + '): ' + e.message); }
+}
+function migrate() {
+  const v = load(KEYS.schema, 0);
+  if (v > SCHEMA) console.warn('Data is from a newer version', v);
+  // future migrations go here: if (v < 2) { ... }
+  save(KEYS.schema, SCHEMA);
+}
+
+/* ---------- Program data ---------- */
+const PENDING = 'pending cardiologist';
+const BREATH = 'Exhale on the effort, inhale on the return. No breath-holding or straining.';
+
+const EX = {
+  bike:      { name: 'Warm-up: bike or treadmill walk', cardio: true, target: '5–8 min easy (RPE 3–4)' },
+  legpress:  { name: 'Leg press (machine)', sets: 3, reps: '10–12' },
+  chestpress:{ name: 'Chest press (machine)', sets: 3, reps: '10–12' },
+  seatedrow: { name: 'Seated cable row', sets: 3, reps: '10–12' },
+  pulldown:  { name: 'Lat pulldown', sets: 3, reps: '10–12' },
+  legcurl:   { name: 'Seated leg curl (machine)', sets: 2, reps: '12–15' },
+  shoulderpress: { name: 'Shoulder press (machine)', sets: 2, reps: '10–12',
+                   flag: 'Machine only — no heavy overhead dumbbells without a spotter.' },
+  gobletbox: { name: 'Box squat to bench (light DB or bodyweight)', sets: 3, reps: '10–12',
+               flag: 'Controlled sit-down to a bench. Not a box jump.' },
+  legext:    { name: 'Leg extension (machine)', sets: 2, reps: '12–15' },
+  cablefly:  { name: 'Cable chest fly (or pec-deck)', sets: 2, reps: '12–15' },
+  facepull:  { name: 'Cable face pull', sets: 2, reps: '12–15' },
+  pallof:    { name: 'Pallof press (cable, each side)', sets: 2, reps: '10 / side' },
+  hipthrust: { name: 'Glute bridge / hip thrust machine', sets: 3, reps: '10–12' },
+  assistpull:{ name: 'Assisted pull-up (machine)', sets: 3, reps: '8–10' },
+  inclinepress: { name: 'Incline chest press (machine)', sets: 3, reps: '10–12' },
+  cablecurl: { name: 'Cable biceps curl', sets: 2, reps: '12–15' },
+  pushdown:  { name: 'Cable triceps pushdown', sets: 2, reps: '12–15' },
+  deadbug:   { name: 'Dead bug (floor)', sets: 2, reps: '8 / side', bodyweight: true },
+  walk:      { name: 'Cool-down: easy walk + stretch', cardio: true, target: '3–5 min' }
+};
+
+const SESSIONS = {
+  A: { name: 'Session A', day: 1, ex: ['bike','legpress','chestpress','seatedrow','legcurl','pallof','walk'] },
+  B: { name: 'Session B', day: 3, ex: ['bike','gobletbox','pulldown','shoulderpress','hipthrust','facepull','deadbug','walk'] },
+  C: { name: 'Session C', day: 5, ex: ['bike','legpress','inclinepress','assistpull','legext','cablecurl','pushdown','walk'] }
+};
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+const SUPPS = [
+  { id: 'protein',  name: 'Protein', def: 'ok',
+    note: 'Food first; shake as backup if appetite is low. No added-potassium products.' },
+  { id: 'creatine', name: 'Creatine', def: 'pending',
+    note: 'Plan: 3–5 g/day monohydrate, no loading. Tell doctor before bloodwork (raises creatinine).' },
+  { id: 'taurine',  name: 'Taurine', def: 'pending',
+    note: 'Pending cardiologist / pharmacist OK.' }
+];
+const AVOID = [
+  'BCAAs — dropped (redundant with enough protein)',
+  'Stimulant pre-workouts — avoid. Normal coffee is fine.',
+  'High-dose fish oil, vitamin E, turmeric, ginkgo, garlic pills — avoid unless cardiologist approves (bleeding risk)'
+];
+const DEFAULT_CHECKLIST = [
+  'Creatine 3–5 g/day OK?',
+  'Taurine OK with my meds?',
+  'Any lifting load or intensity limits?',
+  'Confirm no stimulant pre-workout',
+  'Should I do cardiac rehab / a stress test for exercise clearance?'
+].map((text, i) => ({ id: 'c' + (i + 1), text, done: false, note: '' }));
+
+/* ---------- Helpers ---------- */
+const $ = (sel, root = document) => root.querySelector(sel);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.style.display = 'block';
+  clearTimeout(toast._t); toast._t = setTimeout(() => { t.style.display = 'none'; }, 1800);
+}
+function suggestedSession() {
+  const dow = new Date().getDay();
+  for (const [id, s] of Object.entries(SESSIONS)) if (s.day === dow) return id;
+  return null;
+}
+function lastEntry(exId) {
+  const log = load(KEYS.log, []);
+  for (let i = log.length - 1; i >= 0; i--) if (log[i].exId === exId) return log[i];
+  return null;
+}
+function fmtSets(sets) {
+  return sets.map(s => `${s.w || '–'}×${s.r || '–'}${s.rpe ? ' @' + s.rpe : ''}`).join(', ');
+}
+function suppStatus() {
+  const st = load(KEYS.supps, {});
+  const out = {};
+  SUPPS.forEach(s => { out[s.id] = st[s.id] || s.def; });
+  return out;
+}
+function statusPill(v) {
+  if (v === 'ok') return '<span class="pill ok">cleared</span>';
+  if (v === 'no') return '<span class="pill no">not approved</span>';
+  return '<span class="pill pend">' + PENDING + '</span>';
+}
+
+/* ---------- Views ---------- */
+let currentTab = 'session';
+let pickedSession = null;
+let historyEx = null;
+
+function render() {
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === currentTab));
+  const v = $('#view');
+  if (currentTab === 'session') v.innerHTML = viewSession();
+  else if (currentTab === 'plan') v.innerHTML = viewPlan();
+  else if (currentTab === 'history') v.innerHTML = viewHistory();
+  else if (currentTab === 'daily') v.innerHTML = viewDaily();
+  else if (currentTab === 'doctor') v.innerHTML = viewDoctor();
+  window.scrollTo(0, 0);
+}
+
+function viewPlan() {
+  const sug = suggestedSession();
+  let h = `<div class="card"><h2>Weekly plan</h2>
+    <p class="muted">3 full-body sessions, ~45 min, machine & cable heavy. Effort by <b>RPE</b> (1–10), not heart rate.
+    Aim for RPE 5–7: last reps feel like work, but you could do 2–3 more and still talk in short sentences.</p></div>`;
+  for (const [id, s] of Object.entries(SESSIONS)) {
+    h += `<div class="card"><h2>${DAYS[s.day]} — ${esc(s.name)} ${sug === id ? '<span class="today-tag">TODAY</span>' : ''}</h2><ul>`;
+    s.ex.forEach(e => {
+      const x = EX[e];
+      h += `<li>${esc(x.name)} <span class="muted">— ${x.cardio ? esc(x.target) : x.sets + ' × ' + esc(x.reps)}</span>
+        ${x.flag ? `<div class="flag">⚠ ${esc(x.flag)}</div>` : ''}</li>`;
+    });
+    h += `</ul><button class="small" data-act="start" data-sid="${id}">Start this session</button></div>`;
+  }
+  h += `<div class="card"><h2>Not in this plan (on purpose)</h2><ul class="muted">
+    <li>Box jumps / plyometrics — fall & impact risk</li>
+    <li>Heavy overhead dumbbells without a spotter</li>
+    <li>Max-effort lifts or anything that makes you strain/hold your breath</li></ul></div>`;
+  return h;
+}
+
+function viewSession() {
+  const draft = load(KEYS.draft, null);
+  const sid = pickedSession || (draft && draft.sessionId) || suggestedSession();
+  let h = `<div class="card"><label>Session</label><select id="sessionPick">
+    <option value="">— choose —</option>
+    ${Object.entries(SESSIONS).map(([id, s]) => `<option value="${id}" ${id === sid ? 'selected' : ''}>${DAYS[s.day]} — ${esc(s.name)}</option>`).join('')}
+    </select>
+    <p class="muted" style="margin-bottom:0">RPE: 5 = moderate, 7 = hard but 3 reps left, 9+ = too much for now. Talk test: short sentences.</p></div>`;
+  if (!sid) return h + `<div class="card muted">Rest day. Pick a session above if you want to train anyway.</div>`;
+
+  const s = SESSIONS[sid];
+  const d = (draft && draft.sessionId === sid && draft.date === todayStr()) ? draft.data : {};
+  s.ex.forEach(exId => {
+    const x = EX[exId];
+    if (x.cardio) {
+      h += `<div class="card"><h2>${esc(x.name)}</h2><div class="muted">${esc(x.target)}</div></div>`;
+      return;
+    }
+    const last = lastEntry(exId);
+    const saved = d[exId] || {};
+    h += `<div class="card" data-ex="${exId}"><h2>${esc(x.name)}</h2>
+      <div class="muted">${x.sets} × ${esc(x.reps)}${last ? ` · last (${last.date}): ${esc(fmtSets(last.sets))}` : ''}</div>
+      <div class="cue">🫁 ${BREATH}</div>
+      ${x.flag ? `<div class="flag">⚠ ${esc(x.flag)}</div>` : ''}
+      <table class="sets"><tr><th>#</th><th>${x.bodyweight ? 'Load' : 'lbs'}</th><th>Reps</th><th>RPE</th></tr>`;
+    for (let i = 0; i < x.sets; i++) {
+      const ss = (saved.sets && saved.sets[i]) || {};
+      const lastW = last && last.sets[i] ? last.sets[i].w : '';
+      h += `<tr><td>${i + 1}</td>
+        <td><input inputmode="decimal" data-f="w" data-i="${i}" value="${esc(ss.w != null ? ss.w : '')}" placeholder="${esc(lastW)}"></td>
+        <td><input inputmode="numeric" data-f="r" data-i="${i}" value="${esc(ss.r != null ? ss.r : '')}" placeholder="${esc(x.reps.split(/[–/ ]/)[0])}"></td>
+        <td><input inputmode="decimal" data-f="rpe" data-i="${i}" value="${esc(ss.rpe != null ? ss.rpe : '')}" placeholder="1–10"></td></tr>`;
+    }
+    h += `</table><input type="text" data-f="note" placeholder="Note (seat height, how it felt…)" value="${esc(saved.note || '')}" style="margin-top:6px"></div>`;
+  });
+  h += `<button class="primary" data-act="finish">Finish &amp; save session</button>
+        <p class="muted">Inputs auto-save as you type — safe to switch apps mid-workout.</p>`;
+  return h;
+}
+
+function collectSession() {
+  const sid = $('#sessionPick') && $('#sessionPick').value;
+  if (!sid) return null;
+  const data = {};
+  document.querySelectorAll('[data-ex]').forEach(card => {
+    const exId = card.dataset.ex;
+    const sets = [];
+    card.querySelectorAll('input[data-i]').forEach(inp => {
+      const i = +inp.dataset.i;
+      sets[i] = sets[i] || {};
+      sets[i][inp.dataset.f] = inp.value.trim();
+    });
+    data[exId] = { sets, note: card.querySelector('[data-f=note]').value.trim() };
+  });
+  return { date: todayStr(), sessionId: sid, data };
+}
+
+function finishSession() {
+  const draft = collectSession();
+  if (!draft) return;
+  const highRpe = [];
+  const log = load(KEYS.log, []);
+  let n = 0;
+  for (const [exId, v] of Object.entries(draft.data)) {
+    const sets = v.sets.filter(s => s.w || s.r || s.rpe);
+    if (!sets.length) continue;
+    sets.forEach(s => { if (+s.rpe >= 9) highRpe.push(EX[exId].name); });
+    log.push({ id: Date.now() + '-' + exId, date: draft.date, sessionId: draft.sessionId, exId, sets, note: v.note });
+    n++;
+  }
+  if (!n) { alert('Nothing entered yet, Brother.'); return; }
+  save(KEYS.log, log);
+  localStorage.removeItem(KEYS.draft);
+  pickedSession = null;
+  toast(`Saved ${n} exercises 💪`);
+  if (highRpe.length) alert('Heads up: RPE 9+ on ' + [...new Set(highRpe)].join(', ') +
+    '.\nThat is near max effort. Next time drop the weight a bit and stay around RPE 6–7.');
+  currentTab = 'history'; render();
+}
+
+function viewHistory() {
+  const log = load(KEYS.log, []);
+  const used = [...new Set(log.map(e => e.exId))].filter(id => EX[id]);
+  if (!used.length) return `<div class="card muted">No workouts logged yet. Finish a session and it shows up here.</div>`;
+  if (!historyEx || !used.includes(historyEx)) historyEx = used[used.length - 1];
+  const rows = log.filter(e => e.exId === historyEx).slice().reverse();
+  let h = `<div class="card"><label>Exercise</label><select id="histPick">
+    ${used.map(id => `<option value="${id}" ${id === historyEx ? 'selected' : ''}>${esc(EX[id].name)}</option>`).join('')}
+    </select></div><div class="card"><table class="hist"><tr><th>Date</th><th>Sets (lbs×reps @RPE)</th><th></th></tr>`;
+  rows.forEach(e => {
+    h += `<tr><td>${esc(e.date)}</td><td>${esc(fmtSets(e.sets))}${e.note ? `<div class="muted">${esc(e.note)}</div>` : ''}</td>
+      <td><button class="small danger" data-act="dellog" data-id="${esc(e.id)}">✕</button></td></tr>`;
+  });
+  return h + '</table></div>';
+}
+
+function viewDaily() {
+  const date = todayStr();
+  const all = load(KEYS.daily, {});
+  const d = all[date] || { weight: '', supps: {}, note: '' };
+  const st = suppStatus();
+  let h = `<div class="card"><h2>Today — ${date}</h2>
+    <label>Bodyweight (lbs)</label><input id="dWeight" inputmode="decimal" value="${esc(d.weight)}" placeholder="e.g. 180">
+    <h3>Supplements taken</h3>`;
+  SUPPS.forEach(s => {
+    const ok = st[s.id] === 'ok';
+    h += `<div class="check"><input type="checkbox" data-supp="${s.id}" ${d.supps[s.id] && ok ? 'checked' : ''} ${ok ? '' : 'disabled'}>
+      <div class="body"><b>${esc(s.name)}</b>${statusPill(st[s.id])}<div class="muted">${esc(s.note)}</div></div></div>`;
+  });
+  h += `<label>Note</label><textarea id="dNote" placeholder="Sleep, energy, anything odd…">${esc(d.note)}</textarea>
+    <p><button class="primary" data-act="savedaily">Save today</button></p></div>`;
+
+  const days = Object.keys(all).sort().reverse().slice(0, 14);
+  if (days.length) {
+    h += `<div class="card"><h2>Recent</h2><table class="hist"><tr><th>Date</th><th>lbs</th><th>Supps</th></tr>`;
+    days.forEach(k => {
+      const x = all[k];
+      const taken = Object.keys(x.supps || {}).filter(id => x.supps[id]).join(', ');
+      h += `<tr><td>${esc(k)}</td><td>${esc(x.weight)}</td><td>${esc(taken)}</td></tr>`;
+    });
+    h += '</table><p class="muted">Goal: 165 lbs, or hold weight while losing fat / adding muscle.</p></div>';
+  }
+  return h;
+}
+
+function viewDoctor() {
+  const cl = load(KEYS.checklist, DEFAULT_CHECKLIST);
+  const lim = load(KEYS.limits, {});
+  const st = suppStatus();
+  let h = `<div class="card"><h2>Questions for the cardiologist</h2>`;
+  cl.forEach(c => {
+    h += `<div class="check"><input type="checkbox" data-cl="${esc(c.id)}" ${c.done ? 'checked' : ''}>
+      <div class="body"><div ${c.done ? 'style="text-decoration:line-through;color:var(--muted)"' : ''}>${esc(c.text)}</div>
+      <input type="text" data-clnote="${esc(c.id)}" value="${esc(c.note)}" placeholder="Answer / notes"></div>
+      <button class="small danger" data-act="delcl" data-id="${esc(c.id)}" style="flex:0">✕</button></div>`;
+  });
+  h += `<div class="row" style="margin-top:8px"><input id="newCl" placeholder="Add a question"><button class="small" data-act="addcl" style="flex:0">Add</button></div></div>`;
+
+  h += `<div class="card"><h2>Cleared limits</h2><p class="muted">Fill in only what the cardiologist actually tells you. Blank = ${PENDING}.</p>
+    <label>Lifting load limit</label><input data-lim="load" value="${esc(lim.load || '')}" placeholder="${PENDING}">
+    <label>Intensity / heart-rate guidance</label><input data-lim="intensity" value="${esc(lim.intensity || '')}" placeholder="${PENDING}">
+    <label>Other instructions</label><input data-lim="other" value="${esc(lim.other || '')}" placeholder="${PENDING}"></div>`;
+
+  h += `<div class="card"><h2>Supplement clearance</h2>`;
+  SUPPS.forEach(s => {
+    h += `<label>${esc(s.name)}</label><select data-suppst="${s.id}">
+      <option value="pending" ${st[s.id] === 'pending' ? 'selected' : ''}>${PENDING}</option>
+      <option value="ok" ${st[s.id] === 'ok' ? 'selected' : ''}>Cleared</option>
+      <option value="no" ${st[s.id] === 'no' ? 'selected' : ''}>Not approved</option></select>`;
+  });
+  h += `<h3>Avoid / dropped</h3><ul class="muted">${AVOID.map(a => `<li>${esc(a)}</li>`).join('')}</ul></div>`;
+  return h;
+}
+
+function renderSafetyLimits() {
+  const lim = load(KEYS.limits, {});
+  $('#safetyLimits').innerHTML =
+    `Load: ${lim.load ? esc(lim.load) : `<span class="pending">${PENDING}</span>`}<br>
+     Intensity: ${lim.intensity ? esc(lim.intensity) : `<span class="pending">${PENDING}</span>`}<br>
+     Other: ${lim.other ? esc(lim.other) : `<span class="pending">${PENDING}</span>`}`;
+}
+
+/* ---------- Events ---------- */
+$('#tabs').addEventListener('click', e => {
+  const b = e.target.closest('button[data-tab]');
+  if (!b) return;
+  currentTab = b.dataset.tab; render();
+});
+$('#safetyBtn').addEventListener('click', () => { renderSafetyLimits(); $('#safety').style.display = 'block'; });
+$('#safetyClose').addEventListener('click', () => { $('#safety').style.display = 'none'; });
+$('#safety').addEventListener('click', e => { if (e.target.id === 'safety') $('#safety').style.display = 'none'; });
+
+$('#view').addEventListener('click', e => {
+  const b = e.target.closest('[data-act]');
+  if (!b) return;
+  const act = b.dataset.act;
+  if (act === 'start') { pickedSession = b.dataset.sid; currentTab = 'session'; render(); }
+  else if (act === 'finish') finishSession();
+  else if (act === 'dellog') {
+    if (!confirm('Delete this entry?')) return;
+    save(KEYS.log, load(KEYS.log, []).filter(x => x.id !== b.dataset.id)); render();
+  }
+  else if (act === 'savedaily') {
+    const all = load(KEYS.daily, {});
+    const supps = {};
+    document.querySelectorAll('[data-supp]').forEach(c => { supps[c.dataset.supp] = c.checked; });
+    all[todayStr()] = { weight: $('#dWeight').value.trim(), supps, note: $('#dNote').value.trim() };
+    save(KEYS.daily, all); toast('Saved'); render();
+  }
+  else if (act === 'addcl') {
+    const txt = $('#newCl').value.trim();
+    if (!txt) return;
+    const cl = load(KEYS.checklist, DEFAULT_CHECKLIST);
+    cl.push({ id: 'c' + Date.now(), text: txt, done: false, note: '' });
+    save(KEYS.checklist, cl); render();
+  }
+  else if (act === 'delcl') {
+    if (!confirm('Remove this question?')) return;
+    save(KEYS.checklist, load(KEYS.checklist, DEFAULT_CHECKLIST).filter(c => c.id !== b.dataset.id)); render();
+  }
+});
+
+$('#view').addEventListener('change', e => {
+  const t = e.target;
+  if (t.id === 'sessionPick') {
+    const cur = load(KEYS.draft, null);
+    if (cur && cur.sessionId && cur.sessionId !== t.value && cur.date === todayStr() &&
+        !confirm('Switch session? Unsaved entries for the current one will be cleared.')) { t.value = cur.sessionId; return; }
+    localStorage.removeItem(KEYS.draft);
+    pickedSession = t.value || null; render();
+  }
+  else if (t.id === 'histPick') { historyEx = t.value; render(); }
+  else if (t.dataset.cl) {
+    const cl = load(KEYS.checklist, DEFAULT_CHECKLIST);
+    const c = cl.find(x => x.id === t.dataset.cl); if (c) c.done = t.checked;
+    save(KEYS.checklist, cl); render();
+  }
+  else if (t.dataset.suppst) {
+    const st = load(KEYS.supps, {}); st[t.dataset.suppst] = t.value; save(KEYS.supps, st); toast('Saved');
+  }
+});
+
+$('#view').addEventListener('input', e => {
+  const t = e.target;
+  if (currentTab === 'session' && t.closest('[data-ex]')) {
+    const d = collectSession(); if (d) save(KEYS.draft, d);
+  }
+  else if (t.dataset.clnote) {
+    const cl = load(KEYS.checklist, DEFAULT_CHECKLIST);
+    const c = cl.find(x => x.id === t.dataset.clnote); if (c) c.note = t.value;
+    save(KEYS.checklist, cl);
+  }
+  else if (t.dataset.lim) {
+    const lim = load(KEYS.limits, {}); lim[t.dataset.lim] = t.value.trim(); save(KEYS.limits, lim);
+  }
+});
+
+/* ---------- Boot ---------- */
+migrate();
+console.assert(Object.values(SESSIONS).every(s => s.ex.every(id => EX[id])), 'Session references unknown exercise');
+render();
+</script>
+</body>
+</html>
