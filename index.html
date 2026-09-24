@@ -10,6 +10,8 @@
     --bg: #0b0e13; --bg2: #121722; --card: #161c27; --card2: #1c2431; --line: #263041; --text: #eef2f7; --muted: #8e9bb0;
     --accent: #ff8a3d; --accent2: #ffb86b; --good: #35d49a; --warn: #ffbe4d; --danger: #ff5c63;
     --radius: 16px; --shadow: 0 6px 20px rgba(0,0,0,.35);
+    /* Signature card style (Brother-approved, keep): orange-to-blue gradient + orange outline */
+    --sig-grad: linear-gradient(135deg, #3a1f0e, #1c2431 70%); --sig-line: rgba(255,138,61,.35);
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; color: var(--text);
@@ -40,7 +42,7 @@
     border-radius: var(--radius); padding: 14px; margin-bottom: 12px; box-shadow: var(--shadow); }
   .card h2 { font-size: 17px; margin: 0 0 6px; letter-spacing: -.2px; }
   .card h3 { font-size: 13px; margin: 14px 0 6px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); }
-  .hero { background: linear-gradient(135deg, #3a1f0e, #1c2431 70%); border-color: rgba(255,138,61,.35); }
+  .hero, .sig { background: var(--sig-grad); border-color: var(--sig-line); }
   .hero .big { font-size: 24px; font-weight: 800; letter-spacing: -.4px; margin: 2px 0; }
   .stats { display: flex; gap: 8px; margin-top: 10px; }
   .stat { flex: 1; background: rgba(0,0,0,.25); border-radius: 12px; padding: 8px 10px; }
