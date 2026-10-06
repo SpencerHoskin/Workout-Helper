@@ -28,17 +28,26 @@ async function makeDetector() {
 const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-/** Decode a QR from a video frame / image / canvas. Returns the text or null. */
-async function decode(source, w, h) {
+let step = 0;
+/**
+ * Decode a QR from a video frame / image. Live frames rotate through cheap passes —
+ * centre square normal, centre square inverted, whole frame — instead of one heavy
+ * full-frame "attemptBoth" pass every tick. Photos get one thorough pass.
+ */
+async function decode(source, w, h, { photo = false } = {}) {
   if (detector) {
     const codes = await detector.detect(source);
     return codes.length ? codes[0].rawValue : null;
   }
-  const scale = Math.min(1, 720 / Math.max(w, h));
-  canvas.width = Math.round(w * scale); canvas.height = Math.round(h * scale);
-  ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+  const pass = photo ? 'full' : ['centre', 'centre-inv', 'full'][step++ % 3];
+  const side = Math.min(w, h) * 0.8;
+  const [sx, sy, sw, sh] = pass === 'full' ? [0, 0, w, h] : [(w - side) / 2, (h - side) / 2, side, side];
+  const scale = Math.min(1, (photo ? 1200 : pass === 'full' ? 640 : 480) / Math.max(sw, sh));
+  canvas.width = Math.round(sw * scale); canvas.height = Math.round(sh * scale);
+  ctx.drawImage(source, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
   const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const code = window.jsQR(img.data, img.width, img.height, { inversionAttempts: 'attemptBoth' });
+  const inversionAttempts = photo ? 'attemptBoth' : pass === 'centre-inv' ? 'onlyInvert' : 'dontInvert';
+  const code = window.jsQR(img.data, img.width, img.height, { inversionAttempts });
   return code && code.data ? code.data : null;
 }
 
@@ -87,7 +96,7 @@ export async function scanFile(file) {
     const img = new Image();
     img.src = url;
     await img.decode();
-    return await decode(img, img.naturalWidth, img.naturalHeight);
+    return await decode(img, img.naturalWidth, img.naturalHeight, { photo: true });
   } finally {
     URL.revokeObjectURL(url);
   }

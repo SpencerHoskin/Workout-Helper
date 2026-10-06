@@ -6,6 +6,7 @@ let end = 0, tick = null;
 function paint() {
   const el = $('#rest');
   const left = Math.max(0, Math.round((end - Date.now()) / 1000));
+  document.body.classList.toggle('resting', !!end);
   if (!end) { el.hidden = true; return; }
   el.hidden = false;
   $('#restTime').textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');

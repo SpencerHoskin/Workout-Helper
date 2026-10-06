@@ -93,3 +93,22 @@ export function parseRepRange(reps) {
 export const roundTo = (v, step) => Math.round(v / step) * step;
 export const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 export const fmtNum = (v, dp = 1) => v == null ? '–' : (Math.round(v * 10 ** dp) / 10 ** dp).toLocaleString();
+
+/** Only http(s) links may become an href (blocks javascript:, data:, etc.). */
+export function safeUrl(s) {
+  const t = String(s || '').trim();
+  if (!t) return '';
+  try {
+    const u = new URL(t);
+    return u.protocol === 'https:' || u.protocol === 'http:' ? u.href : '';
+  } catch {
+    return '';
+  }
+}
+
+/** One CSV cell: quoted when needed, and formula-leading text neutralised for Excel/Numbers. */
+export function csvCell(v) {
+  let s = v == null ? '' : String(v);
+  if (/^[=+\-@\t\r]/.test(s) && !/^-?\d+(\.\d+)?$/.test(s)) s = "'" + s;
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}

@@ -43,10 +43,18 @@ export function confetti() {
 }
 
 let audioCtx;
-/** Short beep (rest timer done / code scanned). iOS needs a prior user gesture, which we always have. */
-export function beep(freq = 880, ms = 140) {
+/** iOS only lets audio start inside a tap. Call this from the first tap so later beeps (scan, rest done) can play. */
+export function unlockAudio() {
   try {
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  } catch { /* no audio support */ }
+}
+
+/** Short beep (rest timer done / code scanned). */
+export function beep(freq = 880, ms = 140) {
+  try {
+    if (!audioCtx) unlockAudio();
     const o = audioCtx.createOscillator(), g = audioCtx.createGain();
     o.frequency.value = freq; o.type = 'sine';
     g.gain.setValueAtTime(0.18, audioCtx.currentTime);
@@ -59,8 +67,10 @@ export function beep(freq = 880, ms = 140) {
 
 /* ---------- Bottom sheet (modal) ---------- */
 let onSheetClose = null;
+let opener = null;
 export function openSheet(html, { onClose } = {}) {
   const s = $('#sheet');
+  if (!s.classList.contains('open')) opener = document.activeElement;
   $('#sheetBody').innerHTML = html;
   s.classList.add('open');
   s.setAttribute('aria-hidden', 'false');
@@ -74,6 +84,8 @@ export function closeSheet() {
   s.classList.remove('open');
   s.setAttribute('aria-hidden', 'true');
   const cb = onSheetClose; onSheetClose = null;
+  if (opener && opener.isConnected && typeof opener.focus === 'function') opener.focus({ preventScroll: true });
+  opener = null;
   if (cb) cb();
 }
 export const sheetOpen = () => $('#sheet').classList.contains('open');

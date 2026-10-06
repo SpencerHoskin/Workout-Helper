@@ -27,6 +27,8 @@ function found(text) {
 }
 
 export function mount() {
+  document.removeEventListener('visibilitychange', onVisibility);
+  document.addEventListener('visibilitychange', onVisibility);
   const hint = $('#scanHint');
   startScanner($('#scanVideo'), found)
     .then(() => { hint.textContent = 'Point at the machine’s QR code'; })
@@ -39,7 +41,16 @@ export function mount() {
     });
 }
 
-export function unmount() { stopScanner(); }
+// Stop the camera when the app goes to the background; restart it on return (iOS freezes the feed otherwise).
+function onVisibility() {
+  if (document.hidden) stopScanner();
+  else if (current().name === 'scan' && !sheetOpen()) mount();
+}
+
+export function unmount() {
+  stopScanner();
+  document.removeEventListener('visibilitychange', onVisibility);
+}
 
 export const changes = {
   async scanPhoto(el) {

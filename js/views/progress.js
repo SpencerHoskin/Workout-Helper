@@ -1,5 +1,5 @@
 import { KEYS, load, save, getLog, getGoal, getWeighins, setWeighins, allExercises, exById, getChecklist } from '../store.js';
-import { exerciseHistory, forecast, weightPoints, movingAverage } from '../analytics.js';
+import { exerciseHistory, forecast, weightPoints, movingAverage, weeklyCap } from '../analytics.js';
 import { lineChart } from '../charts.js';
 import { askCoach, lastCoach, promptText } from '../coach.js';
 import { healthOn, sendWeight } from '../health.js';
@@ -18,47 +18,53 @@ export function render(ctx) {
 }
 
 /* ---------- Strength ---------- */
+// render() computes each view's data once and stashes it here for mount() to chart.
+let chartState = null;
+
 function strengthState(ctx) {
   const log = getLog();
   const exs = allExercises();
   const used = [...new Set(log.slice().reverse().map(e => e.exId))].filter(id => exs[id] && exs[id].kind !== 'cardio');
   const exId = used.includes(ctx.query.ex) ? ctx.query.ex : used[0];
-  return { log, used, ex: exId ? exs[exId] : null, exs };
-}
-
-function strength(ctx) {
-  const { log, used, ex, exs } = strengthState(ctx);
-  if (!ex) return `<div class="card empty"><div class="empty-ic">📈</div><b>No lifts logged yet</b><p class="muted">Scan a machine and log a few sets — your strength curve shows up here.</p>
-    <a class="btn primary" href="#/scan">📷 Scan a machine</a></div>`;
+  const ex = exId ? exs[exId] : null;
+  if (!ex) return { used, ex, exs };
   const hist = exerciseHistory(log, ex);
   const metric = ex.assisted ? 'assist' : ex.kind === 'bodyweight' ? 'reps' : 'e1rm';
   const pts = hist.map(h => ({ x: h.x, y: h[metric] })).filter(p => Number.isFinite(p.y));
   const goal = getGoal();
   const target = goal.strengthEx === ex.id && num(goal.strengthTarget) ? num(goal.strengthTarget) : null;
-  const fc = forecast(pts, { target });
-  const label = { e1rm: 'Estimated 1-rep max', assist: 'Assistance needed (lower = stronger)', reps: 'Total reps' }[metric];
-  const unit = metric === 'reps' ? 'reps' : 'lb';
+  const fc = forecast(pts, { target, maxPerWeek: weeklyCap(ex, metric) });
+  return { used, ex, exs, hist, metric, pts, target, fc, unit: metric === 'reps' ? 'reps' : 'lb' };
+}
 
-  let h = `<section class="card"><label class="lbl">Exercise</label>
+function strength(ctx) {
+  const st = strengthState(ctx);
+  const { used, ex, exs, hist, metric, pts, target, fc, unit } = st;
+  if (!ex) return `<div class="card empty"><div class="empty-ic">📈</div><b>No lifts logged yet</b><p class="muted">Scan a machine and log a few sets — your strength curve shows up here.</p>
+    <a class="btn primary" href="#/scan">📷 Scan a machine</a></div>`;
+  chartState = { kind: 'strength', ...st };
+  const label = { e1rm: 'Estimated 1-rep max', assist: 'Assistance needed (lower = stronger)', reps: 'Total reps' }[metric];
+
+  return `<section class="card"><label class="lbl">Exercise</label>
     <select data-change="pickEx">${used.map(id => `<option value="${id}" ${id === ex.id ? 'selected' : ''}>${esc(exs[id].name)}</option>`).join('')}</select></section>
   <div class="tiles">
     <div class="tile t-orange"><b>${pts.length ? fmtNum(metric === 'assist' ? Math.min(...pts.map(p => p.y)) : Math.max(...pts.map(p => p.y)), 0) : '–'}</b><span>best ${metric === 'e1rm' ? 'e1RM' : metric}</span></div>
     <div class="tile t-violet"><b>${hist.length ? Math.max(...hist.map(x => x.topW)) || '–' : '–'}</b><span>heaviest lb</span></div>
-    <div class="tile t-teal"><b>${fc ? (fc.perWeek > 0 ? '+' : '') + fmtNum(fc.perWeek, 1) : '–'}</b><span>${unit}/week trend</span></div>
+    <div class="tile t-teal"><b>${fc ? (fc.rawPerWeek > 0 ? '+' : '') + fmtNum(fc.rawPerWeek, 1) : '–'}</b><span>${unit}/week lately</span></div>
   </div>
   <section class="card"><h2>${esc(label)}</h2><p class="muted small">${esc(ex.name)} · dashed = forecast</p>
     <div class="chart" data-chart="strength"></div>
-    <p class="forecast">${forecastText(fc, metric, unit, target, pts)}</p></section>
+    <p class="forecast">${forecastText(fc, metric, unit, target, pts, ex)}</p></section>
   <section class="card"><h2>Sessions</h2><table class="hist"><thead><tr><th>Date</th><th>Sets</th>${metric === 'e1rm' ? '<th class="num">e1RM</th>' : ''}</tr></thead><tbody>
     ${hist.slice().reverse().map(x => `<tr><td>${shortDate(x.date)}</td><td>${x.sets.map(s => `${s.w ?? ''}${s.w != null ? '×' : ''}${s.r}${s.rpe ? '@' + s.rpe : ''}`).join(', ')}</td>
       ${metric === 'e1rm' ? `<td class="num">${fmtNum(x.e1rm, 0)}</td>` : ''}</tr>`).join('')}</tbody></table></section>`;
-  return h;
 }
 
-function forecastText(fc, metric, unit, target, pts) {
+function forecastText(fc, metric, unit, target, pts, ex) {
   if (!fc) return `🔮 Log ${Math.max(1, 3 - pts.length)} more session${3 - pts.length === 1 ? '' : 's'} (over a week or more) to unlock the forecast.`;
-  const better = metric === 'assist' ? fc.perWeek < 0 : fc.perWeek > 0;
-  let t = `🔮 Trend: <b>${fc.perWeek > 0 ? '+' : ''}${fmtNum(fc.perWeek, 1)} ${unit}/week</b> ${better ? '— moving the right way.' : '— flat or slipping; check sleep, food and consistency.'}`;
+  const better = metric === 'assist' ? fc.rawPerWeek < 0 : fc.rawPerWeek > 0;
+  let t = `🔮 Lately: <b>${fc.rawPerWeek > 0 ? '+' : ''}${fmtNum(fc.rawPerWeek, 1)} ${unit}/week</b> ${better ? '— moving the right way.' : '— flat or slipping; check sleep, food and consistency.'}`;
+  if (fc.capped) t += ` The forecast assumes your safe pace of <b>one ${ex.inc || 5} lb step per week</b>, not today's beginner gains.`;
   t += ` In 8 weeks: ~<b>${fmtNum(fc.to.y, 0)} ${unit}</b>.`;
   if (target) t += fc.etaDate ? ` Goal ${target} ${unit}: around <b>${shortDate(fc.etaDate)}</b>.` : ` Goal ${target} ${unit}: not reachable on the current trend yet.`;
   if (fc.r2 < 0.3) t += ' <span class="muted">(noisy data — low confidence)</span>';
@@ -76,7 +82,9 @@ function bodyState() {
 }
 
 function body() {
-  const { goal, wins, pts, avg, fc } = bodyState();
+  const st = bodyState();
+  const { goal, wins, pts, avg, fc } = st;
+  chartState = { kind: 'body', ...st };
   const cur = avg.length ? avg[avg.length - 1].y : null;
   const monthAgo = avg.filter(p => p.x <= dayNum(todayStr()) - 30).pop();
   const pctWeek = fc && cur ? Math.abs(fc.perWeek) / cur * 100 : 0;
@@ -123,7 +131,8 @@ export function openWeighin() {
         <div style="flex:0 0 110px"><label class="lbl">Unit</label><select name="unit"><option value="lb">lb</option><option value="kg">kg</option></select></div></div>
       <div class="row"><div><label class="lbl">Body fat % <span class="muted">(opt.)</span></label><input name="bodyFat" inputmode="decimal" placeholder="—"></div>
         <div><label class="lbl">Muscle mass <span class="muted">(opt.)</span></label><input name="muscle" inputmode="decimal" placeholder="same unit"></div></div>
-      <label class="lbl">Scale</label><select name="source"><option value="gym">Crunch scale</option><option value="home">Home scale</option></select>
+      <div class="row"><div><label class="lbl">Scale</label><select name="source"><option value="gym">Crunch scale</option><option value="home">Home scale</option></select></div>
+        <div><label class="lbl">Date</label><input name="date" type="date" value="${todayStr()}" max="${todayStr()}" required></div></div>
       <label class="lbl">Note</label><input name="note" placeholder="Before workout, shoes on…">
       <button class="btn primary wide" type="submit">Save weigh-in</button>
     </form>`);
@@ -169,36 +178,31 @@ function reportHtml(c) {
 }
 
 /* ---------- Charts ---------- */
-export function mount(root, ctx) {
+export function mount(root) {
   const el = root.querySelector('[data-chart]');
-  if (!el) return;
-  if (el.dataset.chart === 'strength') {
-    const { log, ex } = strengthState(ctx);
-    const hist = exerciseHistory(log, ex);
-    const metric = ex.assisted ? 'assist' : ex.kind === 'bodyweight' ? 'reps' : 'e1rm';
-    const pts = hist.map(h => ({ x: h.x, y: h[metric] })).filter(p => Number.isFinite(p.y));
-    const goal = getGoal();
-    const target = goal.strengthEx === ex.id && num(goal.strengthTarget) ? num(goal.strengthTarget) : null;
-    const fc = forecast(pts, { target });
+  const st = chartState;
+  chartState = null;
+  if (!el || !st) return;
+  const line = (p, dp) => ({ x: p.x, y: Math.round(p.y * 10 ** dp) / 10 ** dp });
+  if (st.kind === 'strength') {
     lineChart(el, {
-      label: ex.name,
+      label: st.ex.name,
       series: [
-        { name: metric === 'e1rm' ? 'e1RM' : metric, color: C2, type: 'line', points: pts },
-        ...(fc ? [{ name: 'Forecast', color: C2, type: 'dash', points: [fc.from, fc.to].map(p => ({ x: p.x, y: Math.round(p.y) })) }] : [])
+        { name: st.metric === 'e1rm' ? 'e1RM' : st.metric, color: C2, type: 'line', points: st.pts },
+        ...(st.fc ? [{ name: 'Forecast', color: C2, type: 'dash', points: [st.fc.from, st.fc.to].map(p => line(p, 0)) }] : [])
       ],
-      refs: target ? [{ y: target, label: 'Goal ' + target }] : [],
-      xFmt, yFmt: v => fmtNum(v, 0), unit: metric === 'reps' ? 'reps' : 'lb', endLabel: 0
+      refs: st.target ? [{ y: st.target, label: 'Goal ' + st.target }] : [],
+      xFmt, yFmt: v => fmtNum(v, 0), unit: st.unit, endLabel: 0
     });
   } else {
-    const { goal, pts, avg, fc } = bodyState();
     lineChart(el, {
       label: 'Bodyweight',
       series: [
-        { name: 'Weigh-in', color: C2, type: 'dots', points: pts },
-        { name: '7-day avg', color: C1, type: 'line', points: avg.map(p => ({ x: p.x, y: Math.round(p.y * 10) / 10 })) },
-        ...(fc ? [{ name: 'Forecast', color: C1, type: 'dash', points: [fc.from, fc.to].map(p => ({ x: p.x, y: Math.round(p.y * 10) / 10 })) }] : [])
+        { name: 'Weigh-in', color: C2, type: 'dots', points: st.pts },
+        { name: '7-day avg', color: C1, type: 'line', points: st.avg.map(p => line(p, 1)) },
+        ...(st.fc ? [{ name: 'Forecast', color: C1, type: 'dash', points: [st.fc.from, st.fc.to].map(p => line(p, 1)) }] : [])
       ],
-      refs: goal.targetWeight ? [{ y: goal.targetWeight, label: 'Goal ' + goal.targetWeight }] : [],
+      refs: st.goal.targetWeight ? [{ y: st.goal.targetWeight, label: 'Goal ' + st.goal.targetWeight }] : [],
       xFmt, yFmt: v => fmtNum(v, 1), unit: 'lb', endLabel: 1
     });
   }
@@ -241,11 +245,12 @@ export const submits = {
     if (!(weight > 0)) return toast('Enter your weight', 'warn');
     const lb = Math.round(weight * k * 10) / 10;
     const muscle = num(f.muscle.value);
-    const w = { id: uid('w'), date: todayStr(), ts: Date.now(), weight: lb, bodyFat: num(f.bodyFat.value),
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(f.date.value) && f.date.value <= todayStr() ? f.date.value : todayStr();
+    const w = { id: uid('w'), date, ts: Date.now(), weight: lb, bodyFat: num(f.bodyFat.value),
       muscle: muscle ? Math.round(muscle * k * 10) / 10 : null, source: f.source.value, note: f.note.value.trim() };
     setWeighins(getWeighins().concat(w));
     closeSheet();
-    if (location.hash.indexOf('progress/body') < 0) go('progress/body'); else rerender();
+    go('progress/body');
     if (healthOn()) {
       openSheet(`<div class="sheet-head"><h2>Saved ${lb} lb ✅</h2><p class="muted">Send it to Apple Health too?</p></div>
         <button class="btn primary wide" data-act="healthWeight">❤️ Send to Apple Health</button>

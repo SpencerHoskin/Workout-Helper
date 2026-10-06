@@ -1,6 +1,6 @@
 // Coach Claude client: builds a compact training snapshot and asks the /api/coach function.
 import { SESSIONS, DAYS, SUPPS, PENDING } from './catalog.js';
-import { KEYS, load, save, getLog, getGoal, getSettings, getWeighins, allExercises, getChecklist } from './store.js';
+import { KEYS, load, save, getLog, getGoal, getSettings, getWeighins, allExercises, getChecklist, getLimits, getSupps, getDaily } from './store.js';
 import { exerciseHistory, forecast, weightPoints, movingAverage, suggestNext, weekStats } from './analytics.js';
 import { todayStr, dayNum, fromDayNum, weekKey } from './util.js';
 
@@ -11,8 +11,8 @@ export function buildSnapshot() {
   const goal = getGoal();
   const exs = allExercises();
   const today = todayStr();
-  const limits = load(KEYS.limits, {});
-  const suppSt = load(KEYS.supps, {});
+  const limits = getLimits();
+  const suppSt = getSupps();
 
   const exercises = [];
   for (const id of [...new Set(log.map(e => e.exId))]) {
@@ -46,7 +46,7 @@ export function buildSnapshot() {
   }
 
   const notes = log.filter(e => e.note).slice(-10).map(e => ({ date: e.date, exercise: exs[e.exId]?.name || e.exId, note: e.note }));
-  const daily = load(KEYS.daily, {});
+  const daily = getDaily();
   Object.keys(daily).sort().slice(-7).forEach(d => { if (daily[d].note) notes.push({ date: d, exercise: 'daily', note: daily[d].note }); });
 
   return {
@@ -98,7 +98,14 @@ export async function askCoach(question = '') {
   return saved;
 }
 
-export const lastCoach = () => load(KEYS.coach, null);
+/** Last saved report — only if it has the shape the screens render (guards old/corrupt data). */
+export function lastCoach() {
+  const c = load(KEYS.coach, null);
+  const r = c && c.report;
+  const ok = r && typeof r.headline === 'string' && r.goal_forecast && typeof r.goal_forecast === 'object' &&
+    ['next_session', 'four_week_plan', 'habits', 'safety_flags', 'questions_for_doctor'].every(k => Array.isArray(r[k]));
+  return ok ? c : null;
+}
 
 /** Zero-setup fallback: paste this into the Claude app. */
 export function promptText(question = '') {

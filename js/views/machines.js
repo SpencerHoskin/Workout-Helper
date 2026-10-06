@@ -1,6 +1,6 @@
 import { MACHINE_TYPES } from '../catalog.js';
 import { getMachines, saveMachine, deleteMachine, findMachineByCode, machineIdFor, allExercises, exById, addCustomExercise, getLog } from '../store.js';
-import { esc, guessName, isUrl, uid, shortDate } from '../util.js';
+import { esc, guessName, isUrl, uid, shortDate, safeUrl } from '../util.js';
 import { $, $$, openSheet, closeSheet, toast } from '../ui.js';
 import { go, rerender } from '../router.js';
 import { openWeighin } from './progress.js';
@@ -9,7 +9,7 @@ const typeById = id => MACHINE_TYPES.find(t => t.id === id) || MACHINE_TYPES[MAC
 
 /** Where a known machine should open. */
 export function openMachine(m) {
-  if (m.type === 'scale') { go('progress/body'); setTimeout(openWeighin, 50); return; }
+  if (m.type === 'scale') { go('progress/body'); openWeighin(); return; }
   if (!m.exIds.length) { editMachine(m.id); return; }
   go(`log/${m.exIds[0]}?m=${m.id}`);
 }
@@ -114,10 +114,10 @@ export const actions = {
     closeSheet(); go('machines');
   },
   newExercise() {
-    const name = prompt('Exercise name (e.g. "Cable lateral raise")');
-    if (!name || !name.trim()) return;
-    const id = addCustomExercise(name.trim());
-    go('log/' + id);
+    openSheet(`<div class="sheet-head"><h2>New exercise</h2><p class="muted small">For anything not in the library.</p></div>
+      <form id="newExercise"><label class="lbl">Name</label><input name="name" placeholder="e.g. Cable lateral raise" required autofocus>
+      <label class="lbl">Logged as</label><select name="kind"><option value="strength">Weight × reps</option><option value="cardio">Minutes (cardio)</option><option value="bodyweight">Reps only</option></select>
+      <button class="btn primary wide" type="submit">Create &amp; log it</button></form>`);
   }
 };
 
@@ -129,6 +129,13 @@ export const inputs = {
 };
 
 export const submits = {
+  newExercise(form) {
+    const name = form.elements.name.value.trim();
+    if (!name) return;
+    const id = addCustomExercise(name, form.elements.kind.value);
+    closeSheet();
+    go('log/' + id);
+  },
   newMachine(form) {
     const f = form.elements;
     const name = f.name.value.trim();
@@ -140,20 +147,25 @@ export const submits = {
     const raw = form.dataset.raw;
     const m = saveMachine({
       id: machineIdFor(raw), code: raw, name: name || t.name, type: t.id, exIds,
-      video: f.video && f.video.checked ? raw : '', zone: f.zone.value.trim(), setup: '', created: Date.now()
+      video: f.video && f.video.checked ? safeUrl(raw) : '', zone: f.zone.value.trim(), created: Date.now()
     });
     closeSheet();
     toast(`${t.icon} Saved ${m.name}`);
     openMachine(m);
   },
   editMachine(form) {
-    const m = getMachines()[form.dataset.id];
     const f = form.elements;
-    m.name = f.name.value.trim() || m.name;
-    m.zone = f.zone.value.trim();
-    m.video = f.video.value.trim();
-    m.exIds = [...form.querySelectorAll('input[name=ex]:checked')].map(i => i.value).filter(id => exById(id));
-    saveMachine(m);
+    const video = f.video.value.trim();
+    if (video && !safeUrl(video)) { toast('Video link must start with https://', 'warn'); return; }
+    const old = getMachines()[form.dataset.id];
+    if (!old) return;
+    saveMachine({
+      ...old,
+      name: f.name.value.trim() || old.name,
+      zone: f.zone.value.trim(),
+      video: safeUrl(video),
+      exIds: [...form.querySelectorAll('input[name=ex]:checked')].map(i => i.value).filter(id => exById(id))
+    });
     closeSheet(); toast('Saved'); rerender();
   }
 };

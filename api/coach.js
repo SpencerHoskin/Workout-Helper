@@ -1,6 +1,9 @@
 // Vercel serverless function: POST /api/coach
 // Holds the Anthropic API key server-side (env ANTHROPIC_API_KEY) so it never reaches the phone.
-// Optional env COACH_PASSCODE: when set, the app must send the same value in the x-coach-pass header.
+// Env COACH_PASSCODE: the app must send the same value in the x-coach-pass header. Without it the
+// function stays LOCKED (the repo is public, so an open endpoint would spend your credits) unless
+// you deliberately set COACH_ALLOW_OPEN=1.
+import { createHash, timingSafeEqual } from 'node:crypto';
 import Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import { z } from 'zod';
@@ -45,6 +48,12 @@ Safety rules (non-negotiable — the member trains under a cardiologist's guidan
 
 Forecasting: ground dates in the trends in the data and say how confident you are. With little data, say exactly what to log to sharpen the forecast. Use exercise_id values from the snapshot. Weights are in pounds.`;
 
+/** Constant-time string compare (hash first so lengths always match). */
+export function samePass(a, b) {
+  const h = v => createHash('sha256').update(String(v ?? '')).digest();
+  return timingSafeEqual(h(a), h(b));
+}
+
 function send(res, status, body) {
   res.status(status).setHeader('content-type', 'application/json').setHeader('cache-control', 'no-store');
   res.end(JSON.stringify(body));
@@ -54,8 +63,11 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return send(res, 405, { error: 'POST only' });
 
   const pass = process.env.COACH_PASSCODE;
-  if (pass && req.headers['x-coach-pass'] !== pass) {
-    return send(res, 401, { error: 'Wrong or missing coach passcode — set it in Me → Coach settings.' });
+  if (!pass && process.env.COACH_ALLOW_OPEN !== '1') {
+    return send(res, 503, { error: 'Coach is locked: add COACH_PASSCODE in Vercel → Settings → Environment Variables, then redeploy.' });
+  }
+  if (pass && !samePass(req.headers['x-coach-pass'], pass)) {
+    return send(res, 401, { error: 'Wrong or missing coach passcode — set it in Me → Coach Claude setup.' });
   }
   if (!process.env.ANTHROPIC_API_KEY) {
     return send(res, 500, { error: 'Server is missing ANTHROPIC_API_KEY. Add it in Vercel → Project → Settings → Environment Variables, then redeploy.' });

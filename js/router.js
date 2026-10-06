@@ -1,4 +1,6 @@
 // Hash router: #/today, #/machines, #/scan, #/progress/body, #/log/legpress?m=m_abc
+// go() navigates SYNCHRONOUSLY (pushState + render) so code can open a sheet right after it
+// without racing an async hashchange. Links and back/forward still arrive via hashchange/popstate.
 let renderFn = () => {};
 export const setRenderer = fn => { renderFn = fn; };
 
@@ -11,8 +13,8 @@ export function current() {
 
 export function go(hash, { replace = false } = {}) {
   const target = hash.startsWith('#') ? hash : '#/' + hash;
-  if (location.hash === target) return renderFn();
-  if (replace) { history.replaceState(null, '', target); renderFn(); } else location.hash = target;
+  if (location.hash !== target) history[replace ? 'replaceState' : 'pushState'](null, '', target);
+  renderFn();
 }
 
-export const rerender = (opts) => renderFn(opts);
+export const rerender = opts => renderFn(opts);

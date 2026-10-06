@@ -32,7 +32,7 @@ The flow is: **Claude edits code → GitHub (PR) → you Merge → Vercel redepl
 3. Framework Preset: **Other**. Leave Build Command and Output Directory **empty**.
 4. Open **Environment Variables** and add:
    - `ANTHROPIC_API_KEY`: create one at **console.anthropic.com → API Keys** (it starts with `sk-ant-`).
-   - `COACH_PASSCODE`: any secret phrase you make up (e.g. `brother-5am-2026`). It stops strangers from using your Claude credits.
+   - `COACH_PASSCODE`: any secret phrase you make up (e.g. `brother-5am-2026`). **Required**: without it Coach Claude stays locked, because the repo is public and an open endpoint would let strangers spend your Claude credits.
 5. Click **Deploy**. You get a URL like `https://workout-helper-xyz.vercel.app`.
 
 > **Branches & previews:** Vercel's *production* site follows the repo's default branch. Every other branch (like the PR branches Claude makes) gets its own **Preview URL**, which you can test on your phone *before* merging. Preview links may ask you to log in to Vercel first; that's normal.
@@ -53,7 +53,7 @@ Open **`/test-qr/`** on your deployed site (e.g. `https://…vercel.app/test-qr/
 
 ## Your data
 - Everything is stored **on your phone** (in the browser's storage for this app). Nothing leaves it except when you press **Analyze**: that sends a training snapshot to *your* Vercel function, which forwards it to Claude.
-- Back up now and then: **Me → ⚙️ Settings & data → Backup** (a JSON file). **Restore** loads it back; **CSV** exports for spreadsheets.
+- Back up now and then: **Me → ⚙️ Settings & data → Backup** (a JSON file; save it to Files/iCloud Drive). **Restore** loads it back after checking the file. **CSV** exports for spreadsheets. The Today screen reminds you when your last backup is over 2 weeks old.
 - Prefer zero setup? **Progress → Coach → "Copy for the Claude app"** copies your data as a prompt you can paste into the Claude app.
 
 ## Cost
@@ -68,7 +68,7 @@ index.html            app shell (tabs, sheet, safety overlay)
 css/app.css           design tokens (light + dark), components, charts
 js/app.js             boot, router wiring, event delegation
 js/store.js           localStorage keys (STABLE), schema migration, backup
-js/analytics.js       e1RM, trends, forecasts, progression (pure)
+js/analytics.js       e1RM, trends, forecasts, progression (pure, unit-tested)
 js/util.js            pure helpers (dates, parsing, QR normalising)
 js/charts.js          dependency-free SVG line chart + activity rings
 js/scanner.js         camera QR scanning (BarcodeDetector → jsQR fallback)
@@ -79,7 +79,11 @@ api/coach.js          Vercel function → Claude (structured output, safety prom
 sw.js                 offline cache
 vendor/jsQR.min.js    QR decoder (Apache-2.0)
 test-qr/              printable test codes
+tests/                node --test suites
+docs/REVIEW-v1.md     v1 engineering review → v2 change list
 ```
 - Run locally: `npm install`, then `npm run dev` and open http://localhost:5173. The camera works on `localhost`; on a phone it needs https, so use a Vercel preview.
 - Coach locally: `npx vercel dev` (after `npx vercel link`), with `ANTHROPIC_API_KEY` in `.env.local`.
+- Tests: `npm test` (Node's built-in runner; covers util, analytics, storage migration/restore, the API function). GitHub Actions runs them on every PR.
 - Storage keys in `js/store.js` are **stable**: never rename them; add a migration instead.
+- `docs/REVIEW-v1.md` is the engineering review that drove v2.

@@ -70,7 +70,7 @@ export function lineChart(el, spec) {
 
   el.innerHTML = `${legend}<div class="plot"><svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" tabindex="0"
       aria-label="${esc(spec.label || series.map(s => s.name).join(', '))}">${g}
-      <line class="cross" y1="${P.t}" y2="${H - P.b}" x1="-10" x2="-10"/>
+      <line class="cross" y1="${P.t}" y2="${H - P.b}" x1="0" x2="0" visibility="hidden"/>
       <rect class="hit" x="${P.l}" y="0" width="${W - P.l - P.r}" height="${H}"/></svg>
       <div class="tip" hidden></div></div>`;
 
@@ -81,7 +81,7 @@ export function lineChart(el, spec) {
   const show = i => {
     idx = Math.max(0, Math.min(xsSorted.length - 1, i));
     const x = xsSorted[idx];
-    cross.setAttribute('x1', sx(x)); cross.setAttribute('x2', sx(x));
+    cross.setAttribute('x1', sx(x)); cross.setAttribute('x2', sx(x)); cross.setAttribute('visibility', 'visible');
     tip.replaceChildren();
     const head = document.createElement('div'); head.className = 'tip-date'; head.textContent = xFmt(x);
     tip.appendChild(head);
@@ -98,7 +98,7 @@ export function lineChart(el, spec) {
     const px = (sx(x) / W) * svg.getBoundingClientRect().width;
     tip.style.left = Math.max(4, Math.min(px - tip.offsetWidth / 2, el.clientWidth - tip.offsetWidth - 4)) + 'px';
   };
-  const hide = () => { tip.hidden = true; cross.setAttribute('x1', -10); cross.setAttribute('x2', -10); };
+  const hide = () => { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); };
   const fromEvent = ev => {
     const r = svg.getBoundingClientRect();
     const x = x0 + (((ev.clientX - r.left) / r.width) * W - P.l) / (W - P.l - P.r) * (x1 - x0);
@@ -126,7 +126,7 @@ export function ringsSvg(rings, size = 132) {
     const circ = 2 * Math.PI * rad;
     const frac = r.goal > 0 ? Math.min(1, r.value / r.goal) : 0;
     defs += `<linearGradient id="rg${i}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${r.grad[0]}"/><stop offset="1" stop-color="${r.grad[1]}"/></linearGradient>`;
-    arcs += `<circle cx="${c}" cy="${c}" r="${rad}" fill="none" stroke="${r.grad[1]}" stroke-opacity=".18" stroke-width="${sw}"/>`;
+    arcs += `<circle cx="${c}" cy="${c}" r="${rad}" fill="none" stroke="${r.grad[1]}" stroke-opacity=".3" stroke-width="${sw}"/>`;
     arcs += `<circle class="ring-arc" cx="${c}" cy="${c}" r="${rad}" fill="none" stroke="url(#rg${i})" stroke-width="${sw}"
       stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${circ * (1 - frac)}" style="--circ:${circ}"
       transform="rotate(-90 ${c} ${c})"/>`;

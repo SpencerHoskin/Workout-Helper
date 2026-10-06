@@ -1,15 +1,24 @@
 import { BREATH, SESSIONS, MACHINE_TYPES } from '../catalog.js';
-import { KEYS, load, getLog, getMachines, getSettings, exById, addSet, removeSet, setEntryNote, getSetup, setSetup } from '../store.js';
+import { getLog, getLimits, getMachines, getSettings, exById, addSet, removeSet, setEntryNote, getSetup, setSetup } from '../store.js';
 import { exerciseHistory, suggestNext, isPR, e1rm } from '../analytics.js';
-import { esc, todayStr, shortDate, num, fmtNum } from '../util.js';
+import { esc, todayStr, shortDate, num, fmtNum, safeUrl } from '../util.js';
 import { $, $$, toast, confetti } from '../ui.js';
 import { startRest } from '../timer.js';
 import { rerender } from '../router.js';
 import { activeSession } from './today.js';
+import { lastCoach } from '../coach.js';
 
+// Plain text — callers escape once.
 const fmtSet = (ex, s) => ex.kind === 'cardio'
-  ? `${s.min} min${s.lvl ? ' · ' + esc(s.lvl) : ''}${s.rpe ? ' · RPE ' + s.rpe : ''}`
+  ? `${s.min} min${s.lvl ? ' · ' + s.lvl : ''}${s.rpe ? ' · RPE ' + s.rpe : ''}`
   : `${ex.kind === 'bodyweight' ? '' : (s.w ?? '–') + ' lb × '}${s.r ?? '–'}${s.rpe ? ' · RPE ' + s.rpe : ''}`;
+
+/** Coach Claude's target for this exercise, if a report from the last 14 days has one. */
+function coachTarget(exId) {
+  const c = lastCoach();
+  if (!c || Date.now() - c.ts > 14 * 864e5) return null;
+  return (c.report.next_session || []).find(t => t.exercise_id === exId) || null;
+}
 
 let ctxNow = null;
 
@@ -27,7 +36,8 @@ export function render(ctx) {
   const sets = entry ? entry.sets : [];
   const sug = suggestNext(ex, prior);
   const last = prior[prior.length - 1];
-  const limits = load(KEYS.limits, {});
+  const limits = getLimits();
+  const coach = coachTarget(ex.id);
   const best = prior.length && ex.kind === 'strength' ? Math.max(...prior.map(h => h.e1rm)) : null;
   const lastSet = sets[sets.length - 1];
   const sid = activeSession();
@@ -50,12 +60,13 @@ export function render(ctx) {
     }).join('')}</div>` : ''}
     <div class="lh-meta">${ex.kind === 'cardio' ? esc(ex.target || '') : `<span class="target">${ex.sets} × ${esc(ex.reps)}</span><span class="target">RPE 5–7</span>`}
       ${best ? `<span class="target">Best e1RM ${Math.round(best)} lb</span>` : ''}</div>
-    ${m && m.video ? `<a class="btn glass" href="${esc(m.video)}" target="_blank" rel="noopener">▶ Training video</a>` : ''}
+    ${m && safeUrl(m.video) ? `<a class="btn glass" href="${esc(safeUrl(m.video))}" target="_blank" rel="noopener">▶ Training video</a>` : ''}
   </section>`;
 
   h += `<section class="card sug ${sug.caution ? 'caution' : sug.up ? 'up' : ''}">
     <div class="eyebrow">${sug.up ? '⬆️ Level up' : sug.caution ? '⚠️ Ease off' : '🎯 Today’s target'}</div>
     <b>${esc(sug.text)}</b>${sug.why ? `<p class="muted small">${esc(sug.why)}</p>` : ''}
+    ${coach ? `<div class="coach-tgt">✨ <b>Coach Claude:</b> ${coach.sets} × ${esc(coach.reps)}${coach.weight_lb ? ' @ ' + coach.weight_lb + ' lb' : ''}${coach.note ? `<span class="muted small"> — ${esc(coach.note)}</span>` : ''}</div>` : ''}
     ${last ? `<p class="small">Last time (${shortDate(last.date)}): ${last.sets.map(s => esc(fmtSet(ex, s))).join(', ')}</p>` : ''}
     ${ex.flag ? `<div class="flag">⚠ ${esc(ex.flag)}</div>` : ''}
     ${limits.load && ex.kind === 'strength' ? `<div class="flag">🩺 Cardiologist load limit: ${esc(limits.load)}</div>` : ''}
@@ -63,7 +74,7 @@ export function render(ctx) {
   </section>`;
 
   h += `<section class="card"><div class="row-between"><h2>Sets today</h2><span class="count">${sets.length}${ex.kind !== 'cardio' ? '/' + ex.sets : ''}</span></div>
-    ${sets.length ? `<ol class="setlist">${sets.map((s, i) => `<li><span class="sn">${i + 1}</span><b>${fmtSet(ex, s)}</b>
+    ${sets.length ? `<ol class="setlist">${sets.map((s, i) => `<li><span class="sn">${i + 1}</span><b>${esc(fmtSet(ex, s))}</b>
       <button class="icon-btn danger" data-act="delSet" data-entry="${esc(entry.id)}" data-i="${i}" aria-label="Delete set ${i + 1}">✕</button></li>`).join('')}</ol>`
       : '<p class="muted small">No sets yet — you’ve got this.</p>'}
     <form id="logSet" class="entry" autocomplete="off">`;
@@ -75,10 +86,11 @@ export function render(ctx) {
     if (ex.kind === 'strength') h += stepper('w', ex.assisted ? 'Assist (lb)' : 'Weight (lb)', defW, inc, 'decimal');
     h += stepper('r', 'Reps', defR, 1, 'numeric');
   }
+  const rpe = lastSet && lastSet.rpe ? lastSet.rpe : '';  // carried forward so every set keeps its effort rating
   h += `<label class="lbl">How hard? (RPE) <span class="muted">— 5 moderate · 7 hard, 3 left · 9+ too much</span></label>
     <div class="rpe" role="radiogroup" aria-label="RPE">${[4, 5, 6, 7, 8, 9].map(v =>
-      `<button type="button" class="rpe-chip r${v}" data-act="rpe" data-v="${v}" role="radio" aria-checked="false">${v}</button>`).join('')}</div>
-    <input type="hidden" name="rpe">
+      `<button type="button" class="rpe-chip r${v}" data-act="rpe" data-v="${v}" role="radio" aria-checked="${v === rpe}">${v}</button>`).join('')}</div>
+    <input type="hidden" name="rpe" value="${rpe}">
     <button class="btn primary wide big-btn" type="submit">✓ Log set ${sets.length + 1}</button>
   </form></section>`;
 

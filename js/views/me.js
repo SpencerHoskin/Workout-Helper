@@ -1,13 +1,13 @@
 import { SESSIONS, DAYS, SUPPS, AVOID, PENDING } from '../catalog.js';
-import { KEYS, load, save, getGoal, setGoal, getSettings, setSettings, getChecklist, getLog, allExercises, exportAll, importAll, setTodaySession } from '../store.js';
+import { KEYS, save, getGoal, setGoal, getSettings, setSettings, getChecklist, getLog, getDaily, getLimits, getSupps, allExercises, exportAll, importAll, setTodaySession, markBackedUp } from '../store.js';
 import { HEALTH_STEPS, sendWeight, sendWorkout } from '../health.js';
-import { esc, todayStr } from '../util.js';
+import { esc, todayStr, csvCell } from '../util.js';
 import { toast, download } from '../ui.js';
-import { go, rerender } from '../router.js';
+import { go, rerender, current } from '../router.js';
 import { applyTheme } from '../theme.js';
 
 function suppStatus() {
-  const st = load(KEYS.supps, {});
+  const st = getSupps();
   return Object.fromEntries(SUPPS.map(s => [s.id, st[s.id] || s.def]));
 }
 const statusPill = v => v === 'ok' ? '<span class="pill ok">cleared</span>' : v === 'no' ? '<span class="pill no">not approved</span>' : `<span class="pill pend">${PENDING}</span>`;
@@ -31,7 +31,7 @@ export function render(ctx) {
       <div style="flex:0 0 120px"><label class="lbl">e1RM target</label><input data-change="goal" name="strengthTarget" inputmode="decimal" placeholder="lb" value="${esc(goal.strengthTarget)}"></div></div>
     <label class="lbl">Your why (Claude reads this)</label><textarea data-change="goal" name="why">${esc(goal.why)}</textarea>`;
 
-  const daily = load(KEYS.daily, {});
+  const daily = getDaily();
   const d = daily[todayStr()] || { supps: {}, note: '' };
   const st = suppStatus();
   const dailyHtml = SUPPS.map(s => `<div class="check"><input type="checkbox" data-supp="${s.id}" ${d.supps && d.supps[s.id] && st[s.id] === 'ok' ? 'checked' : ''} ${st[s.id] === 'ok' ? '' : 'disabled'} aria-label="${esc(s.name)} taken">
@@ -41,7 +41,7 @@ export function render(ctx) {
     <button class="btn ghost wide" data-act="weighin">⚖️ Log bodyweight</button>`;
 
   const cl = getChecklist();
-  const lim = load(KEYS.limits, {});
+  const lim = getLimits();
   const doctorHtml = `<h3>Questions for the cardiologist</h3>${cl.map(c => `<div class="check"><input type="checkbox" data-change="clDone" data-id="${esc(c.id)}" ${c.done ? 'checked' : ''} aria-label="Answered">
       <div class="body"><div ${c.done ? 'class="struck"' : ''}>${esc(c.text)}</div>
       <input type="text" data-input="clNote" data-id="${esc(c.id)}" value="${esc(c.note)}" placeholder="Answer / notes"></div>
@@ -105,9 +105,7 @@ export const changes = {
     rerender({ keepScroll: true });
   },
   suppSt(el) {
-    const st = load(KEYS.supps, {});
-    st[el.dataset.id] = el.value;
-    save(KEYS.supps, st);
+    save(KEYS.supps, { ...getSupps(), [el.dataset.id]: el.value });
     toast('Saved');
   },
   setting(el) {
@@ -151,7 +149,7 @@ export const inputs = {
     save(KEYS.checklist, cl);
   },
   lim(el) {
-    const lim = load(KEYS.limits, {});
+    const lim = getLimits();
     lim[el.dataset.k] = el.value.trim();
     save(KEYS.limits, lim);
   }
@@ -159,7 +157,7 @@ export const inputs = {
 
 export const actions = {
   saveDaily() {
-    const all = load(KEYS.daily, {});
+    const all = { ...getDaily() };
     const supps = {};
     document.querySelectorAll('[data-supp]').forEach(c => { supps[c.dataset.supp] = c.checked; });
     const prev = all[todayStr()] || {};
@@ -186,11 +184,13 @@ export const actions = {
   testHealthWo: () => sendWorkout(1),
   exportJson() {
     download(`5am-workout-backup-${todayStr()}.json`, JSON.stringify(exportAll(), null, 1));
+    markBackedUp();
+    if (current().name === 'today') rerender({ keepScroll: true }); // drop the reminder card
   },
   exportCsv() {
     const ex = allExercises();
     const rows = [['date', 'exercise', 'set', 'weight_lb', 'reps', 'rpe', 'minutes', 'machine', 'note']];
     for (const e of getLog()) e.sets.forEach((s, i) => rows.push([e.date, ex[e.exId] ? ex[e.exId].name : e.exId, i + 1, s.w ?? '', s.r ?? '', s.rpe ?? '', s.min ?? '', e.machineId || '', i === 0 ? e.note || '' : '']));
-    download(`5am-workout-${todayStr()}.csv`, rows.map(r => r.map(v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : v).join(',')).join('\n'), 'text/csv');
+    download(`5am-workout-${todayStr()}.csv`, rows.map(r => r.map(csvCell).join(',')).join('\n'), 'text/csv');
   }
 };

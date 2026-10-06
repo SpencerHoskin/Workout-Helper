@@ -1,5 +1,5 @@
 import { SESSIONS, DAYS } from '../catalog.js';
-import { getLog, getGoal, getSettings, getWeighins, exById, todaySession, setTodaySession } from '../store.js';
+import { getLog, getGoal, getSettings, getWeighins, exById, todaySession, setTodaySession, getMeta } from '../store.js';
 import { exerciseHistory, suggestNext, weekStats, weekStreak } from '../analytics.js';
 import { ringsSvg } from '../charts.js';
 import { lastCoach } from '../coach.js';
@@ -106,6 +106,14 @@ export function render() {
 
   if (healthOn() && setsToday) {
     h += `<button class="btn ghost wide" data-act="healthWorkout">❤️ Send today's workout to Apple Health</button>`;
+  }
+
+  // Data lives only on this phone — nudge a backup every 2 weeks once there's something worth keeping.
+  const lastBackup = getMeta().lastBackup || 0;
+  if (new Set(log.map(e => e.date)).size >= 6 && Date.now() - lastBackup > 14 * 864e5) {
+    h += `<section class="card backup-card"><b>💾 Back up your logbook</b>
+      <p class="muted small">Everything lives on this phone. ${lastBackup ? 'Last backup ' + Math.floor((Date.now() - lastBackup) / 864e5) + ' days ago.' : 'No backup yet.'} Save a copy to Files or iCloud Drive.</p>
+      <button class="btn small" data-act="exportJson">⬇️ Back up now</button></section>`;
   }
 
   const c = lastCoach();

@@ -60,41 +60,60 @@ export function linreg(points) {
 }
 
 /**
- * Trend + projection. Needs ≥3 points spanning ≥7 days, otherwise returns null (not enough signal).
- * target: optional y value → eta (dayNum) when the trend line crosses it, if it's heading that way.
+ * Trend + projection, anchored at your latest real value (not the regression line).
+ * Needs ≥3 points spanning ≥7 days, otherwise null (not enough signal).
+ *  target      optional y → eta (dayNum) when the projection reaches it, if heading that way
+ *  maxPerWeek  optional cap on the projected rate (e.g. one safe load increment per week)
  */
-export function forecast(points, { horizonDays = 56, target = null, windowDays = 56 } = {}) {
+export function forecast(points, { horizonDays = 56, target = null, windowDays = 56, maxPerWeek = null } = {}) {
   if (points.length < 3) return null;
-  const lastX = points[points.length - 1].x;
-  const recent = points.filter(p => p.x >= lastX - windowDays);
+  const last = points[points.length - 1];
+  const recent = points.filter(p => p.x >= last.x - windowDays);
   const use = recent.length >= 3 ? recent : points.slice(-3);
   if (use[use.length - 1].x - use[0].x < 7) return null;
   const reg = linreg(use);
   if (!reg) return null;
-  const fromY = reg.at(lastX);
+  let slope = reg.slope;
+  const capped = maxPerWeek != null && Math.abs(slope * 7) > maxPerWeek;
+  if (capped) slope = Math.sign(slope) * maxPerWeek / 7;
+  const from = { x: last.x, y: last.y };
+  const at = x => from.y + slope * (x - from.x);
   let eta = null;
-  if (target != null && reg.slope !== 0) {
-    const x = (target - reg.intercept) / reg.slope;
-    if (x >= lastX && x - lastX < 3 * 365) eta = Math.round(x);
-    else if ((target - fromY) * reg.slope <= 0 && Math.abs(target - fromY) < 0.5) eta = lastX; // already there
+  if (target != null) {
+    const gap = target - from.y;
+    if (Math.abs(gap) < 0.5) eta = from.x;
+    else if (slope !== 0 && gap * slope > 0 && gap / slope < 3 * 365) eta = Math.round(from.x + gap / slope);
   }
   return {
-    perWeek: reg.slope * 7,
+    perWeek: slope * 7,
+    rawPerWeek: reg.slope * 7,
+    capped,
     r2: reg.r2,
     n: use.length,
-    from: { x: lastX, y: fromY },
-    to: { x: lastX + horizonDays, y: reg.at(lastX + horizonDays) },
+    from,
+    to: { x: from.x + horizonDays, y: at(from.x + horizonDays) },
     eta,
     etaDate: eta != null ? fromDayNum(eta) : null
   };
 }
 
-/** Trailing moving average by calendar window (default 7 days) — smooths scale noise. */
+/** Safe projected strength gain: one load increment per week, expressed in the chart's metric. */
+export function weeklyCap(ex, metric) {
+  if (metric === 'e1rm') return (ex.inc || 5) * (1 + parseRepRange(ex.reps)[1] / 30);
+  if (metric === 'assist') return ex.inc || 5;
+  return null;
+}
+
+/** Trailing moving average by calendar window (default 7 days) — smooths scale noise. O(n), points sorted by x. */
 export function movingAverage(points, windowDays = 7) {
-  return points.map(p => {
-    const win = points.filter(q => q.x <= p.x && q.x > p.x - windowDays);
-    return { x: p.x, y: win.reduce((t, q) => t + q.y, 0) / win.length };
-  });
+  const out = [];
+  let lo = 0, sum = 0;
+  for (let i = 0; i < points.length; i++) {
+    sum += points[i].y;
+    while (points[lo].x <= points[i].x - windowDays) sum -= points[lo++].y;
+    out.push({ x: points[i].x, y: sum / (i - lo + 1) });
+  }
+  return out;
 }
 
 /** Daily bodyweight points (multiple weigh-ins on one day are averaged). */
