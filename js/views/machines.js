@@ -4,6 +4,7 @@ import { esc, guessName, isUrl, uid, shortDate, safeUrl } from '../util.js';
 import { $, $$, openSheet, closeSheet, toast } from '../ui.js';
 import { go, rerender } from '../router.js';
 import { openWeighin } from './progress.js';
+import { icon } from '../icons.js';
 
 const typeById = id => MACHINE_TYPES.find(t => t.id === id) || MACHINE_TYPES[MACHINE_TYPES.length - 1];
 
@@ -17,7 +18,7 @@ export function openMachine(m) {
 /** Called by the scanner with the raw QR text. */
 export function handleScanned(code) {
   const m = findMachineByCode(code);
-  if (m) { toast(`${typeById(m.type).icon} ${m.name}`); openMachine(m); }
+  if (m) { toast(m.name); openMachine(m); }
   else openNewMachine(code);
 }
 
@@ -33,7 +34,7 @@ export function render() {
   let h = `<div class="search"><input type="search" placeholder="Search machines & exercises" data-input="search" aria-label="Search"></div>
   <section class="card">
     <div class="row-between"><h2>My machines <span class="count">${machines.length}</span></h2>
-      <button class="btn small" data-act="newMachine">＋ Add</button></div>`;
+      <button class="btn small" data-act="newMachine">${icon('plus', 16)} Add</button></div>`;
   if (!machines.length) {
     h += `<p class="muted">No machines yet. Tap <b>Scan</b> and point at the QR sticker on any machine at Crunch — the app remembers it from then on.</p>`;
   }
@@ -41,24 +42,24 @@ export function render() {
     const t = typeById(m.type);
     return `<li data-search="${esc((m.name + ' ' + m.zone + ' ' + t.name).toLowerCase())}">
       <button class="mrow" data-act="openMachine" data-id="${esc(m.id)}">
-        <span class="micon g${(m.name.length % 5) + 1}">${t.icon}</span>
+        <span class="micon">${icon(t.icon, 22)}</span>
         <span class="mmain"><b>${esc(m.name)}</b><small>${esc([m.zone, m.exIds.length > 1 ? m.exIds.length + ' exercises' : '', lastUsed[m.id] ? 'last ' + shortDate(lastUsed[m.id]) : 'not used yet'].filter(Boolean).join(' · '))}</small></span>
-        <span class="chev">›</span></button></li>`;
+        <span class="chev">${icon('chevron', 18)}</span></button></li>`;
   }).join('')}</ul></section>`;
 
   h += `<section class="card"><h2>Exercise library</h2><p class="muted small">No QR code? Log straight from here.</p>`;
   for (const [g, list] of Object.entries(groups).sort()) {
     h += `<h3 data-group>${esc(g)}</h3><ul class="xlist">${list.map(x =>
-      `<li data-search="${esc(x.name.toLowerCase())}"><a href="#/log/${x.id}">${esc(x.name)}<span class="chev">›</span></a></li>`).join('')}</ul>`;
+      `<li data-search="${esc(x.name.toLowerCase())}"><a href="#/log/${x.id}">${esc(x.name)}<span class="chev">${icon('chevron', 18)}</span></a></li>`).join('')}</ul>`;
   }
-  h += `<button class="btn ghost wide" data-act="newExercise">＋ Create an exercise</button></section>`;
+  h += `<button class="btn ghost wide" data-act="newExercise">${icon('plus', 16)} Create an exercise</button></section>`;
   return h;
 }
 
 function typeGrid(selected) {
   return `<div class="type-grid" role="radiogroup" aria-label="Machine type">${MACHINE_TYPES.map(t =>
     `<button type="button" class="type ${t.id === selected ? 'on' : ''}" data-act="pickType" data-type="${t.id}" role="radio" aria-checked="${t.id === selected}">
-      <span>${t.icon}</span>${esc(t.name)}</button>`).join('')}</div>`;
+      ${icon(t.icon, 22)}${esc(t.name)}</button>`).join('')}</div>`;
 }
 
 export function openNewMachine(code) {
@@ -66,7 +67,7 @@ export function openNewMachine(code) {
   const raw = code || 'manual:' + uid();
   const guess = guessName(raw);
   const pre = MACHINE_TYPES.find(t => guess && guess.toLowerCase().includes(t.name.toLowerCase().split(' ')[0].toLowerCase()));
-  openSheet(`<div class="sheet-head"><span class="badge-new">${manual ? 'New machine' : 'New code scanned!'}</span>
+  openSheet(`<div class="sheet-head"><span class="badge-new">${icon(manual ? 'plus' : 'scan', 14, { stroke: 2.5 })} ${manual ? 'New machine' : 'New code scanned'}</span>
       <h2>What machine is this?</h2>
       ${!manual ? `<p class="muted small code">${esc(raw.length > 90 ? raw.slice(0, 90) + '…' : raw)}</p>` : ''}</div>
     <form id="newMachine" data-raw="${esc(raw)}">
@@ -76,7 +77,7 @@ export function openNewMachine(code) {
       <div class="custom-kind" ${pre && pre.id === 'other' ? '' : 'hidden'}>
         <label>Logged as</label><select name="kind"><option value="strength">Weight × reps</option><option value="cardio">Minutes (cardio)</option><option value="bodyweight">Reps only</option></select></div>
       <label>Where is it? <span class="muted">(optional)</span></label><input name="zone" placeholder="e.g. Cable zone, back wall">
-      ${isUrl(raw) ? `<label class="check-line"><input type="checkbox" name="video" checked> This code opens a training video — keep a ▶ button for it</label>` : ''}
+      ${isUrl(raw) ? `<label class="check-line"><input type="checkbox" name="video" checked> This code opens a training video — keep a Training video button for it</label>` : ''}
       <button class="btn primary wide" type="submit">Save machine</button>
     </form>`);
 }
@@ -150,7 +151,7 @@ export const submits = {
       video: f.video && f.video.checked ? safeUrl(raw) : '', zone: f.zone.value.trim(), created: Date.now()
     });
     closeSheet();
-    toast(`${t.icon} Saved ${m.name}`);
+    toast(`Saved ${m.name}`);
     openMachine(m);
   },
   editMachine(form) {

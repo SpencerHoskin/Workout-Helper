@@ -1,4 +1,4 @@
-# 5am Workout 🏋️‍♂️📷
+# Kiln
 
 An iPhone web app (installs to your home screen) for **Crunch Stratford**: scan the QR sticker on any machine, log your sets, track the gym scale, and let **Coach Claude** analyze your training and forecast the best path to your goal.
 
@@ -8,7 +8,7 @@ An iPhone web app (installs to your home screen) for **Crunch Stratford**: scan 
 - **Progress charts.** Estimated 1-rep max per lift, plus bodyweight, each with a dashed forecast line.
 - **Coach Claude.** Claude reads a snapshot of your log and returns an assessment, a dated forecast, exact targets for next session, a 4-week plan, habits, safety flags, and questions for your doctor. Your cardiologist limits are built into its instructions.
 - **Apple Health bridge.** Sends weigh-ins and workouts to Health through two tiny Apple Shortcuts.
-- **Safety first.** The ⚠ Safety panel, doctor checklist, cleared limits and supplement clearance from the original 5am app all carry over. Your old logs migrate automatically.
+- **Safety first.** The Safety panel, doctor checklist, cleared limits and supplement clearance from the original 5am app all carry over. Your old logs migrate automatically.
 
 ---
 
@@ -40,11 +40,11 @@ The flow is: **Claude edits code → GitHub (PR) → you Merge → Vercel redepl
 ### 2. Install on the iPhone
 1. Open your Vercel URL in **Safari**.
 2. Tap **Share** → **Add to Home Screen** → **Add**.
-3. Open **5am Workout** from the home-screen icon (not from Safari). Tap **Scan** and **Allow** the camera.
-4. Go to **Me → ✨ Coach Claude setup** and enter the same `COACH_PASSCODE`.
+3. Open **Kiln** from the home-screen icon (not from Safari). Tap **Scan** and **Allow** the camera.
+4. Go to **Me → Coach Claude setup** and enter the same `COACH_PASSCODE`.
 
 ### 3. (Optional) Apple Health
-Go to **Me → ❤️ Apple Health** in the app for the step-by-step: you make two Shortcuts (`WH Log Weight`, `WH Log Workout`) and turn the switch on. An iPhone web app can't write to Health directly; Shortcuts is Apple's official bridge.
+Go to **Me → Apple Health** in the app for the step-by-step: you make two Shortcuts (`WH Log Weight`, `WH Log Workout`) and turn the switch on. An iPhone web app can't write to Health directly; Shortcuts is Apple's official bridge.
 
 ---
 
@@ -53,7 +53,7 @@ Open **`/test-qr/`** on your deployed site (e.g. `https://…vercel.app/test-qr/
 
 ## Your data
 - Everything is stored **on your phone** (in the browser's storage for this app). Nothing leaves it except when you press **Analyze**: that sends a training snapshot to *your* Vercel function, which forwards it to Claude.
-- Back up now and then: **Me → ⚙️ Settings & data → Backup** (a JSON file; save it to Files/iCloud Drive). **Restore** loads it back after checking the file. **CSV** exports for spreadsheets. The Today screen reminds you when your last backup is over 2 weeks old.
+- Back up now and then: **Me → Settings & data → Backup** (a JSON file; save it to Files/iCloud Drive). **Restore** loads it back after checking the file. **CSV** exports for spreadsheets. The Today screen reminds you when your last backup is over 2 weeks old.
 - Prefer zero setup? **Progress → Coach → "Copy for the Claude app"** copies your data as a prompt you can paste into the Claude app.
 
 ## Cost

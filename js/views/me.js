@@ -5,6 +5,7 @@ import { esc, todayStr, csvCell } from '../util.js';
 import { toast, download } from '../ui.js';
 import { go, rerender, current } from '../router.js';
 import { applyTheme } from '../theme.js';
+import { icon } from '../icons.js';
 
 function suppStatus() {
   const st = getSupps();
@@ -17,7 +18,7 @@ export function render(ctx) {
   const set = getSettings();
   const exs = Object.values(allExercises()).filter(x => x.kind === 'strength');
   const open = ctx.arg || 'goal';
-  const sec = (id, title, body) => `<details class="card sec" ${open === id ? 'open' : ''}><summary><h2>${title}</h2></summary>${body}</details>`;
+  const sec = (id, ic, title, body) => `<details class="card sec" ${open === id ? 'open' : ''}><summary><h2>${icon(ic, 20)}${title}</h2></summary>${body}</details>`;
 
   const goalHtml = `
     <label class="lbl">Main goal</label>
@@ -38,15 +39,15 @@ export function render(ctx) {
       <div class="body"><b>${esc(s.name)}</b>${statusPill(st[s.id])}<div class="muted small">${esc(s.note)}</div></div></div>`).join('') +
     `<label class="lbl">Note</label><textarea id="dNote" placeholder="Sleep, energy, anything odd…">${esc(d.note || '')}</textarea>
     <button class="btn primary wide" data-act="saveDaily">Save today</button>
-    <button class="btn ghost wide" data-act="weighin">⚖️ Log bodyweight</button>`;
+    <button class="btn ghost wide" data-act="weighin">${icon('scale', 18)} Log bodyweight</button>`;
 
   const cl = getChecklist();
   const lim = getLimits();
   const doctorHtml = `<h3>Questions for the cardiologist</h3>${cl.map(c => `<div class="check"><input type="checkbox" data-change="clDone" data-id="${esc(c.id)}" ${c.done ? 'checked' : ''} aria-label="Answered">
       <div class="body"><div ${c.done ? 'class="struck"' : ''}>${esc(c.text)}</div>
       <input type="text" data-input="clNote" data-id="${esc(c.id)}" value="${esc(c.note)}" placeholder="Answer / notes"></div>
-      <button class="icon-btn danger" data-act="delCl" data-id="${esc(c.id)}" aria-label="Remove question">✕</button></div>`).join('')}
-    <div class="row"><input id="newCl" placeholder="Add a question"><button class="btn small" data-act="addCl" style="flex:0">Add</button></div>
+      <button class="icon-btn danger" data-act="delCl" data-id="${esc(c.id)}" aria-label="Remove question">${icon('close', 15, { stroke: 2.5 })}</button></div>`).join('')}
+    <div class="row"><input id="newCl" placeholder="Add a question"><button class="btn fit" data-act="addCl">Add</button></div>
     <h3>Cleared limits</h3><p class="muted small">Fill in only what the cardiologist actually tells you. Blank = ${PENDING}.</p>
     ${[['load', 'Lifting load limit'], ['intensity', 'Intensity / heart-rate guidance'], ['other', 'Other instructions']].map(([k, l]) =>
       `<label class="lbl">${l}</label><input data-input="lim" data-k="${k}" value="${esc(lim[k] || '')}" placeholder="${PENDING}">`).join('')}
@@ -64,7 +65,7 @@ export function render(ctx) {
     <label class="switch"><input type="checkbox" data-change="healthOn" ${set.health.enabled ? 'checked' : ''}><span></span> Apple Health buttons on</label>
     <div class="row"><div><label class="lbl">Weight shortcut</label><input data-change="healthName" data-k="weightShortcut" value="${esc(set.health.weightShortcut)}"></div>
       <div><label class="lbl">Workout shortcut</label><input data-change="healthName" data-k="workoutShortcut" value="${esc(set.health.workoutShortcut)}"></div></div>
-    <div class="row"><button class="btn small" data-act="testHealthW">Test weight (180)</button><button class="btn small" data-act="testHealthWo">Test workout (1 min)</button></div>`;
+    <div class="row btn-row"><button class="btn small" data-act="testHealthW">Test weight</button><button class="btn small" data-act="testHealthWo">Test workout</button></div>`;
 
   const coachHtml = `<p class="muted small">Coach Claude runs on your own Vercel deployment. Your Anthropic API key lives in Vercel, never on this phone.</p>
     <label class="lbl">Coach passcode</label><input type="password" data-change="setting" data-k="coachPass" value="${esc(set.coachPass)}" placeholder="Same as COACH_PASSCODE in Vercel" autocomplete="off">
@@ -73,21 +74,21 @@ export function render(ctx) {
   const appHtml = `
     <label class="lbl">Gym</label><input data-change="setting" data-k="gymName" value="${esc(set.gymName)}">
     <label class="lbl">Rest timer (seconds)</label><select data-change="setting" data-k="restSec">${[60, 75, 90, 120, 150, 180].map(n => `<option ${+set.restSec === n ? 'selected' : ''}>${n}</option>`).join('')}</select>
-    <label class="lbl">Theme</label><select data-change="setting" data-k="theme">${[['auto', 'Match iPhone'], ['light', 'Bright'], ['dark', 'Night']].map(([v, l]) => `<option value="${v}" ${set.theme === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
+    <label class="lbl">Theme</label><select data-change="setting" data-k="theme">${[['auto', 'Match iPhone'], ['light', 'Light'], ['dark', 'Dark']].map(([v, l]) => `<option value="${v}" ${set.theme === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
     <h3>Your data</h3><p class="muted small">Everything is stored on this phone. Back it up now and then.</p>
-    <div class="row"><button class="btn small" data-act="exportJson">⬇️ Backup</button>
-      <label class="btn small">⬆️ Restore<input type="file" accept="application/json,.json" data-change="importJson" hidden></label>
-      <button class="btn small" data-act="exportCsv">📄 CSV</button></div>`;
+    <div class="row btn-row"><button class="btn small" data-act="exportJson">${icon('download', 16)} Backup</button>
+      <label class="btn small">${icon('upload', 16)} Restore<input type="file" accept="application/json,.json" data-change="importJson" hidden></label>
+      <button class="btn small" data-act="exportCsv">${icon('file', 16)} CSV</button></div>`;
 
-  return `<section class="card hero sig me-hero"><div class="eyebrow">You</div><h2 class="big">Goal: ${esc({ lose: 'lose weight', recomp: 'recomp', strength: 'get stronger', general: 'general fitness' }[goal.type])}${goal.targetWeight ? ' · ' + esc(goal.targetWeight) + ' lb' : ''}</h2>
+  return `<section class="card me-hero"><div class="eyebrow">You</div><h2 class="big">Goal: ${esc({ lose: 'lose weight', recomp: 'recomp', strength: 'get stronger', general: 'general fitness' }[goal.type])}${goal.targetWeight ? ' · ' + esc(goal.targetWeight) + ' lb' : ''}</h2>
       <p class="hero-sub">${esc(goal.why)}</p></section>` +
-    sec('goal', '🎯 Goal', goalHtml) +
-    sec('daily', '✅ Daily check', dailyHtml) +
-    sec('doctor', '🩺 Doctor', doctorHtml) +
-    sec('plan', '🗓️ Weekly plan', planHtml) +
-    sec('health', '❤️ Apple Health', healthHtml) +
-    sec('coach', '✨ Coach Claude setup', coachHtml) +
-    sec('settings', '⚙️ Settings & data', appHtml);
+    sec('goal', 'target', 'Goal', goalHtml) +
+    sec('daily', 'check', 'Daily check', dailyHtml) +
+    sec('doctor', 'doctor', 'Doctor', doctorHtml) +
+    sec('plan', 'calendar', 'Weekly plan', planHtml) +
+    sec('health', 'heart', 'Apple Health', healthHtml) +
+    sec('coach', 'sparkle', 'Coach Claude setup', coachHtml) +
+    sec('settings', 'gear', 'Settings &amp; data', appHtml);
 }
 
 export const changes = {
@@ -95,7 +96,7 @@ export const changes = {
     const g = getGoal();
     g[el.name] = ['targetWeight', 'sessionsPerWeek'].includes(el.name) ? (el.value === '' ? '' : Number(el.value)) : el.value;
     setGoal(g);
-    toast('Goal saved 🎯');
+    toast('Goal saved');
   },
   clDone(el) {
     const cl = getChecklist();
@@ -119,7 +120,7 @@ export const changes = {
     const s = getSettings();
     s.health.enabled = el.checked;
     setSettings(s);
-    toast(el.checked ? 'Apple Health buttons on ❤️' : 'Apple Health buttons off');
+    toast(el.checked ? 'Apple Health buttons on' : 'Apple Health buttons off');
   },
   healthName(el) {
     const s = getSettings();
@@ -133,7 +134,7 @@ export const changes = {
       const obj = JSON.parse(await file.text());
       if (!confirm('Replace data on this phone with the backup?')) return;
       importAll(obj);
-      toast('Restored ✅');
+      toast('Restored');
       go('today');
     } catch (e) {
       alert('Restore failed: ' + e.message);
@@ -163,7 +164,7 @@ export const actions = {
     const prev = all[todayStr()] || {};
     all[todayStr()] = { ...prev, supps, note: document.getElementById('dNote').value.trim() };
     save(KEYS.daily, all);
-    toast('Saved ✅');
+    toast('Saved');
   },
   addCl() {
     const inp = document.getElementById('newCl');
@@ -183,7 +184,7 @@ export const actions = {
   testHealthW: () => sendWeight(180),
   testHealthWo: () => sendWorkout(1),
   exportJson() {
-    download(`5am-workout-backup-${todayStr()}.json`, JSON.stringify(exportAll(), null, 1));
+    download(`kiln-backup-${todayStr()}.json`, JSON.stringify(exportAll(), null, 1));
     markBackedUp();
     if (current().name === 'today') rerender({ keepScroll: true }); // drop the reminder card
   },
@@ -191,6 +192,6 @@ export const actions = {
     const ex = allExercises();
     const rows = [['date', 'exercise', 'set', 'weight_lb', 'reps', 'rpe', 'minutes', 'machine', 'note']];
     for (const e of getLog()) e.sets.forEach((s, i) => rows.push([e.date, ex[e.exId] ? ex[e.exId].name : e.exId, i + 1, s.w ?? '', s.r ?? '', s.rpe ?? '', s.min ?? '', e.machineId || '', i === 0 ? e.note || '' : '']));
-    download(`5am-workout-${todayStr()}.csv`, rows.map(r => r.map(csvCell).join(',')).join('\n'), 'text/csv');
+    download(`kiln-log-${todayStr()}.csv`, rows.map(r => r.map(csvCell).join(',')).join('\n'), 'text/csv');
   }
 };

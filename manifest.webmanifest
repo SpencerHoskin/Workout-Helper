@@ -1,13 +1,13 @@
 {
-  "name": "5am Workout",
-  "short_name": "5am Workout",
-  "description": "Scan Crunch machines, log sets, track the scale, and let Coach Claude forecast your path.",
+  "name": "Kiln",
+  "short_name": "Kiln",
+  "description": "Kiln: scan Crunch machines, log sets, track the scale, and let Coach Claude forecast your path.",
   "start_url": "./#/today",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#fff4ec",
-  "theme_color": "#ff3d7f",
+  "background_color": "#F4F0E9",
+  "theme_color": "#B4491A",
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },

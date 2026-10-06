@@ -6,6 +6,7 @@ import { lastCoach } from '../coach.js';
 import { healthOn, sendWorkout, workoutMinutesToday } from '../health.js';
 import { esc, todayStr, fmtNum } from '../util.js';
 import { rerender } from '../router.js';
+import { icon } from '../icons.js';
 
 export function suggestedSession() {
   const dow = new Date().getDay();
@@ -19,10 +20,10 @@ export function activeSession() {
 
 function greeting() {
   const h = new Date().getHours();
-  if (h < 7) return '5am club, Brother 🌅';
-  if (h < 12) return 'Morning, Brother ☀️';
-  if (h < 17) return 'Afternoon, Brother 💥';
-  return 'Evening, Brother 🌙';
+  if (h < 7) return '5am club, Brother';
+  if (h < 12) return 'Morning, Brother';
+  if (h < 17) return 'Afternoon, Brother';
+  return 'Evening, Brother';
 }
 
 export function render() {
@@ -39,28 +40,27 @@ export function render() {
   const setsToday = todayLog.reduce((t, e) => t + e.sets.length, 0);
 
   const ringData = [
-    { value: setsToday, goal: plannedSets || 12, grad: ['#ff8a3d', '#ff3d7f'], label: 'Sets today' },
-    { value: ws.sessions, goal: goal.sessionsPerWeek, grad: ['#b6f03c', '#10b981'], label: 'Workouts this week' },
-    { value: ws.weighins, goal: 2, grad: ['#22d3ee', '#6d4aff'], label: 'Weigh-ins this week' }
+    { value: setsToday, goal: plannedSets || 12, color: 'var(--accent)', label: 'sets today' },
+    { value: ws.sessions, goal: goal.sessionsPerWeek, color: 'var(--secondary)', label: 'workouts this week' },
+    { value: ws.weighins, goal: 2, color: 'var(--c1)', label: 'weigh-ins this week' }
   ];
 
   let h = `<section class="card hero sig">
-    <div class="hero-top"><div>
-      <div class="eyebrow">${esc(new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }))} · ${esc(getSettings().gymName)}</div>
-      <h2 class="big">${greeting()}</h2>
-      <div class="hero-sub">${s ? `${esc(s.name)} today · ${planned.length} lifts` : 'Rest day — or pick a session'}</div>
-    </div></div>
-    <div class="ring-row">${ringsSvg(ringData)}
-      <ul class="ring-legend">${ringData.map(r => `<li><i style="background:linear-gradient(135deg,${r.grad[0]},${r.grad[1]})"></i><b>${r.value}/${r.goal}</b> ${esc(r.label)}</li>`).join('')}</ul>
-    </div>
+    <div class="eyebrow">${esc(new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }))} · ${esc(getSettings().gymName)}</div>
+    <h2 class="big">${greeting()}</h2>
+    <div class="hero-sub">${s ? `${esc(s.name)} today · ${planned.length} lifts · ~45 min` : 'Rest day — or pick a session below'}</div>
   </section>
 
-  <button class="cta" data-act="go" data-to="scan"><span class="cta-ic">📷</span><span><b>Scan a machine</b><small>Point at the QR code to log sets</small></span></button>
+  <section class="card"><div class="ring-row">${ringsSvg(ringData)}
+    <ul class="ring-legend">${ringData.map(r => `<li><i style="background:${r.color}"></i><b>${r.value}/${r.goal}</b> ${esc(r.label)}</li>`).join('')}</ul>
+  </div></section>
+
+  <button class="cta" data-act="go" data-to="scan"><span class="cta-ic">${icon('scan', 24)}</span><span><b>Scan a machine</b><small>Point at the QR code to log sets</small></span></button>
 
   <div class="tiles">
-    <div class="tile t-orange"><b>${streak}</b><span>week streak 🔥</span></div>
-    <div class="tile t-violet"><b>${ws.sessions}/${goal.sessionsPerWeek}</b><span>workouts this week</span></div>
-    <div class="tile t-teal"><b>${fmtNum(ws.volume / 1000, 1)}k</b><span>lb moved this week</span></div>
+    <div class="tile"><b>${streak}</b><span>week streak</span></div>
+    <div class="tile"><b>${ws.sessions}/${goal.sessionsPerWeek}</b><span>workouts</span></div>
+    <div class="tile"><b>${fmtNum(ws.volume / 1000, 1)}k</b><span>lb moved</span></div>
   </div>
 
   <section class="card">
@@ -79,16 +79,16 @@ export function render() {
       const done = todayLog.find(e => e.exId === exId);
       const nSets = done ? done.sets.length : 0;
       if (ex.kind === 'cardio') {
-        h += `<li><a href="#/log/${exId}" class="plan-row cardio ${nSets ? 'done' : ''}"><span class="num">${nSets ? '✓' : esc(ex.icon || '🏃')}</span>
-          <span class="plan-main"><b>${esc(ex.name)}</b><small>${esc(ex.target || '')}</small></span><span class="chev">›</span></a></li>`;
+        h += `<li><a href="#/log/${exId}" class="plan-row cardio ${nSets ? 'done' : ''}"><span class="num">${icon(nSets ? 'check' : (ex.icon || 'run'), 18, { stroke: nSets ? 2.5 : 2 })}</span>
+          <span class="plan-main"><b>${esc(ex.name)}</b><small>${esc(ex.target || '')}</small></span><span class="chev">${icon('chevron', 18)}</span></a></li>`;
         continue;
       }
       n++;
       const sug = suggestNext(ex, exerciseHistory(log, ex));
       h += `<li><a href="#/log/${exId}" class="plan-row ${nSets >= ex.sets ? 'done' : nSets ? 'partial' : ''}">
-        <span class="num">${nSets >= ex.sets ? '✓' : n}</span>
+        <span class="num">${nSets >= ex.sets ? icon('check', 18, { stroke: 2.5 }) : n}</span>
         <span class="plan-main"><b>${esc(ex.name)}</b><small>${nSets ? `${nSets}/${ex.sets} sets logged` : esc(sug.text)}</small></span>
-        <span class="chev">›</span></a></li>`;
+        <span class="chev">${icon('chevron', 18)}</span></a></li>`;
     }
     h += '</ul>';
   } else {
@@ -98,30 +98,30 @@ export function render() {
   if (extra.length) {
     h += `<h3>Also today</h3><ul class="plan">${extra.map(e => {
       const ex = exById(e.exId);
-      return `<li><a href="#/log/${e.exId}${e.machineId ? '?m=' + e.machineId : ''}" class="plan-row done"><span class="num">✓</span>
-        <span class="plan-main"><b>${esc(ex ? ex.name : e.exId)}</b><small>${e.sets.length} sets</small></span><span class="chev">›</span></a></li>`;
+      return `<li><a href="#/log/${e.exId}${e.machineId ? '?m=' + e.machineId : ''}" class="plan-row done"><span class="num">${icon('check', 18, { stroke: 2.5 })}</span>
+        <span class="plan-main"><b>${esc(ex ? ex.name : e.exId)}</b><small>${e.sets.length} sets</small></span><span class="chev">${icon('chevron', 18)}</span></a></li>`;
     }).join('')}</ul>`;
   }
   h += '</section>';
 
   if (healthOn() && setsToday) {
-    h += `<button class="btn ghost wide" data-act="healthWorkout">❤️ Send today's workout to Apple Health</button>`;
+    h += `<button class="btn ghost wide" data-act="healthWorkout">${icon('heart', 18)} Send today's workout to Apple Health</button>`;
   }
 
   // Data lives only on this phone — nudge a backup every 2 weeks once there's something worth keeping.
   const lastBackup = getMeta().lastBackup || 0;
   if (new Set(log.map(e => e.date)).size >= 6 && Date.now() - lastBackup > 14 * 864e5) {
-    h += `<section class="card backup-card"><b>💾 Back up your logbook</b>
+    h += `<section class="card backup-card"><b>${icon('download', 18)} Back up your logbook</b>
       <p class="muted small">Everything lives on this phone. ${lastBackup ? 'Last backup ' + Math.floor((Date.now() - lastBackup) / 864e5) + ' days ago.' : 'No backup yet.'} Save a copy to Files or iCloud Drive.</p>
-      <button class="btn small" data-act="exportJson">⬇️ Back up now</button></section>`;
+      <button class="btn small" data-act="exportJson">${icon('download', 16)} Back up now</button></section>`;
   }
 
   const c = lastCoach();
   h += `<a class="card coach-card" href="#/progress/coach">
-    <div class="eyebrow">Coach Claude</div>
+    <div class="eyebrow">${icon('sparkle', 14)} Coach Claude</div>
     ${c ? `<b>${esc(c.report.headline)}</b><p class="muted">${esc(c.report.goal_forecast.summary)}</p>`
         : `<b>Get your forecast</b><p class="muted">Claude reads your log + scale weigh-ins and maps the best path to your goal.</p>`}
-    <span class="link">Open coach ›</span></a>`;
+    <span class="link">Open coach ${icon('chevron', 16)}</span></a>`;
   return h;
 }
 

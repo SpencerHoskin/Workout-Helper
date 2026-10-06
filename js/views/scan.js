@@ -2,6 +2,7 @@ import { startScanner, stopScanner, scanFile } from '../scanner.js';
 import { $, beep, openSheet, closeSheet, toast, sheetOpen, onSheetClosed } from '../ui.js';
 import { current } from '../router.js';
 import { handleScanned } from './machines.js';
+import { icon } from '../icons.js';
 
 export function render() {
   return `<section class="scan">
@@ -11,9 +12,9 @@ export function render() {
       <div class="scan-hint" id="scanHint" role="status">Starting camera…</div>
     </div>
     <div class="scan-actions">
-      <label class="btn ghost">📸 Scan from photo<input type="file" accept="image/*" data-change="scanPhoto" hidden></label>
-      <button class="btn ghost" data-act="typeCode">⌨️ Type code</button>
-      <a class="btn ghost" href="#/machines">📋 Pick from list</a>
+      <label class="btn ghost">${icon('camera', 20)}From photo<input type="file" accept="image/*" data-change="scanPhoto" hidden></label>
+      <button class="btn ghost" data-act="typeCode">${icon('keyboard', 20)}Type code</button>
+      <a class="btn ghost" href="#/machines">${icon('list', 20)}Pick from list</a>
     </div>
     <p class="muted small center">Every machine at Crunch has a QR sticker for its training video. Scan it once and the app remembers that machine.</p>
   </section>`;

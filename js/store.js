@@ -240,6 +240,7 @@ export const getMeta = () => loadTyped('meta', {});
 export const markBackedUp = () => save(KEYS.meta, { ...getMeta(), lastBackup: Date.now() });
 
 export function exportAll() {
+  // '5am-workout' is the backup FORMAT id (the app's original name) — keep it so old and new backups restore.
   const out = { app: '5am-workout', exported: new Date().toISOString(), data: {} };
   for (const k of Object.values(KEYS)) {
     const v = load(k, undefined);
@@ -250,7 +251,7 @@ export function exportAll() {
 
 /** Restore a backup. Validates EVERYTHING first, so a bad file never half-overwrites your data. */
 export function importAll(obj) {
-  if (!isObj(obj) || obj.app !== '5am-workout' || !isObj(obj.data)) throw new Error('Not a 5am Workout backup file');
+  if (!isObj(obj) || obj.app !== '5am-workout' || !isObj(obj.data)) throw new Error('Not a Kiln backup file');
   const byKey = Object.fromEntries(Object.entries(KEYS).map(([name, key]) => [key, name]));
   const writes = [];
   for (const [k, v] of Object.entries(obj.data)) {

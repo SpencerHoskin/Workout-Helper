@@ -50,7 +50,7 @@ export function buildSnapshot() {
   Object.keys(daily).sort().slice(-7).forEach(d => { if (daily[d].note) notes.push({ date: d, exercise: 'daily', note: daily[d].note }); });
 
   return {
-    app: '5am Workout', gym: getSettings().gymName, today, units: 'lb',
+    app: 'Kiln', gym: getSettings().gymName, today, units: 'lb',
     goal: {
       type: goal.type, target_weight_lb: goal.targetWeight || null, target_date: goal.targetDate || null,
       sessions_per_week: goal.sessionsPerWeek, strength_goal: goal.strengthTarget ? { exercise_id: goal.strengthEx, target_lb: +goal.strengthTarget } : null,

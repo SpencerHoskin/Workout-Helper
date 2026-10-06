@@ -80,7 +80,7 @@ test('restore validates everything before writing anything (v1 bug S4)', () => {
   reset();
   addSet({ exId: 'legpress', set: { w: 100, r: 12 } });
   const before = localStorage.getItem('wh_log');
-  assert.throws(() => importAll({ app: 'other', data: {} }), /Not a 5am Workout backup/);
+  assert.throws(() => importAll({ app: 'other', data: {} }), /Not a Kiln backup/);
   assert.throws(() => importAll({ app: '5am-workout', data: { wh_goal: { type: 'lose' }, wh_log: { not: 'an array' } } }), /wrong shape/);
   assert.throws(() => importAll({ app: '5am-workout', data: { wh_log: [{ date: 5 }] } }), /damaged/);
   assert.equal(localStorage.getItem('wh_log'), before);

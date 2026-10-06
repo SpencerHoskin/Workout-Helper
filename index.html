@@ -3,23 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#fff4ec">
+<meta name="theme-color" content="#F4F0E9">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="5am Workout">
-<meta name="description" content="Scan Crunch machines, log sets, track the scale, and let Coach Claude forecast your path to your goal.">
-<title>5am Workout</title>
+<meta name="apple-mobile-web-app-title" content="Kiln">
+<meta name="description" content="Kiln: scan Crunch machines, log sets, track the scale, and let Coach Claude forecast your path to your goal.">
+<title>Kiln</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preload" href="fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
-<div class="bg-blobs" aria-hidden="true"><i></i><i></i><i></i></div>
 <header class="top">
-  <a class="brand" href="#/today" aria-label="5am Workout home"><span class="logo">5am</span><span class="brand-name">Workout</span></a>
-  <button class="safety-btn" data-act="safety">⚠ Safety</button>
+  <a class="brand" href="#/today" aria-label="Kiln home"><span class="logo"><svg class="i" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20v-8.5a7 7 0 0 1 14 0V20M3 20h18"/><path d="M12 17.5c-1.6 0-2.6-1-2.6-2.3 0-1.6 1.6-2.3 2.6-3.9 1 1.6 2.6 2.3 2.6 3.9 0 1.3-1 2.3-2.6 2.3z"/></svg></span><span class="brand-name">Kiln</span></a>
+  <button class="safety-btn" data-act="safety"><svg class="i" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9.5 17h-19zM12 10v4M12 17.2v.3"/></svg> Safety</button>
 </header>
 
 <main id="view" tabindex="-1"></main>
@@ -27,20 +27,20 @@
 <div id="rest" class="rest" hidden role="timer" aria-live="off">
   <span class="rest-label">Rest</span><b id="restTime">1:30</b>
   <button data-act="restAdd" aria-label="Add 30 seconds">+30s</button>
-  <button data-act="restStop" aria-label="Stop rest timer">✕</button>
+  <button data-act="restStop" aria-label="Stop rest timer"><svg class="i" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
 </div>
 
 <nav id="tabs" class="tabs" aria-label="Main">
-  <a href="#/today" data-tab="today"><span class="ic">🏠</span>Today</a>
-  <a href="#/machines" data-tab="machines"><span class="ic">🏋️</span>Machines</a>
-  <a href="#/scan" data-tab="scan" class="scan-tab" aria-label="Scan a machine QR code"><span class="ic">📷</span><span class="scan-label">Scan</span></a>
-  <a href="#/progress/strength" data-tab="progress"><span class="ic">📈</span>Progress</a>
-  <a href="#/me" data-tab="me"><span class="ic">🙂</span>Me</a>
+  <a href="#/today" data-tab="today"><span class="ic"><svg class="i" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span>Today</a>
+  <a href="#/machines" data-tab="machines"><span class="ic"><svg class="i" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12"/></svg></span>Machines</a>
+  <a href="#/scan" data-tab="scan" class="scan-tab" aria-label="Scan a machine QR code"><span class="ic"><svg class="i" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10"/></svg></span><span class="scan-label">Scan</span></a>
+  <a href="#/progress/strength" data-tab="progress"><span class="ic"><svg class="i" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h16M6 15l4-4 3 3 5-6"/></svg></span>Progress</a>
+  <a href="#/me" data-tab="me"><span class="ic"><svg class="i" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></span>Me</a>
 </nav>
 
 <div id="sheet" class="sheet" aria-hidden="true" role="dialog" aria-modal="true">
   <div class="sheet-panel"><div class="grabber" aria-hidden="true"></div>
-    <button class="sheet-x" data-act="closeSheet" aria-label="Close">✕</button>
+    <button class="sheet-x" data-act="closeSheet" aria-label="Close"><svg class="i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     <div id="sheetBody"></div></div>
 </div>
 

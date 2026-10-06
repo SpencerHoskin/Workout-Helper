@@ -22,8 +22,8 @@ export function confetti() {
   document.body.appendChild(c);
   const ctx = c.getContext('2d');
   ctx.scale(dpr, dpr);
-  const colors = ['#ff8a3d', '#ff4f8b', '#8b5cf6', '#3b82f6', '#22d3ee', '#a3e635', '#facc15'];
-  const parts = Array.from({ length: 120 }, () => ({
+  const colors = ['#B4491A', '#E77A43', '#24364F', '#86A5CB', '#3B7449', '#DBA850', '#ECE6DC'];
+  const parts = Array.from({ length: 90 }, () => ({
     x: innerWidth / 2, y: innerHeight * 0.35,
     vx: (Math.random() - 0.5) * 14, vy: Math.random() * -14 - 4,
     s: 5 + Math.random() * 6, r: Math.random() * 6, vr: (Math.random() - 0.5) * 0.4,
