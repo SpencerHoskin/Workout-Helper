@@ -6,13 +6,14 @@ import { healthOn, sendWeight } from '../health.js';
 import { esc, todayStr, shortDate, fromDayNum, dayNum, num, fmtNum, uid } from '../util.js';
 import { $, openSheet, closeSheet, toast } from '../ui.js';
 import { go, rerender } from '../router.js';
+import { icon } from '../icons.js';
 
 const C1 = 'var(--c1)', C2 = 'var(--c2)';
 const xFmt = x => shortDate(fromDayNum(x));
 
 export function render(ctx) {
   const seg = ['strength', 'body', 'coach'].includes(ctx.arg) ? ctx.arg : 'strength';
-  const tabs = `<nav class="seg" aria-label="Progress sections">${[['strength', '💪 Strength'], ['body', '⚖️ Body'], ['coach', '✨ Coach']].map(([id, label]) =>
+  const tabs = `<nav class="seg" aria-label="Progress sections">${[['strength', 'Strength'], ['body', 'Body'], ['coach', 'Coach']].map(([id, label]) =>
     `<a href="#/progress/${id}" class="${seg === id ? 'on' : ''}" ${seg === id ? 'aria-current="page"' : ''}>${label}</a>`).join('')}</nav>`;
   return tabs + (seg === 'strength' ? strength(ctx) : seg === 'body' ? body() : coach());
 }
@@ -40,8 +41,8 @@ function strengthState(ctx) {
 function strength(ctx) {
   const st = strengthState(ctx);
   const { used, ex, exs, hist, metric, pts, target, fc, unit } = st;
-  if (!ex) return `<div class="card empty"><div class="empty-ic">📈</div><b>No lifts logged yet</b><p class="muted">Scan a machine and log a few sets — your strength curve shows up here.</p>
-    <a class="btn primary" href="#/scan">📷 Scan a machine</a></div>`;
+  if (!ex) return `<div class="card empty"><div class="empty-ic">${icon('chart', 26)}</div><b>No lifts logged yet</b><p class="muted">Scan a machine and log a few sets — your strength curve shows up here.</p>
+    <a class="btn primary" href="#/scan">${icon('scan', 18)} Scan a machine</a></div>`;
   chartState = { kind: 'strength', ...st };
   const label = { e1rm: 'Estimated 1-rep max', assist: 'Assistance needed (lower = stronger)', reps: 'Total reps' }[metric];
 
@@ -61,9 +62,9 @@ function strength(ctx) {
 }
 
 function forecastText(fc, metric, unit, target, pts, ex) {
-  if (!fc) return `🔮 Log ${Math.max(1, 3 - pts.length)} more session${3 - pts.length === 1 ? '' : 's'} (over a week or more) to unlock the forecast.`;
+  if (!fc) return `Log ${Math.max(1, 3 - pts.length)} more session${3 - pts.length === 1 ? '' : 's'} (over a week or more) to unlock the forecast.`;
   const better = metric === 'assist' ? fc.rawPerWeek < 0 : fc.rawPerWeek > 0;
-  let t = `🔮 Lately: <b>${fc.rawPerWeek > 0 ? '+' : ''}${fmtNum(fc.rawPerWeek, 1)} ${unit}/week</b> ${better ? '— moving the right way.' : '— flat or slipping; check sleep, food and consistency.'}`;
+  let t = `Lately: <b>${fc.rawPerWeek > 0 ? '+' : ''}${fmtNum(fc.rawPerWeek, 1)} ${unit}/week</b> ${better ? '— moving the right way.' : '— flat or slipping; check sleep, food and consistency.'}`;
   if (fc.capped) t += ` The forecast assumes your safe pace of <b>one ${ex.inc || 5} lb step per week</b>, not today's beginner gains.`;
   t += ` In 8 weeks: ~<b>${fmtNum(fc.to.y, 0)} ${unit}</b>.`;
   if (target) t += fc.etaDate ? ` Goal ${target} ${unit}: around <b>${shortDate(fc.etaDate)}</b>.` : ` Goal ${target} ${unit}: not reachable on the current trend yet.`;
@@ -89,35 +90,35 @@ function body() {
   const monthAgo = avg.filter(p => p.x <= dayNum(todayStr()) - 30).pop();
   const pctWeek = fc && cur ? Math.abs(fc.perWeek) / cur * 100 : 0;
   const lastBf = [...wins].reverse().find(w => w.bodyFat);
-  let h = `<button class="cta" data-act="weighin"><span class="cta-ic">⚖️</span><span><b>Log a weigh-in</b><small>Step on the Crunch scale, punch in the number</small></span></button>
+  let h = `<button class="cta" data-act="weighin"><span class="cta-ic">${icon('scale', 24)}</span><span><b>Log a weigh-in</b><small>Step on the Crunch scale, punch in the number</small></span></button>
   <div class="tiles">
     <div class="tile t-violet"><b>${cur ? fmtNum(cur, 1) : '–'}</b><span>lb (7-day avg)</span></div>
     <div class="tile t-orange"><b>${cur && monthAgo ? (cur - monthAgo.y > 0 ? '+' : '') + fmtNum(cur - monthAgo.y, 1) : '–'}</b><span>lb vs 30 days ago</span></div>
     <div class="tile t-teal"><b>${lastBf ? fmtNum(lastBf.bodyFat, 1) + '%' : '–'}</b><span>body fat (last)</span></div>
   </div>`;
   if (!pts.length) {
-    return h + `<div class="card empty"><div class="empty-ic">⚖️</div><b>No weigh-ins yet</b><p class="muted">Weigh in 2–3× a week, same time of day (e.g. right when you get to the gym). The 7-day average smooths out water-weight noise.</p></div>`;
+    return h + `<div class="card empty"><div class="empty-ic">${icon('scale', 26)}</div><b>No weigh-ins yet</b><p class="muted">Weigh in 2–3× a week, same time of day (e.g. right when you get to the gym). The 7-day average smooths out water-weight noise.</p></div>`;
   }
   h += `<section class="card"><h2>Bodyweight</h2><p class="muted small">Dots = each weigh-in · line = 7-day average · dashed = forecast</p>
     <div class="chart" data-chart="body"></div>
     <p class="forecast">${bodyForecastText(fc, goal, cur)}</p>
-    ${pctWeek > 1 ? `<div class="flag">⚠ Changing ${fmtNum(pctWeek, 1)}% of bodyweight per week — faster than the ~1%/week safe ceiling. Mention it to your doctor.</div>` : ''}
+    ${pctWeek > 1 ? `<div class="flag">${icon('alert', 16)}<span>Changing ${fmtNum(pctWeek, 1)}% of bodyweight per week — faster than the ~1%/week safe ceiling. Mention it to your doctor.</span></div>` : ''}
   </section>
-  <section class="card"><div class="row-between"><h2>Weigh-ins</h2>${healthOn() && wins.length ? '<button class="btn small" data-act="healthWeight">❤️ Send latest to Health</button>' : ''}</div>
+  <section class="card"><div class="row-between"><h2>Weigh-ins</h2>${healthOn() && wins.length ? `<button class="btn small" data-act="healthWeight">${icon('heart', 15)} Send latest to Health</button>` : ''}</div>
   <table class="hist"><tbody>${wins.slice(-20).reverse().map(w => `<tr><td>${shortDate(w.date)}</td><td><b>${fmtNum(w.weight, 1)} lb</b>
     ${w.bodyFat ? ` · ${fmtNum(w.bodyFat, 1)}% fat` : ''}${w.muscle ? ` · ${fmtNum(w.muscle, 1)} lb muscle` : ''}<div class="muted small">${esc(sourceLabel(w.source))}${w.note ? ' · ' + esc(w.note) : ''}</div></td>
-    <td><button class="icon-btn danger" data-act="delWeighin" data-id="${esc(w.id)}" aria-label="Delete weigh-in">✕</button></td></tr>`).join('')}</tbody></table></section>`;
+    <td><button class="icon-btn danger" data-act="delWeighin" data-id="${esc(w.id)}" aria-label="Delete weigh-in">${icon('close', 15, { stroke: 2.5 })}</button></td></tr>`).join('')}</tbody></table></section>`;
   return h;
 }
 
 const sourceLabel = s => ({ gym: 'Crunch scale', home: 'Home scale', daily: 'Daily check', health: 'Apple Health' }[s] || s || '');
 
 function bodyForecastText(fc, goal, cur) {
-  if (!fc) return '🔮 A few more weigh-ins across 1–2 weeks unlock the forecast.';
-  let t = `🔮 Trend: <b>${fc.perWeek > 0 ? '+' : ''}${fmtNum(fc.perWeek, 2)} lb/week</b>.`;
+  if (!fc) return 'A few more weigh-ins across 1–2 weeks unlock the forecast.';
+  let t = `Trend: <b>${fc.perWeek > 0 ? '+' : ''}${fmtNum(fc.perWeek, 2)} lb/week</b>.`;
   if (goal.targetWeight && cur) {
     const diff = goal.targetWeight - cur;
-    if (Math.abs(diff) < 1) t += ` You’re at your ${goal.targetWeight} lb goal — now it’s about recomposition. 💪`;
+    if (Math.abs(diff) < 1) t += ` You’re at your ${goal.targetWeight} lb goal — now it’s about recomposition.`;
     else if (fc.etaDate) t += ` At this pace you reach <b>${goal.targetWeight} lb around ${shortDate(fc.etaDate)}</b>.`;
     else t += ` Trend isn’t heading toward ${goal.targetWeight} lb yet${goal.type === 'recomp' ? ' — fine for a recomp if lifts are climbing' : ''}.`;
   }
@@ -125,7 +126,7 @@ function bodyForecastText(fc, goal, cur) {
 }
 
 export function openWeighin() {
-  openSheet(`<div class="sheet-head"><span class="badge-new">⚖️ Weigh-in</span><h2>What does the scale say?</h2></div>
+  openSheet(`<div class="sheet-head"><span class="badge-new">${icon('scale', 14, { stroke: 2.5 })} Weigh-in</span><h2>What does the scale say?</h2></div>
     <form id="weighin" autocomplete="off">
       <div class="row"><div><label class="lbl">Weight</label><input name="weight" inputmode="decimal" placeholder="e.g. 182.4" required autofocus></div>
         <div style="flex:0 0 110px"><label class="lbl">Unit</label><select name="unit"><option value="lb">lb</option><option value="kg">kg</option></select></div></div>
@@ -141,13 +142,13 @@ export function openWeighin() {
 /* ---------- Coach ---------- */
 function coach() {
   const c = lastCoach();
-  let h = `<section class="card g-aurora coach-ask">
-    <div class="eyebrow">✨ Coach Claude</div>
+  let h = `<section class="card coach-ask">
+    <div class="eyebrow">${icon('sparkle', 14)} Coach Claude</div>
     <h2>Analyze &amp; forecast</h2>
     <p>Claude reads your machine log, scale weigh-ins and goal, then maps the best path forward — within your cardiologist-safe limits.</p>
     <form id="coach"><textarea name="q" rows="2" placeholder="Optional: ask something (“Should I add a 4th day?”)"></textarea>
-    <button class="btn white wide" type="submit" id="coachBtn">✨ Analyze my training</button></form>
-    <button class="btn glass wide" data-act="copyPrompt">📋 Copy for the Claude app instead</button>
+    <button class="btn primary wide" type="submit" id="coachBtn">${icon('sparkle', 18)} Analyze my training</button></form>
+    <button class="btn ghost wide" data-act="copyPrompt">${icon('copy', 18)} Copy for the Claude app instead</button>
   </section>`;
   if (c) h += reportHtml(c);
   else h += `<p class="muted small center">No report yet. The more sessions and weigh-ins you log, the sharper the forecast.</p>`;
@@ -156,24 +157,24 @@ function coach() {
 
 function reportHtml(c) {
   const r = c.report;
-  const conf = { low: '🟡 low', medium: '🟢 medium', high: '💚 high' }[r.goal_forecast.confidence] || r.goal_forecast.confidence;
+  const conf = { low: 'low', medium: 'medium', high: 'high' }[r.goal_forecast.confidence] || r.goal_forecast.confidence;
   const open = new Set(getChecklist().map(x => x.text));
   return `<section class="card report">
     <div class="eyebrow">${new Date(c.ts).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}${c.question ? ' · “' + esc(c.question) + '”' : ''}</div>
     <h2 class="big grad-text">${esc(r.headline)}</h2>
     <p>${esc(r.assessment)}</p>
-    <div class="forecast-box"><b>🔮 Forecast</b><p>${esc(r.goal_forecast.summary)}</p>
+    <div class="forecast-box"><b>${icon('trend', 16)} Forecast</b><p>${esc(r.goal_forecast.summary)}</p>
       <small>${r.goal_forecast.projected_date ? 'Target date: <b>' + esc(r.goal_forecast.projected_date) + '</b> · ' : ''}confidence ${conf}</small></div>
   </section>
-  ${r.safety_flags.length ? `<section class="card caution-card"><h2>⚠️ Safety</h2><ul>${r.safety_flags.map(f => `<li>${esc(f)}</li>`).join('')}</ul></section>` : ''}
-  <section class="card"><h2>🎯 Next session</h2><ul class="targets">${r.next_session.map(t => `<li>
+  ${r.safety_flags.length ? `<section class="card caution-card"><h2>Safety</h2><ul>${r.safety_flags.map(f => `<li>${esc(f)}</li>`).join('')}</ul></section>` : ''}
+  <section class="card"><h2>Next session</h2><ul class="targets">${r.next_session.map(t => `<li>
     <a href="${exById(t.exercise_id) ? '#/log/' + esc(t.exercise_id) : '#/machines'}"><b>${esc(t.exercise)}</b>
     <span class="tgt">${t.sets} × ${esc(t.reps)}${t.weight_lb ? ' @ ' + t.weight_lb + ' lb' : ''}</span></a>
     <small class="muted">${esc(t.note)}</small></li>`).join('')}</ul></section>
-  <section class="card"><h2>🗓️ Next 4 weeks</h2><ol class="weeks">${r.four_week_plan.map(w => `<li><b>Week ${w.week}: ${esc(w.focus)}</b><p class="muted small">${esc(w.details)}</p></li>`).join('')}</ol></section>
-  <section class="card"><h2>🌱 Habits</h2><ul>${r.habits.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>
-  ${r.questions_for_doctor.length ? `<section class="card"><h2>🩺 Ask your doctor</h2><ul class="qlist">${r.questions_for_doctor.map(q => `<li>${esc(q)}
-    ${open.has(q) ? '<span class="pill ok">on checklist</span>' : `<button class="btn small" data-act="addDocQ" data-q="${esc(q)}">＋ Checklist</button>`}</li>`).join('')}</ul></section>` : ''}
+  <section class="card"><h2>Next 4 weeks</h2><ol class="weeks">${r.four_week_plan.map(w => `<li><b>Week ${w.week}: ${esc(w.focus)}</b><p class="muted small">${esc(w.details)}</p></li>`).join('')}</ol></section>
+  <section class="card"><h2>Habits</h2><ul>${r.habits.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>
+  ${r.questions_for_doctor.length ? `<section class="card"><h2>Ask your doctor</h2><ul class="qlist">${r.questions_for_doctor.map(q => `<li>${esc(q)}
+    ${open.has(q) ? '<span class="pill ok">on checklist</span>' : `<button class="btn small" data-act="addDocQ" data-q="${esc(q)}">${icon('plus', 15)} Checklist</button>`}</li>`).join('')}</ul></section>` : ''}
   <p class="muted small center">Model: ${esc(c.model || '')} · Coaching, not medical advice.</p>`;
 }
 
@@ -225,14 +226,14 @@ export const actions = {
     if (w) sendWeight(w.weight);
   },
   async copyPrompt() {
-    try { await navigator.clipboard.writeText(promptText()); toast('Copied — paste it into the Claude app 📋'); }
+    try { await navigator.clipboard.writeText(promptText()); toast('Copied — paste it into the Claude app'); }
     catch { toast('Copy failed — your browser blocked the clipboard', 'warn'); }
   },
   addDocQ(el) {
     const cl = getChecklist();
     cl.push({ id: 'c' + Date.now(), text: el.dataset.q, done: false, note: '' });
     save(KEYS.checklist, cl);
-    toast('Added to the doctor checklist 🩺');
+    toast('Added to the doctor checklist');
     rerender({ keepScroll: true });
   }
 };
@@ -252,10 +253,10 @@ export const submits = {
     closeSheet();
     go('progress/body');
     if (healthOn()) {
-      openSheet(`<div class="sheet-head"><h2>Saved ${lb} lb ✅</h2><p class="muted">Send it to Apple Health too?</p></div>
-        <button class="btn primary wide" data-act="healthWeight">❤️ Send to Apple Health</button>
+      openSheet(`<div class="sheet-head"><h2>Saved ${lb} lb</h2><p class="muted">Send it to Apple Health too?</p></div>
+        <button class="btn primary wide" data-act="healthWeight">${icon('heart', 18)} Send to Apple Health</button>
         <button class="btn ghost wide" data-act="closeSheet">Not now</button>`);
-    } else toast(`Saved ${lb} lb ⚖️`);
+    } else toast(`Saved ${lb} lb`);
   },
   async coach(form) {
     const btn = $('#coachBtn');
@@ -263,16 +264,16 @@ export const submits = {
     btn.disabled = true;
     const lines = ['Reading your logbook…', 'Crunching the trend lines…', 'Checking your safety limits…', 'Mapping your next 4 weeks…'];
     let i = 0;
-    btn.textContent = '✨ ' + lines[0];
-    const spin = setInterval(() => { btn.textContent = '✨ ' + lines[++i % lines.length]; }, 2500);
+    btn.textContent = lines[0];
+    const spin = setInterval(() => { btn.textContent = lines[++i % lines.length]; }, 2500);
     try {
       await askCoach(q);
-      toast('Coach report ready ✨');
+      toast('Coach report ready');
       rerender();
     } catch (e) {
       toast(e.message, 'warn');
       btn.disabled = false;
-      btn.textContent = '✨ Analyze my training';
+      btn.innerHTML = icon('sparkle', 18) + ' Analyze my training';
     } finally {
       clearInterval(spin);
     }

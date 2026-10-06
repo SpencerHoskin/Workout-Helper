@@ -117,20 +117,18 @@ export function lineChart(el, spec) {
   });
 }
 
-/** Apple-Fitness-style concentric rings. rings: [{value, goal, grad:[c1,c2], label}] */
-export function ringsSvg(rings, size = 132) {
-  const c = size / 2, sw = 13, gap = 3;
-  let defs = '', arcs = '';
+/** Concentric progress rings in the theme's own colours. rings: [{value, goal, color, label}] (color may be a CSS var). */
+export function ringsSvg(rings, size = 124) {
+  const c = size / 2, sw = 12, gap = 4;
+  let arcs = '';
   rings.forEach((r, i) => {
     const rad = c - sw / 2 - i * (sw + gap);
     const circ = 2 * Math.PI * rad;
     const frac = r.goal > 0 ? Math.min(1, r.value / r.goal) : 0;
-    defs += `<linearGradient id="rg${i}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${r.grad[0]}"/><stop offset="1" stop-color="${r.grad[1]}"/></linearGradient>`;
-    arcs += `<circle cx="${c}" cy="${c}" r="${rad}" fill="none" stroke="${r.grad[1]}" stroke-opacity=".3" stroke-width="${sw}"/>`;
-    arcs += `<circle class="ring-arc" cx="${c}" cy="${c}" r="${rad}" fill="none" stroke="url(#rg${i})" stroke-width="${sw}"
-      stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${circ * (1 - frac)}" style="--circ:${circ}"
-      transform="rotate(-90 ${c} ${c})"/>`;
+    arcs += `<circle cx="${c}" cy="${c}" r="${rad}" fill="none" style="stroke:${r.color}" stroke-opacity=".18" stroke-width="${sw}"/>`;
+    if (frac > 0) arcs += `<circle class="ring-arc" cx="${c}" cy="${c}" r="${rad}" fill="none" style="stroke:${r.color};--circ:${circ}" stroke-width="${sw}"
+      stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${circ * (1 - frac)}" transform="rotate(-90 ${c} ${c})"/>`;
   });
   return `<svg class="rings" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" role="img"
-    aria-label="${esc(rings.map(r => `${r.label}: ${r.value} of ${r.goal}`).join('; '))}"><defs>${defs}</defs>${arcs}</svg>`;
+    aria-label="${esc(rings.map(r => `${r.label}: ${r.value} of ${r.goal}`).join('; '))}">${arcs}</svg>`;
 }

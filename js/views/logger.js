@@ -7,6 +7,7 @@ import { startRest } from '../timer.js';
 import { rerender } from '../router.js';
 import { activeSession } from './today.js';
 import { lastCoach } from '../coach.js';
+import { icon } from '../icons.js';
 
 // Plain text — callers escape once.
 const fmtSet = (ex, s) => ex.kind === 'cardio'
@@ -49,10 +50,10 @@ export function render(ctx) {
   const defR = lastSet ? lastSet.r : (sug.r ?? '');
   const inc = ex.inc || 5;
 
-  let h = `<section class="card logger-head ${ex.kind === 'cardio' ? 'g-ocean' : 'g-sunset'}">
-    <div class="lh-top"><a href="#/${m ? 'machines' : 'today'}" class="back" aria-label="Back">‹</a>
-      ${m ? `<span class="lh-machine">${type ? type.icon : '🏋️'} ${esc(m.name)}${m.zone ? ' · ' + esc(m.zone) : ''}</span>` : '<span></span>'}
-      ${m ? `<button class="icon-btn" data-act="editMachine" data-id="${esc(m.id)}" aria-label="Edit machine">✎</button>` : '<span></span>'}</div>
+  let h = `<section class="card logger-head">
+    <div class="lh-top"><a href="#/${m ? 'machines' : 'today'}" class="back" aria-label="Back">${icon('back', 22)}</a>
+      ${m ? `<span class="lh-machine">${icon(type ? type.icon : 'dumbbell', 16)} ${esc(m.name)}${m.zone ? ' · ' + esc(m.zone) : ''}</span>` : '<span></span>'}
+      ${m ? `<button class="icon-btn" data-act="editMachine" data-id="${esc(m.id)}" aria-label="Edit machine">${icon('edit', 16)}</button>` : '<span></span>'}</div>
     <h2 class="big">${esc(ex.name)}</h2>
     ${m && m.exIds.length > 1 ? `<div class="chips">${m.exIds.map(id => {
       const x = exById(id);
@@ -60,22 +61,22 @@ export function render(ctx) {
     }).join('')}</div>` : ''}
     <div class="lh-meta">${ex.kind === 'cardio' ? esc(ex.target || '') : `<span class="target">${ex.sets} × ${esc(ex.reps)}</span><span class="target">RPE 5–7</span>`}
       ${best ? `<span class="target">Best e1RM ${Math.round(best)} lb</span>` : ''}</div>
-    ${m && safeUrl(m.video) ? `<a class="btn glass" href="${esc(safeUrl(m.video))}" target="_blank" rel="noopener">▶ Training video</a>` : ''}
+    ${m && safeUrl(m.video) ? `<a class="btn ghost small" href="${esc(safeUrl(m.video))}" target="_blank" rel="noopener">${icon('play', 14)} Training video</a>` : ''}
   </section>`;
 
   h += `<section class="card sug ${sug.caution ? 'caution' : sug.up ? 'up' : ''}">
-    <div class="eyebrow">${sug.up ? '⬆️ Level up' : sug.caution ? '⚠️ Ease off' : '🎯 Today’s target'}</div>
+    <div class="eyebrow">${sug.up ? icon('up', 14, { stroke: 2.5 }) + ' Level up' : sug.caution ? icon('alert', 14, { stroke: 2.5 }) + ' Ease off' : icon('target', 14, { stroke: 2.5 }) + ' Today’s target'}</div>
     <b>${esc(sug.text)}</b>${sug.why ? `<p class="muted small">${esc(sug.why)}</p>` : ''}
-    ${coach ? `<div class="coach-tgt">✨ <b>Coach Claude:</b> ${coach.sets} × ${esc(coach.reps)}${coach.weight_lb ? ' @ ' + coach.weight_lb + ' lb' : ''}${coach.note ? `<span class="muted small"> — ${esc(coach.note)}</span>` : ''}</div>` : ''}
+    ${coach ? `<div class="coach-tgt">${icon('sparkle', 16)}<span><b>Coach Claude:</b> ${coach.sets} × ${esc(coach.reps)}${coach.weight_lb ? ' @ ' + coach.weight_lb + ' lb' : ''}${coach.note ? `<span class="muted small"> — ${esc(coach.note)}</span>` : ''}</span></div>` : ''}
     ${last ? `<p class="small">Last time (${shortDate(last.date)}): ${last.sets.map(s => esc(fmtSet(ex, s))).join(', ')}</p>` : ''}
-    ${ex.flag ? `<div class="flag">⚠ ${esc(ex.flag)}</div>` : ''}
-    ${limits.load && ex.kind === 'strength' ? `<div class="flag">🩺 Cardiologist load limit: ${esc(limits.load)}</div>` : ''}
-    ${ex.kind !== 'cardio' ? `<div class="cue">🫁 ${BREATH}</div>` : ''}
+    ${ex.flag ? `<div class="flag">${icon('alert', 16)}<span>${esc(ex.flag)}</span></div>` : ''}
+    ${limits.load && ex.kind === 'strength' ? `<div class="flag">${icon('doctor', 16)}<span>Cardiologist load limit: ${esc(limits.load)}</span></div>` : ''}
+    ${ex.kind !== 'cardio' ? `<div class="cue">${icon('breath', 16)}<span>${BREATH}</span></div>` : ''}
   </section>`;
 
   h += `<section class="card"><div class="row-between"><h2>Sets today</h2><span class="count">${sets.length}${ex.kind !== 'cardio' ? '/' + ex.sets : ''}</span></div>
     ${sets.length ? `<ol class="setlist">${sets.map((s, i) => `<li><span class="sn">${i + 1}</span><b>${esc(fmtSet(ex, s))}</b>
-      <button class="icon-btn danger" data-act="delSet" data-entry="${esc(entry.id)}" data-i="${i}" aria-label="Delete set ${i + 1}">✕</button></li>`).join('')}</ol>`
+      <button class="icon-btn danger" data-act="delSet" data-entry="${esc(entry.id)}" data-i="${i}" aria-label="Delete set ${i + 1}">${icon('close', 15, { stroke: 2.5 })}</button></li>`).join('')}</ol>`
       : '<p class="muted small">No sets yet — you’ve got this.</p>'}
     <form id="logSet" class="entry" autocomplete="off">`;
 
@@ -91,7 +92,7 @@ export function render(ctx) {
     <div class="rpe" role="radiogroup" aria-label="RPE">${[4, 5, 6, 7, 8, 9].map(v =>
       `<button type="button" class="rpe-chip r${v}" data-act="rpe" data-v="${v}" role="radio" aria-checked="${v === rpe}">${v}</button>`).join('')}</div>
     <input type="hidden" name="rpe" value="${rpe}">
-    <button class="btn primary wide big-btn" type="submit">✓ Log set ${sets.length + 1}</button>
+    <button class="btn primary wide big-btn" type="submit">${icon('check', 20, { stroke: 2.6 })} Log set ${sets.length + 1}</button>
   </form></section>`;
 
   h += `<section class="card">
@@ -101,11 +102,11 @@ export function render(ctx) {
     <input data-input="entryNote" data-ex="${ex.id}" value="${esc(entry ? entry.note : '')}" placeholder="How it felt…" ${entry ? '' : 'disabled title="Log a set first"'}>
   </section>`;
 
-  if (next) h += `<a class="btn ghost wide" href="#/log/${nextId}">Next: ${esc(next.name)} ›</a>`;
+  if (next) h += `<a class="btn ghost wide" href="#/log/${nextId}">Next: ${esc(next.name)} ${icon('chevron', 16)}</a>`;
   else h += `<a class="btn ghost wide" href="#/today">Done — back to today</a>`;
 
   if (prior.length) {
-    h += `<section class="card"><div class="row-between"><h2>History</h2><a class="link" href="#/progress/strength?ex=${ex.id}">Chart ›</a></div>
+    h += `<section class="card"><div class="row-between"><h2>History</h2><a class="link" href="#/progress/strength?ex=${ex.id}">Chart ${icon('chevron', 16)}</a></div>
       <table class="hist"><tbody>${prior.slice(-6).reverse().map(p => `<tr><td>${shortDate(p.date)}</td><td>${p.sets.map(s => esc(fmtSet(ex, s))).join(', ')}</td>
       ${ex.kind === 'strength' ? `<td class="num">${fmtNum(p.e1rm, 0)}</td>` : ''}</tr>`).join('')}</tbody></table></section>`;
   }
@@ -116,7 +117,7 @@ function stepper(name, label, value, step, mode) {
   return `<label class="lbl" for="f_${name}">${label}</label>
     <div class="stepper"><button type="button" data-act="step" data-f="${name}" data-d="-${step}" aria-label="Decrease ${label}">−</button>
     <input id="f_${name}" name="${name}" inputmode="${mode}" value="${esc(value ?? '')}" placeholder="0">
-    <button type="button" data-act="step" data-f="${name}" data-d="${step}" aria-label="Increase ${label}">＋</button></div>`;
+    <button type="button" data-act="step" data-f="${name}" data-d="${step}" aria-label="Increase ${label}">+</button></div>`;
 }
 
 export const actions = {
@@ -162,9 +163,9 @@ export const submits = {
       alert('Heads up, Brother: RPE 9+ is near max effort.\nTake a longer rest, drop the weight a bit next set, and stay around RPE 6–7.');
     } else if (pr) {
       confetti();
-      toast(`🏆 ${pr}! ${set.w} lb × ${set.r} (e1RM ${Math.round(e1rm(set.w, set.r))})`);
+      toast(`${pr}! ${set.w} lb × ${set.r} · e1RM ${Math.round(e1rm(set.w, set.r))}`);
     } else {
-      toast('Set logged 💪');
+      toast('Set logged');
     }
     if (ex.kind !== 'cardio') startRest(getSettings().restSec);
     rerender({ keepScroll: true });

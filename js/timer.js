@@ -13,7 +13,7 @@ function paint() {
   if (left <= 0) {
     stopRest();
     beep(988, 220);
-    toast('Rest done — next set, Brother 💪');
+    toast('Rest done — next set, Brother');
   }
 }
 

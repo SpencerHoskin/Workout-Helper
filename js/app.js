@@ -6,6 +6,7 @@ import { $, closeSheet, sheetOpen, unlockAudio, download } from './ui.js';
 import { current, setRenderer, go } from './router.js';
 import { addRest, stopRest } from './timer.js';
 import { applyTheme } from './theme.js';
+import { icon } from './icons.js';
 import * as today from './views/today.js';
 import * as machines from './views/machines.js';
 import * as scan from './views/scan.js';
@@ -51,11 +52,11 @@ function render({ keepScroll = false } = {}) {
     // Error boundary: never a white screen — always offer a way to get the data out.
     console.error('render failed', err);
     active = null;
-    root.innerHTML = `<section class="card caution-card"><h2>😬 Something broke on this screen</h2>
+    root.innerHTML = `<section class="card caution-card"><h2>Something broke on this screen</h2>
       <p class="muted">Your data is still on this phone. Grab a rescue copy, then try another tab or reload.</p>
       <p class="small code">${esc(err && err.message)}</p>
-      <button class="btn primary wide" data-act="rescueExport">⬇️ Download my data</button>
-      <button class="btn ghost wide" data-act="reload">↻ Reload app</button></section>`;
+      <button class="btn primary wide" data-act="rescueExport">${icon('download', 18)} Download my data</button>
+      <button class="btn ghost wide" data-act="reload">${icon('refresh', 18)} Reload app</button></section>`;
     return;
   }
   root.dataset.view = ctx.name;
