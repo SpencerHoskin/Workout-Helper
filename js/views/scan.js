@@ -37,8 +37,8 @@ export function mount() {
       console.warn(err);
       hint.classList.add('err');
       hint.textContent = err.name === 'NotAllowedError'
-        ? 'Camera blocked. iPhone: Settings → Safari → Camera → Allow. Or use “Scan from photo”.'
-        : (err.message || 'Camera unavailable') + ' — try “Scan from photo”.';
+        ? 'Camera blocked. iPhone: Settings → Safari → Camera → Allow. Or use “From photo”.'
+        : (err.message || 'Camera unavailable') + ' — try “From photo”.';
     });
 }
 

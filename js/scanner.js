@@ -55,7 +55,7 @@ export async function startScanner(video, onCode) {
   stopScanner();
   const mine = ++session;
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    throw new Error('Camera not available here. Open the app over https (or use "Scan from photo").');
+    throw new Error('Camera not available here. Open the app over https (or use "From photo").');
   }
   detector = await makeDetector();
   const s = await navigator.mediaDevices.getUserMedia({

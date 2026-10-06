@@ -77,7 +77,7 @@ export function openNewMachine(code) {
       <div class="custom-kind" ${pre && pre.id === 'other' ? '' : 'hidden'}>
         <label>Logged as</label><select name="kind"><option value="strength">Weight × reps</option><option value="cardio">Minutes (cardio)</option><option value="bodyweight">Reps only</option></select></div>
       <label>Where is it? <span class="muted">(optional)</span></label><input name="zone" placeholder="e.g. Cable zone, back wall">
-      ${isUrl(raw) ? `<label class="check-line"><input type="checkbox" name="video" checked> This code opens a training video — keep a Training video button for it</label>` : ''}
+      ${isUrl(raw) ? `<label class="check-line"><input type="checkbox" name="video" checked> This code opens a training video — show a “Training&nbsp;video” button in the logger</label>` : ''}
       <button class="btn primary wide" type="submit">Save machine</button>
     </form>`);
 }
