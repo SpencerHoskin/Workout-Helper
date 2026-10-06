@@ -10,9 +10,13 @@ import { lastCoach } from '../coach.js';
 import { icon } from '../icons.js';
 
 // Plain text — callers escape once.
+// Non-breaking spaces keep "120 lb × 12" from splitting across lines.
 const fmtSet = (ex, s) => ex.kind === 'cardio'
-  ? `${s.min} min${s.lvl ? ' · ' + s.lvl : ''}${s.rpe ? ' · RPE ' + s.rpe : ''}`
-  : `${ex.kind === 'bodyweight' ? '' : (s.w ?? '–') + ' lb × '}${s.r ?? '–'}${s.rpe ? ' · RPE ' + s.rpe : ''}`;
+  ? `${s.min}\u00a0min${s.lvl ? ' · ' + s.lvl : ''}${s.rpe ? ' · RPE\u00a0' + s.rpe : ''}`
+  : `${ex.kind === 'bodyweight' ? '' : (s.w ?? '–') + '\u00a0lb\u00a0×\u00a0'}${s.r ?? '–'}${s.rpe ? ' · RPE\u00a0' + s.rpe : ''}`;
+// Compact form for history tables (same as Progress → Sessions): 120×12@6
+const shortSet = (ex, s) => ex.kind === 'cardio' ? fmtSet(ex, s)
+  : `${ex.kind === 'bodyweight' ? '' : (s.w ?? '–') + '×'}${s.r ?? '–'}${s.rpe ? '@' + s.rpe : ''}`;
 
 /** Coach Claude's target for this exercise, if a report from the last 14 days has one. */
 function coachTarget(exId) {
@@ -50,7 +54,7 @@ export function render(ctx) {
   const defR = lastSet ? lastSet.r : (sug.r ?? '');
   const inc = ex.inc || 5;
 
-  let h = `<section class="card logger-head">
+  let h = `<section class="card">
     <div class="lh-top"><a href="#/${m ? 'machines' : 'today'}" class="back" aria-label="Back">${icon('back', 22)}</a>
       ${m ? `<span class="lh-machine">${icon(type ? type.icon : 'dumbbell', 16)} ${esc(m.name)}${m.zone ? ' · ' + esc(m.zone) : ''}</span>` : '<span></span>'}
       ${m ? `<button class="icon-btn" data-act="editMachine" data-id="${esc(m.id)}" aria-label="Edit machine">${icon('edit', 16)}</button>` : '<span></span>'}</div>
@@ -67,7 +71,7 @@ export function render(ctx) {
   h += `<section class="card sug ${sug.caution ? 'caution' : sug.up ? 'up' : ''}">
     <div class="eyebrow">${sug.up ? icon('up', 14, { stroke: 2.5 }) + ' Level up' : sug.caution ? icon('alert', 14, { stroke: 2.5 }) + ' Ease off' : icon('target', 14, { stroke: 2.5 }) + ' Today’s target'}</div>
     <b>${esc(sug.text)}</b>${sug.why ? `<p class="muted small">${esc(sug.why)}</p>` : ''}
-    ${coach ? `<div class="coach-tgt">${icon('sparkle', 16)}<span><b>Coach Claude:</b> ${coach.sets} × ${esc(coach.reps)}${coach.weight_lb ? ' @ ' + coach.weight_lb + ' lb' : ''}${coach.note ? `<span class="muted small"> — ${esc(coach.note)}</span>` : ''}</span></div>` : ''}
+    ${coach ? `<div class="coach-tgt">${icon('sparkle', 16)}<span><b>Coach Claude</b> ${coach.sets} × ${esc(coach.reps)}${coach.weight_lb ? ' @ ' + coach.weight_lb + ' lb' : ''}${coach.note ? `<span class="muted small"> — ${esc(coach.note)}</span>` : ''}</span></div>` : ''}
     ${last ? `<p class="small">Last time (${shortDate(last.date)}): ${last.sets.map(s => esc(fmtSet(ex, s))).join(', ')}</p>` : ''}
     ${ex.flag ? `<div class="flag">${icon('alert', 16)}<span>${esc(ex.flag)}</span></div>` : ''}
     ${limits.load && ex.kind === 'strength' ? `<div class="flag">${icon('doctor', 16)}<span>Cardiologist load limit: ${esc(limits.load)}</span></div>` : ''}
@@ -107,7 +111,8 @@ export function render(ctx) {
 
   if (prior.length) {
     h += `<section class="card"><div class="row-between"><h2>History</h2><a class="link" href="#/progress/strength?ex=${ex.id}">Chart ${icon('chevron', 16)}</a></div>
-      <table class="hist"><tbody>${prior.slice(-6).reverse().map(p => `<tr><td>${shortDate(p.date)}</td><td>${p.sets.map(s => esc(fmtSet(ex, s))).join(', ')}</td>
+      <table class="hist"><thead><tr><th>Date</th><th>Sets</th>${ex.kind === 'strength' ? '<th class="num">e1RM</th>' : ''}</tr></thead>
+      <tbody>${prior.slice(-6).reverse().map(p => `<tr><td>${shortDate(p.date)}</td><td>${p.sets.map(s => esc(shortSet(ex, s))).join(', ')}</td>
       ${ex.kind === 'strength' ? `<td class="num">${fmtNum(p.e1rm, 0)}</td>` : ''}</tr>`).join('')}</tbody></table></section>`;
   }
   return h;

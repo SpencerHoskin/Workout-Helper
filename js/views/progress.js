@@ -10,6 +10,9 @@ import { icon } from '../icons.js';
 
 const C1 = 'var(--c1)', C2 = 'var(--c2)';
 const xFmt = x => shortDate(fromDayNum(x));
+/** "2027-04-10" → "Apr 10, 2027" (anything else is shown as given). */
+const niceDate = d => /^\d{4}-\d{2}-\d{2}$/.test(d)
+  ? new Date(d + 'T12:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : d;
 
 export function render(ctx) {
   const seg = ['strength', 'body', 'coach'].includes(ctx.arg) ? ctx.arg : 'strength';
@@ -49,9 +52,9 @@ function strength(ctx) {
   return `<section class="card"><label class="lbl">Exercise</label>
     <select data-change="pickEx">${used.map(id => `<option value="${id}" ${id === ex.id ? 'selected' : ''}>${esc(exs[id].name)}</option>`).join('')}</select></section>
   <div class="tiles">
-    <div class="tile t-orange"><b>${pts.length ? fmtNum(metric === 'assist' ? Math.min(...pts.map(p => p.y)) : Math.max(...pts.map(p => p.y)), 0) : '–'}</b><span>best ${metric === 'e1rm' ? 'e1RM' : metric}</span></div>
-    <div class="tile t-violet"><b>${hist.length ? Math.max(...hist.map(x => x.topW)) || '–' : '–'}</b><span>heaviest lb</span></div>
-    <div class="tile t-teal"><b>${fc ? (fc.rawPerWeek > 0 ? '+' : '') + fmtNum(fc.rawPerWeek, 1) : '–'}</b><span>${unit}/week lately</span></div>
+    <div class="tile"><b>${pts.length ? fmtNum(metric === 'assist' ? Math.min(...pts.map(p => p.y)) : Math.max(...pts.map(p => p.y)), 0) : '–'}</b><span>best ${metric === 'e1rm' ? 'e1RM' : metric}</span></div>
+    <div class="tile"><b>${hist.length ? Math.max(...hist.map(x => x.topW)) || '–' : '–'}</b><span>heaviest lb</span></div>
+    <div class="tile"><b>${fc ? (fc.rawPerWeek > 0 ? '+' : '') + fmtNum(fc.rawPerWeek, 1) : '–'}</b><span>${unit}/wk lately</span></div>
   </div>
   <section class="card"><h2>${esc(label)}</h2><p class="muted small">${esc(ex.name)} · dashed = forecast</p>
     <div class="chart" data-chart="strength"></div>
@@ -90,11 +93,11 @@ function body() {
   const monthAgo = avg.filter(p => p.x <= dayNum(todayStr()) - 30).pop();
   const pctWeek = fc && cur ? Math.abs(fc.perWeek) / cur * 100 : 0;
   const lastBf = [...wins].reverse().find(w => w.bodyFat);
-  let h = `<button class="cta" data-act="weighin"><span class="cta-ic">${icon('scale', 24)}</span><span><b>Log a weigh-in</b><small>Step on the Crunch scale, punch in the number</small></span></button>
+  let h = `<button class="cta" data-act="weighin"><span class="cta-ic">${icon('scale', 24)}</span><span><b>Log a weigh-in</b><small>Step on the Crunch scale</small></span></button>
   <div class="tiles">
-    <div class="tile t-violet"><b>${cur ? fmtNum(cur, 1) : '–'}</b><span>lb (7-day avg)</span></div>
-    <div class="tile t-orange"><b>${cur && monthAgo ? (cur - monthAgo.y > 0 ? '+' : '') + fmtNum(cur - monthAgo.y, 1) : '–'}</b><span>lb vs 30 days ago</span></div>
-    <div class="tile t-teal"><b>${lastBf ? fmtNum(lastBf.bodyFat, 1) + '%' : '–'}</b><span>body fat (last)</span></div>
+    <div class="tile"><b>${cur ? fmtNum(cur, 1) : '–'}</b><span>7-day avg (lb)</span></div>
+    <div class="tile"><b>${cur && monthAgo ? (cur - monthAgo.y > 0 ? '+' : '') + fmtNum(cur - monthAgo.y, 1) : '–'}</b><span>vs 30 days</span></div>
+    <div class="tile"><b>${lastBf ? fmtNum(lastBf.bodyFat, 1) + '%' : '–'}</b><span>body fat</span></div>
   </div>`;
   if (!pts.length) {
     return h + `<div class="card empty"><div class="empty-ic">${icon('scale', 26)}</div><b>No weigh-ins yet</b><p class="muted">Weigh in 2–3× a week, same time of day (e.g. right when you get to the gym). The 7-day average smooths out water-weight noise.</p></div>`;
@@ -142,7 +145,7 @@ export function openWeighin() {
 /* ---------- Coach ---------- */
 function coach() {
   const c = lastCoach();
-  let h = `<section class="card coach-ask">
+  let h = `<section class="card">
     <div class="eyebrow">${icon('sparkle', 14)} Coach Claude</div>
     <h2>Analyze &amp; forecast</h2>
     <p>Claude reads your machine log, scale weigh-ins and goal, then maps the best path forward — within your cardiologist-safe limits.</p>
@@ -161,10 +164,10 @@ function reportHtml(c) {
   const open = new Set(getChecklist().map(x => x.text));
   return `<section class="card report">
     <div class="eyebrow">${new Date(c.ts).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}${c.question ? ' · “' + esc(c.question) + '”' : ''}</div>
-    <h2 class="big grad-text">${esc(r.headline)}</h2>
+    <h2 class="report-head">${esc(r.headline)}</h2>
     <p>${esc(r.assessment)}</p>
     <div class="forecast-box"><b>${icon('trend', 16)} Forecast</b><p>${esc(r.goal_forecast.summary)}</p>
-      <small>${r.goal_forecast.projected_date ? 'Target date: <b>' + esc(r.goal_forecast.projected_date) + '</b> · ' : ''}confidence ${conf}</small></div>
+      <small>${r.goal_forecast.projected_date ? 'Target <b>' + esc(niceDate(r.goal_forecast.projected_date)) + '</b> · ' : ''}${esc(conf)} confidence</small></div>
   </section>
   ${r.safety_flags.length ? `<section class="card caution-card"><h2>Safety</h2><ul>${r.safety_flags.map(f => `<li>${esc(f)}</li>`).join('')}</ul></section>` : ''}
   <section class="card"><h2>Next session</h2><ul class="targets">${r.next_session.map(t => `<li>

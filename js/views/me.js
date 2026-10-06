@@ -47,7 +47,7 @@ export function render(ctx) {
       <div class="body"><div ${c.done ? 'class="struck"' : ''}>${esc(c.text)}</div>
       <input type="text" data-input="clNote" data-id="${esc(c.id)}" value="${esc(c.note)}" placeholder="Answer / notes"></div>
       <button class="icon-btn danger" data-act="delCl" data-id="${esc(c.id)}" aria-label="Remove question">${icon('close', 15, { stroke: 2.5 })}</button></div>`).join('')}
-    <div class="row"><input id="newCl" placeholder="Add a question"><button class="btn small" data-act="addCl" style="flex:0">Add</button></div>
+    <div class="row"><input id="newCl" placeholder="Add a question"><button class="btn fit" data-act="addCl">Add</button></div>
     <h3>Cleared limits</h3><p class="muted small">Fill in only what the cardiologist actually tells you. Blank = ${PENDING}.</p>
     ${[['load', 'Lifting load limit'], ['intensity', 'Intensity / heart-rate guidance'], ['other', 'Other instructions']].map(([k, l]) =>
       `<label class="lbl">${l}</label><input data-input="lim" data-k="${k}" value="${esc(lim[k] || '')}" placeholder="${PENDING}">`).join('')}
@@ -65,7 +65,7 @@ export function render(ctx) {
     <label class="switch"><input type="checkbox" data-change="healthOn" ${set.health.enabled ? 'checked' : ''}><span></span> Apple Health buttons on</label>
     <div class="row"><div><label class="lbl">Weight shortcut</label><input data-change="healthName" data-k="weightShortcut" value="${esc(set.health.weightShortcut)}"></div>
       <div><label class="lbl">Workout shortcut</label><input data-change="healthName" data-k="workoutShortcut" value="${esc(set.health.workoutShortcut)}"></div></div>
-    <div class="row"><button class="btn small" data-act="testHealthW">Test weight (180)</button><button class="btn small" data-act="testHealthWo">Test workout (1 min)</button></div>`;
+    <div class="row btn-row"><button class="btn small" data-act="testHealthW">Test weight</button><button class="btn small" data-act="testHealthWo">Test workout</button></div>`;
 
   const coachHtml = `<p class="muted small">Coach Claude runs on your own Vercel deployment. Your Anthropic API key lives in Vercel, never on this phone.</p>
     <label class="lbl">Coach passcode</label><input type="password" data-change="setting" data-k="coachPass" value="${esc(set.coachPass)}" placeholder="Same as COACH_PASSCODE in Vercel" autocomplete="off">
@@ -76,11 +76,11 @@ export function render(ctx) {
     <label class="lbl">Rest timer (seconds)</label><select data-change="setting" data-k="restSec">${[60, 75, 90, 120, 150, 180].map(n => `<option ${+set.restSec === n ? 'selected' : ''}>${n}</option>`).join('')}</select>
     <label class="lbl">Theme</label><select data-change="setting" data-k="theme">${[['auto', 'Match iPhone'], ['light', 'Light'], ['dark', 'Dark']].map(([v, l]) => `<option value="${v}" ${set.theme === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
     <h3>Your data</h3><p class="muted small">Everything is stored on this phone. Back it up now and then.</p>
-    <div class="row"><button class="btn small" data-act="exportJson">${icon('download', 16)} Backup</button>
+    <div class="row btn-row"><button class="btn small" data-act="exportJson">${icon('download', 16)} Backup</button>
       <label class="btn small">${icon('upload', 16)} Restore<input type="file" accept="application/json,.json" data-change="importJson" hidden></label>
       <button class="btn small" data-act="exportCsv">${icon('file', 16)} CSV</button></div>`;
 
-  return `<section class="card hero sig me-hero"><div class="eyebrow">You</div><h2 class="big">Goal: ${esc({ lose: 'lose weight', recomp: 'recomp', strength: 'get stronger', general: 'general fitness' }[goal.type])}${goal.targetWeight ? ' · ' + esc(goal.targetWeight) + ' lb' : ''}</h2>
+  return `<section class="card me-hero"><div class="eyebrow">You</div><h2 class="big">Goal: ${esc({ lose: 'lose weight', recomp: 'recomp', strength: 'get stronger', general: 'general fitness' }[goal.type])}${goal.targetWeight ? ' · ' + esc(goal.targetWeight) + ' lb' : ''}</h2>
       <p class="hero-sub">${esc(goal.why)}</p></section>` +
     sec('goal', 'target', 'Goal', goalHtml) +
     sec('daily', 'check', 'Daily check', dailyHtml) +

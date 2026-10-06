@@ -12,7 +12,7 @@ export function render() {
       <div class="scan-hint" id="scanHint" role="status">Starting camera…</div>
     </div>
     <div class="scan-actions">
-      <label class="btn ghost">${icon('camera', 20)}Scan from photo<input type="file" accept="image/*" data-change="scanPhoto" hidden></label>
+      <label class="btn ghost">${icon('camera', 20)}From photo<input type="file" accept="image/*" data-change="scanPhoto" hidden></label>
       <button class="btn ghost" data-act="typeCode">${icon('keyboard', 20)}Type code</button>
       <a class="btn ghost" href="#/machines">${icon('list', 20)}Pick from list</a>
     </div>

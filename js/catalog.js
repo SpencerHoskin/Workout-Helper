@@ -8,7 +8,7 @@ export const BREATH = 'Exhale on the effort, inhale on the return. No breath-hol
 // inc: smallest sensible load jump in lb for that machine
 // assisted: the stack ASSISTS you, so less weight = harder
 export const EX = {
-  bike:          { name: 'Warm-up: bike or treadmill walk', kind: 'cardio', target: '5–8 min easy (RPE 3–4)', icon: 'run' },
+  bike:          { name: 'Warm-up: bike or treadmill walk', kind: 'cardio', target: '5–8 min easy (RPE 3–4)', icon: 'bike' },
   legpress:      { name: 'Leg press (machine)', sets: 3, reps: '10–12', inc: 10, group: 'Legs' },
   chestpress:    { name: 'Chest press (machine)', sets: 3, reps: '10–12', inc: 5, group: 'Chest' },
   seatedrow:     { name: 'Seated cable row', sets: 3, reps: '10–12', inc: 5, group: 'Back' },
@@ -40,10 +40,10 @@ export const EX = {
   abcrunch:      { name: 'Ab crunch (machine)', sets: 2, reps: '12–15', inc: 5, group: 'Core' },
   backext:       { name: 'Back extension (machine)', sets: 2, reps: '12–15', inc: 5, group: 'Back' },
   treadmill:     { name: 'Treadmill', kind: 'cardio', target: '10–20 min, talk-test pace', icon: 'run' },
-  ubike:         { name: 'Stationary bike', kind: 'cardio', target: '10–20 min easy–moderate', icon: 'run' },
-  elliptical:    { name: 'Elliptical', kind: 'cardio', target: '10–20 min easy–moderate', icon: 'run' },
-  stairs:        { name: 'Stair climber', kind: 'cardio', target: '5–10 min, slow and steady', icon: 'run' },
-  rower:         { name: 'Rowing machine', kind: 'cardio', target: '5–10 min easy', icon: 'run' }
+  ubike:         { name: 'Stationary bike', kind: 'cardio', target: '10–20 min easy–moderate', icon: 'bike' },
+  elliptical:    { name: 'Elliptical', kind: 'cardio', target: '10–20 min easy–moderate', icon: 'elliptical' },
+  stairs:        { name: 'Stair climber', kind: 'cardio', target: '5–10 min, slow and steady', icon: 'stairs' },
+  rower:         { name: 'Rowing machine', kind: 'cardio', target: '5–10 min easy', icon: 'rower' }
 };
 
 export const SESSIONS = {
@@ -56,24 +56,24 @@ export const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 // What you can pick when a QR code is scanned for the first time. icon = a name from js/icons.js.
 export const MACHINE_TYPES = [
   { id: 'legpress',   name: 'Leg Press',            icon: 'dumbbell', ex: ['legpress', 'calfraise'] },
-  { id: 'chest',      name: 'Chest Press',          icon: 'dumbbell', ex: ['chestpress', 'inclinepress'] },
+  { id: 'chest',      name: 'Chest Press',          icon: 'press', ex: ['chestpress', 'inclinepress'] },
   { id: 'row',        name: 'Seated Row',           icon: 'cable', ex: ['seatedrow'] },
-  { id: 'pulldown',   name: 'Lat Pulldown',         icon: 'cable', ex: ['pulldown'] },
+  { id: 'pulldown',   name: 'Lat Pulldown',         icon: 'pulldown', ex: ['pulldown'] },
   { id: 'cable',      name: 'Cable Station',        icon: 'cable', ex: ['seatedrow', 'facepull', 'pallof', 'cablefly', 'cablecurl', 'pushdown'] },
-  { id: 'shoulder',   name: 'Shoulder Press',       icon: 'dumbbell', ex: ['shoulderpress'] },
+  { id: 'shoulder',   name: 'Shoulder Press',       icon: 'overhead', ex: ['shoulderpress'] },
   { id: 'legcurl',    name: 'Leg Curl',             icon: 'dumbbell', ex: ['legcurl'] },
   { id: 'legext',     name: 'Leg Extension',        icon: 'dumbbell', ex: ['legext'] },
   { id: 'pecdeck',    name: 'Pec Deck / Rear Delt', icon: 'dumbbell', ex: ['pecdeck', 'reversefly'] },
   { id: 'glute',      name: 'Hip Thrust / Glute',   icon: 'dumbbell', ex: ['hipthrust'] },
-  { id: 'hips',       name: 'Abductor / Adductor',  icon: 'dumbbell', ex: ['abductor', 'adductor'] },
-  { id: 'assist',     name: 'Assisted Pull-up',     icon: 'dumbbell', ex: ['assistpull'] },
+  { id: 'hips',       name: 'Abductor / Adductor',  icon: 'hips', ex: ['abductor', 'adductor'] },
+  { id: 'assist',     name: 'Assisted Pull-up',     icon: 'overhead', ex: ['assistpull'] },
   { id: 'smith',      name: 'Smith Machine',        icon: 'dumbbell', ex: ['smithsquat', 'gobletbox'] },
   { id: 'abs',        name: 'Ab / Back Machine',    icon: 'dumbbell', ex: ['abcrunch', 'backext'] },
   { id: 'treadmill',  name: 'Treadmill',            icon: 'run', ex: ['treadmill'] },
-  { id: 'bike',       name: 'Bike',                 icon: 'run', ex: ['ubike'] },
-  { id: 'elliptical', name: 'Elliptical',           icon: 'run', ex: ['elliptical'] },
-  { id: 'stairs',     name: 'Stair Climber',        icon: 'run', ex: ['stairs'] },
-  { id: 'rower',      name: 'Rower',                icon: 'run', ex: ['rower'] },
+  { id: 'bike',       name: 'Bike',                 icon: 'bike', ex: ['ubike'] },
+  { id: 'elliptical', name: 'Elliptical',           icon: 'elliptical', ex: ['elliptical'] },
+  { id: 'stairs',     name: 'Stair Climber',        icon: 'stairs', ex: ['stairs'] },
+  { id: 'rower',      name: 'Rower',                icon: 'rower', ex: ['rower'] },
   { id: 'scale',      name: 'Scale',                icon: 'scale', ex: [], scale: true },
   { id: 'other',      name: 'Something else',       icon: 'sparkle', ex: [], custom: true }
 ];
