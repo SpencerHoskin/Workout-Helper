@@ -1,7 +1,7 @@
 {
-  "name": "5am Workout",
-  "short_name": "5am Workout",
-  "description": "Scan Crunch machines, log sets, track the scale, and let Coach Claude forecast your path.",
+  "name": "Kiln",
+  "short_name": "Kiln",
+  "description": "Kiln: scan Crunch machines, log sets, track the scale, and let Coach Claude forecast your path.",
   "start_url": "./#/today",
   "scope": "./",
   "display": "standalone",

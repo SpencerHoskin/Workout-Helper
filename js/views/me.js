@@ -184,7 +184,7 @@ export const actions = {
   testHealthW: () => sendWeight(180),
   testHealthWo: () => sendWorkout(1),
   exportJson() {
-    download(`5am-workout-backup-${todayStr()}.json`, JSON.stringify(exportAll(), null, 1));
+    download(`kiln-backup-${todayStr()}.json`, JSON.stringify(exportAll(), null, 1));
     markBackedUp();
     if (current().name === 'today') rerender({ keepScroll: true }); // drop the reminder card
   },
@@ -192,6 +192,6 @@ export const actions = {
     const ex = allExercises();
     const rows = [['date', 'exercise', 'set', 'weight_lb', 'reps', 'rpe', 'minutes', 'machine', 'note']];
     for (const e of getLog()) e.sets.forEach((s, i) => rows.push([e.date, ex[e.exId] ? ex[e.exId].name : e.exId, i + 1, s.w ?? '', s.r ?? '', s.rpe ?? '', s.min ?? '', e.machineId || '', i === 0 ? e.note || '' : '']));
-    download(`5am-workout-${todayStr()}.csv`, rows.map(r => r.map(csvCell).join(',')).join('\n'), 'text/csv');
+    download(`kiln-log-${todayStr()}.csv`, rows.map(r => r.map(csvCell).join(',')).join('\n'), 'text/csv');
   }
 };

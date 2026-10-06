@@ -28,7 +28,7 @@ const ACTIONS = {
   restStop: () => stopRest(),
   safety: () => openSafety(),
   safetyClose: () => { $('#safety').hidden = true; },
-  rescueExport: () => download(`5am-workout-RESCUE-${todayStr()}.json`, JSON.stringify({ app: '5am-workout-raw', data: rawDump() }, null, 1)),
+  rescueExport: () => download(`kiln-RESCUE-${todayStr()}.json`, JSON.stringify({ app: 'kiln-raw', data: rawDump() }, null, 1)),
   reload: () => location.reload()
 };
 const CHANGES = merge('changes');

@@ -1,5 +1,6 @@
 // Line icons (24px grid, 2px stroke, currentColor) — one consistent set instead of emoji.
 const P = {
+  kiln: '<path d="M5 20v-8.5a7 7 0 0 1 14 0V20M3 20h18"/><path d="M12 17.5c-1.6 0-2.6-1-2.6-2.3 0-1.6 1.6-2.3 2.6-3.9 1 1.6 2.6 2.3 2.6 3.9 0 1.3-1 2.3-2.6 2.3z"/>',
   home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
   dumbbell: '<path d="M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12"/>',
   scan: '<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10"/>',

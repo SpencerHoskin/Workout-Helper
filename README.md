@@ -1,4 +1,4 @@
-# 5am Workout 🏋️‍♂️📷
+# Kiln
 
 An iPhone web app (installs to your home screen) for **Crunch Stratford**: scan the QR sticker on any machine, log your sets, track the gym scale, and let **Coach Claude** analyze your training and forecast the best path to your goal.
 
@@ -40,7 +40,7 @@ The flow is: **Claude edits code → GitHub (PR) → you Merge → Vercel redepl
 ### 2. Install on the iPhone
 1. Open your Vercel URL in **Safari**.
 2. Tap **Share** → **Add to Home Screen** → **Add**.
-3. Open **5am Workout** from the home-screen icon (not from Safari). Tap **Scan** and **Allow** the camera.
+3. Open **Kiln** from the home-screen icon (not from Safari). Tap **Scan** and **Allow** the camera.
 4. Go to **Me → ✨ Coach Claude setup** and enter the same `COACH_PASSCODE`.
 
 ### 3. (Optional) Apple Health

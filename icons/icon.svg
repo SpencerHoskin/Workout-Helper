@@ -5,8 +5,8 @@
     </linearGradient>
   </defs>
   <rect width="512" height="512" fill="url(#bg)"/>
-  <g fill="none" stroke="#FFF8F1" stroke-width="34" stroke-linecap="round">
-    <path d="M168 160v192M112 200v112M344 160v192M400 200v112M168 256h176"/>
+  <g transform="translate(88 70) scale(14)" fill="none" stroke="#FFF8F1" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 20v-8.5a7 7 0 0 1 14 0V20M3 20h18"/>
+    <path d="M12 17.5c-1.6 0-2.6-1-2.6-2.3 0-1.6 1.6-2.3 2.6-3.9 1 1.6 2.6 2.3 2.6 3.9 0 1.3-1 2.3-2.6 2.3z" fill="#E77A43" stroke="#FFF8F1"/>
   </g>
-  <text x="256" y="440" text-anchor="middle" font-family="Manrope, Helvetica, Arial, sans-serif" font-weight="800" font-size="92" fill="#FFF8F1" letter-spacing="-2">5am</text>
 </svg>
