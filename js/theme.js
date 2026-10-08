@@ -5,5 +5,5 @@ export function applyTheme() {
   const root = document.documentElement;
   if (t === 'light' || t === 'dark') root.dataset.theme = t; else delete root.dataset.theme;
   const dark = t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
-  document.querySelector('meta[name=theme-color]').setAttribute('content', dark ? '#33190D' : '#F5D9C4');
+  document.querySelector('meta[name=theme-color]').setAttribute('content', dark ? '#0D1120' : '#F1EEF6');
 }

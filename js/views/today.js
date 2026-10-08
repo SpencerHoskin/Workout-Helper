@@ -45,15 +45,16 @@ export function render() {
     { value: ws.weighins, goal: 2, color: 'var(--c1)', label: 'weigh-ins this week' }
   ];
 
+  // The session card: greeting, today's rings and the plan size on one tinted glass panel.
   let h = `<section class="card hero sig">
+    <span class="brandmark" aria-hidden="true">KILN</span>
     <div class="eyebrow">${esc(new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }))} · ${esc(getSettings().gymName)}</div>
     <h2 class="big">${greeting()}</h2>
-    <div class="hero-sub">${s ? `${esc(s.name)} today · ${planned.length} lifts · ~45 min` : 'Rest day — or pick a session below'}</div>
+    <div class="ring-row">${ringsSvg(ringData, 112)}
+      <ul class="ring-legend">${ringData.map(r => `<li><i style="background:${r.color}"></i><b>${r.value}/${r.goal}</b> ${esc(r.label)}</li>`).join('')}</ul>
+    </div>
+    <div class="hero-pill">${s ? `${esc(s.name)} · ${planned.length} lifts · ~45 min` : 'Rest day — or pick a session below'}</div>
   </section>
-
-  <section class="card"><div class="ring-row">${ringsSvg(ringData)}
-    <ul class="ring-legend">${ringData.map(r => `<li><i style="background:${r.color}"></i><b>${r.value}/${r.goal}</b> ${esc(r.label)}</li>`).join('')}</ul>
-  </div></section>
 
   <button class="cta" data-act="go" data-to="scan"><span class="cta-ic">${icon('scan', 24)}</span><span><b>Scan a machine</b><small>Point at the QR code to log sets</small></span></button>
 
