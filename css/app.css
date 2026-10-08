@@ -98,7 +98,7 @@ h1, h2, h3 { font-weight: 800; }
 /* ---------- Header / nav ---------- */
 .top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 10px;
   padding: 10px 16px; padding-top: max(10px, env(safe-area-inset-top));
-  background: color-mix(in srgb, var(--surface) 62%, transparent); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(14px); }
+  background: color-mix(in srgb, var(--surface) 62%, transparent); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
 .brand { flex: 1; display: flex; align-items: center; gap: 7px; text-decoration: none; font-weight: 800; font-size: 19px; letter-spacing: -.3px; }
 .logo { width: 32px; height: 32px; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); border-radius: 10px; }
 .brand-name { font-size: 21px; letter-spacing: -.4px; }
