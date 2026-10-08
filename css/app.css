@@ -28,6 +28,7 @@
   --c2: #C25A22;    /* chart: strength line, weigh-in dots — validated */
   /* Signature card (Brother-approved, keep): orange-to-blue gradient + orange outline */
   --sig-grad: linear-gradient(135deg, #A3461B 0%, #24364F 85%);
+  --page-grad: linear-gradient(180deg, #F5D9C4 0%, #F4EDE4 38%, #F1EEE9 62%, #DCE3EC 100%); /* Dawn */
   --sig-line: var(--accent);
   --sig-text: #FFF8F1;
   --placeholder: #77706A;
@@ -54,6 +55,7 @@
     --danger: #E36C87; --danger-soft: #3A1E26; --on-danger: #1A120D;
     --c1: #5B97CF; --c2: #D87339;
     --sig-grad: linear-gradient(135deg, #7F3616 0%, #1C2A40 85%);
+  --page-grad: linear-gradient(180deg, #33190D 0%, #171412 40%, #131417 60%, #0E1624 100%); /* Kiln night */
     --sig-text: #FBF3EA;
     --placeholder: #918980; --raised: #3A3632;
     --float-bg: #24364F; --float-text: #F1ECE4; --float-ring: rgba(241, 236, 228, .12);
@@ -72,6 +74,7 @@
   --danger: #E36C87; --danger-soft: #3A1E26; --on-danger: #1A120D;
   --c1: #5B97CF; --c2: #D87339;
   --sig-grad: linear-gradient(135deg, #7F3616 0%, #1C2A40 85%);
+  --page-grad: linear-gradient(180deg, #33190D 0%, #171412 40%, #131417 60%, #0E1624 100%); /* Kiln night */
   --sig-text: #FBF3EA;
   --placeholder: #918980; --raised: #3A3632;
   --float-bg: #24364F; --float-text: #F1ECE4; --float-ring: rgba(241, 236, 228, .12);
@@ -83,6 +86,8 @@
 /* ---------- Base ---------- */
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; min-height: 100%; }
+/* Page gradient on a fixed layer (iOS Safari ignores background-attachment: fixed). */
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; background: var(--page-grad); pointer-events: none; }
 body { background: var(--bg); color: var(--text); font: 500 16px/1.45 var(--font); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 a { color: inherit; }
 button { font: inherit; cursor: pointer; color: inherit; }
@@ -93,7 +98,7 @@ h1, h2, h3 { font-weight: 800; }
 /* ---------- Header / nav ---------- */
 .top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 10px;
   padding: 10px 16px; padding-top: max(10px, env(safe-area-inset-top));
-  background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+  background: color-mix(in srgb, var(--surface) 62%, transparent); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(14px); }
 .brand { flex: 1; display: flex; align-items: center; gap: 7px; text-decoration: none; font-weight: 800; font-size: 19px; letter-spacing: -.3px; }
 .logo { width: 32px; height: 32px; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); border-radius: 10px; }
 .brand-name { font-size: 21px; letter-spacing: -.4px; }
