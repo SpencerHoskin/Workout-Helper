@@ -30,18 +30,20 @@
   --danger: #B42850; --danger-soft: rgba(180, 40, 80, .12); --on-danger: #FFFFFF;
   --c1: #4057D0;    /* chart: bodyweight average / forecast */
   --c2: #CF4A33;    /* chart: strength line, weigh-in dots */
-  --glass: linear-gradient(140deg, rgba(255,255,255,.78) 0%, rgba(255,255,255,.52) 40%, rgba(255,255,255,.42) 65%, rgba(255,255,255,.62) 100%);
+  /* Convex fill: lit top-left, slightly shaded bottom-right, so every panel reads as a domed button. */
+  --glass: linear-gradient(145deg, rgba(255,255,255,.82) 0%, rgba(255,255,255,.55) 45%, rgba(238,232,246,.50) 100%);
   --glass-tint: linear-gradient(135deg, rgba(255,140,120,.42) 0%, rgba(236,110,170,.30) 50%, rgba(140,120,255,.30) 100%);
-  --glass-edge: inset 1.2px 1.2px 0 rgba(255,255,255,.95), inset -1px -1px 0 rgba(27,24,48,.06), inset 0 0 0 1px rgba(255,255,255,.45);
+  /* No hard outline: a soft inner glow top-left and soft inner shade bottom-right melt the edge into the background. */
+  --glass-edge: inset 5px 5px 12px rgba(255,255,255,.7), inset -6px -6px 14px rgba(90,70,130,.10);
   --glass-shadow: 0 10px 30px rgba(60, 40, 110, .12);
   --glass-solid: rgba(246, 243, 250, .92);  /* sheets, tooltips: frost you can read through */
   /* Soft Touch: one moulded material. Raised = bulges out, pressed = sinks in. */
   --soft: rgba(246, 243, 250, .66);         /* raised controls */
   --well: rgba(232, 227, 240, .6);          /* sunken inputs and selected states */
-  --raise: 7px 7px 18px rgba(90, 70, 130, .17), -6px -6px 16px rgba(255, 255, 255, .9);
+  --raise: 12px 12px 28px rgba(90, 70, 130, .20), -9px -9px 24px rgba(255, 255, 255, .85);
   --raise-sm: 4px 4px 10px rgba(90, 70, 130, .16), -4px -4px 10px rgba(255, 255, 255, .9);
   --press: inset 4px 4px 9px rgba(90, 70, 130, .17), inset -4px -4px 9px rgba(255, 255, 255, .85);
-  --sheen: linear-gradient(115deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,.1) 22%, transparent 34%);
+  --sheen: radial-gradient(120% 80% at 12% 0%, rgba(255,255,255,.5), transparent 62%);  /* soft dome highlight, no hard line */
   --a1: #FFB09C; --a2: #F49BC4; --a3: #B3A2FF; --a4: #FFD69A; --a5: #9FD3F2;
   --aurora-opacity: .6;
   --grain-opacity: .06;
@@ -69,16 +71,16 @@
     --warn: #FFC66E; --warn-soft: rgba(255, 181, 71, .14);
     --danger: #FF7F9B; --danger-soft: rgba(255, 90, 130, .16); --on-danger: #1A0B14;
     --c1: #9DB4FF; --c2: #FF9C73;
-    --glass: linear-gradient(140deg, rgba(255,255,255,.17) 0%, rgba(255,255,255,.06) 38%, rgba(255,255,255,.03) 62%, rgba(255,255,255,.10) 100%);
+    --glass: linear-gradient(145deg, rgba(255,255,255,.15) 0%, rgba(255,255,255,.05) 50%, rgba(0,0,0,.12) 100%);
     --glass-tint: linear-gradient(135deg, rgba(255,107,91,.30) 0%, rgba(224,69,123,.22) 50%, rgba(123,92,255,.22) 100%);
-    --glass-edge: inset 1.2px 1.2px 0 rgba(255,255,255,.5), inset -1px -1px 0 rgba(255,255,255,.08), inset 0 0 0 1px rgba(255,255,255,.09);
+    --glass-edge: inset 5px 5px 12px rgba(255,255,255,.07), inset -6px -6px 16px rgba(0,0,0,.32);
     --glass-shadow: 0 20px 44px rgba(0, 0, 0, .35);
     --glass-solid: rgba(24, 26, 44, .9);
     --soft: rgba(40, 42, 64, .5); --well: rgba(10, 12, 24, .32);
-    --raise: 7px 7px 18px rgba(0, 0, 0, .5), -5px -5px 14px rgba(255, 255, 255, .055);
+    --raise: 12px 12px 30px rgba(0, 0, 0, .55), -8px -8px 22px rgba(255, 255, 255, .06);
     --raise-sm: 4px 4px 10px rgba(0, 0, 0, .45), -3px -3px 9px rgba(255, 255, 255, .05);
     --press: inset 4px 4px 10px rgba(0, 0, 0, .5), inset -3px -3px 8px rgba(255, 255, 255, .06);
-    --sheen: linear-gradient(115deg, rgba(255,255,255,.22) 0%, rgba(255,255,255,.05) 22%, transparent 34%);
+    --sheen: radial-gradient(120% 80% at 12% 0%, rgba(255,255,255,.13), transparent 62%);
     --a1: #FF6B5B; --a2: #E0457B; --a3: #7B5CFF; --a4: #FFB547; --a5: #3D6BFF;
     --aurora-opacity: .72; --grain-opacity: .1;
     --placeholder: #8E8AA6; --raised: rgba(255, 255, 255, .2); --dot-ring: #151829;
@@ -97,16 +99,16 @@
   --warn: #FFC66E; --warn-soft: rgba(255, 181, 71, .14);
   --danger: #FF7F9B; --danger-soft: rgba(255, 90, 130, .16); --on-danger: #1A0B14;
   --c1: #9DB4FF; --c2: #FF9C73;
-  --glass: linear-gradient(140deg, rgba(255,255,255,.17) 0%, rgba(255,255,255,.06) 38%, rgba(255,255,255,.03) 62%, rgba(255,255,255,.10) 100%);
+  --glass: linear-gradient(145deg, rgba(255,255,255,.15) 0%, rgba(255,255,255,.05) 50%, rgba(0,0,0,.12) 100%);
   --glass-tint: linear-gradient(135deg, rgba(255,107,91,.30) 0%, rgba(224,69,123,.22) 50%, rgba(123,92,255,.22) 100%);
-  --glass-edge: inset 1.2px 1.2px 0 rgba(255,255,255,.5), inset -1px -1px 0 rgba(255,255,255,.08), inset 0 0 0 1px rgba(255,255,255,.09);
+  --glass-edge: inset 5px 5px 12px rgba(255,255,255,.07), inset -6px -6px 16px rgba(0,0,0,.32);
   --glass-shadow: 0 20px 44px rgba(0, 0, 0, .35);
   --glass-solid: rgba(24, 26, 44, .9);
     --soft: rgba(40, 42, 64, .5); --well: rgba(10, 12, 24, .32);
-    --raise: 7px 7px 18px rgba(0, 0, 0, .5), -5px -5px 14px rgba(255, 255, 255, .055);
+    --raise: 12px 12px 30px rgba(0, 0, 0, .55), -8px -8px 22px rgba(255, 255, 255, .06);
     --raise-sm: 4px 4px 10px rgba(0, 0, 0, .45), -3px -3px 9px rgba(255, 255, 255, .05);
     --press: inset 4px 4px 10px rgba(0, 0, 0, .5), inset -3px -3px 8px rgba(255, 255, 255, .06);
-  --sheen: linear-gradient(115deg, rgba(255,255,255,.22) 0%, rgba(255,255,255,.05) 22%, transparent 34%);
+  --sheen: radial-gradient(120% 80% at 12% 0%, rgba(255,255,255,.13), transparent 62%);
   --a1: #FF6B5B; --a2: #E0457B; --a3: #7B5CFF; --a4: #FFB547; --a5: #3D6BFF;
   --aurora-opacity: .72; --grain-opacity: .1;
   --placeholder: #8E8AA6; --raised: rgba(255, 255, 255, .2); --dot-ring: #151829;
@@ -158,7 +160,7 @@ h1, h2, h3 { font-weight: 700; }
   border: 1px solid color-mix(in srgb, var(--danger) 55%, transparent); border-radius: 999px; padding: 7px 13px; font-weight: 600; font-size: 13px;
   backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 .safety-btn::after { content: ""; position: absolute; inset: -5px; }
-main { padding: 4px 16px 130px; max-width: 640px; margin: 0 auto; outline: none; display: flex; flex-direction: column; gap: 12px; }
+main { padding: 6px 18px 130px; max-width: 640px; margin: 0 auto; outline: none; display: flex; flex-direction: column; gap: 16px; }
 main > * { margin: 0; }
 main > .btn.wide { margin-top: 0; }
 body.resting main { padding-bottom: 200px; }
@@ -498,6 +500,9 @@ details.sec[open] { padding-bottom: 16px; }
    Same glass, moulded softly: panels and controls bulge out (--raise), inputs and the
    chosen option sink in (--press). Pressed choices show their colour in the text, not a fill. */
 .card, .tile { box-shadow: var(--glass-edge), var(--raise); }
+a.card, button.card { transition: box-shadow .15s, transform .15s; }
+a.card:active, button.card:active { transform: scale(.99); box-shadow: var(--press); }
+.tiles { gap: 12px; }
 .hero .rings { border-radius: 50%; padding: 6px; background: var(--well); box-shadow: var(--press); box-sizing: content-box; }
 
 .btn { background: var(--soft); border: 0; box-shadow: var(--raise-sm); }
