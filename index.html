@@ -54,6 +54,8 @@
       <li>Dizziness or light-headedness</li>
       <li>Palpitations / racing or irregular heartbeat</li>
     </ul>
+    <!-- .mine = "My health profile" only; .general = everyone else (see applyProfile in js/theme.js) -->
+    <div class="mine">
     <h3 class="amber">Bleeding risk</h3>
     <ul>
       <li>Hard hit to the head → get checked, <b>even if you feel fine</b></li>
@@ -64,15 +66,27 @@
     <ul>
       <li>Unusual muscle pain — out of proportion to the workout, in muscles you didn't train, or with dark urine</li>
     </ul>
+    </div>
+    <div class="general">
+    <h3 class="amber">Stop that exercise if</h3>
+    <ul>
+      <li>Sharp or joint pain (not the normal burn of a hard set)</li>
+      <li>Numbness, tingling, or pain that shoots down a limb</li>
+      <li>Very sore for days with dark urine → see a doctor</li>
+    </ul>
+    </div>
     <h3>Every session</h3>
     <ul>
       <li><b>Talk test:</b> you should be able to speak in short sentences</li>
       <li><b>Breathe:</b> exhale on the effort — never hold your breath or strain</li>
       <li>Machines &amp; cables over free weights; collars on barbells; no jumping/drop risk</li>
-      <li>Soreness: no ibuprofen / naproxen (NSAIDs). Ask the pharmacist what's OK.</li>
+      <li class="mine">Soreness: no ibuprofen / naproxen (NSAIDs). Ask the pharmacist what's OK.</li>
+      <li class="general">New to training or have a heart, lung or joint condition? Check with your doctor first.</li>
     </ul>
+    <div class="mine">
     <h3>Cleared limits</h3>
     <div id="safetyLimits" class="muted"></div>
+    </div>
   </div>
 </div>
 

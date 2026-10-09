@@ -1,11 +1,11 @@
 // Boot, routing, and event delegation. Views export render/mount/unmount + handler maps.
-import { migrate, getLimits, rawDump } from './store.js';
+import { migrate, getLimits, rawDump, getMeta, save, KEYS } from './store.js';
 import { EX, SESSIONS, PENDING } from './catalog.js';
 import { esc, todayStr } from './util.js';
-import { $, closeSheet, sheetOpen, unlockAudio, download, sweep } from './ui.js';
-import { current, setRenderer, go } from './router.js';
+import { $, closeSheet, sheetOpen, unlockAudio, download, sweep, pushLayer, dropLayer, onLayerEntry, setInstallPrompt, PLATFORM } from './ui.js';
+import { current, setRenderer, go, rerender } from './router.js';
 import { addRest, stopRest } from './timer.js';
-import { applyTheme } from './theme.js';
+import { applyTheme, applyProfile } from './theme.js';
 import { icon } from './icons.js';
 import * as today from './views/today.js';
 import * as machines from './views/machines.js';
@@ -27,7 +27,7 @@ const ACTIONS = {
   restAdd: () => addRest(30),
   restStop: () => stopRest(),
   safety: () => openSafety(),
-  safetyClose: () => { $('#safety').hidden = true; },
+  safetyClose: () => closeSafety(),
   rescueExport: () => download(`kiln-RESCUE-${todayStr()}.json`, JSON.stringify({ app: 'kiln-raw', data: rawDump() }, null, 1)),
   reload: () => location.reload()
 };
@@ -78,6 +78,12 @@ function openSafety() {
   const v = x => x ? esc(x) : `<span class="pending">${PENDING}</span>`;
   $('#safetyLimits').innerHTML = `Load: ${v(lim.load)}<br>Intensity: ${v(lim.intensity)}<br>Other: ${v(lim.other)}`;
   $('#safety').hidden = false;
+  pushLayer();
+}
+function closeSafety() {
+  if ($('#safety').hidden) return;
+  $('#safety').hidden = true;
+  dropLayer();
 }
 
 /* ---------- Event delegation ---------- */
@@ -101,18 +107,34 @@ document.addEventListener('submit', e => {
 });
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
-  if (sheetOpen()) closeSheet();
-  else if (!$('#safety').hidden) $('#safety').hidden = true;
+  if (!$('#safety').hidden) closeSafety(); // Safety sits above a sheet
+  else closeSheet();
 });
 $('#sheet').addEventListener('click', e => { if (e.target.id === 'sheet') closeSheet(); });
-$('#safety').addEventListener('click', e => { if (e.target.id === 'safety') $('#safety').hidden = true; });
+$('#safety').addEventListener('click', e => { if (e.target.id === 'safety') closeSafety(); });
 // Links and back/forward. go() renders itself, so skip events for a hash we already rendered.
-const onNav = () => { if (location.hash !== renderedHash) { closeSheet(); render(); } };
+// Same hash but off a pop-up's history entry = Back was pressed on a pop-up: close it, stay on this screen.
+const onNav = () => {
+  if (location.hash !== renderedHash) { closeSheet(); closeSafety(); render(); }
+  else if (!onLayerEntry()) { if (!$('#safety').hidden) closeSafety(); else closeSheet(); }
+};
 window.addEventListener('hashchange', onNav);
 window.addEventListener('popstate', onNav);
 document.addEventListener('pointerdown', unlockAudio, { once: true, capture: true });
 document.addEventListener('pointerdown', sweep, { passive: true, capture: true });
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
+// Android/Chrome: keep the install dialog for the "Install Kiln" button on Today instead of the browser's mini-bar.
+window.addEventListener('beforeinstallprompt', e => {
+  if (PLATFORM !== 'android' || getMeta().installHintOff) return; // no button of ours → let the browser offer it
+  e.preventDefault();
+  setInstallPrompt(e);
+  if (current().name === 'today' && !sheetOpen()) rerender({ keepScroll: true });
+});
+window.addEventListener('appinstalled', () => {
+  setInstallPrompt(null);
+  save(KEYS.meta, { ...getMeta(), installHintOff: true }); // the browser tab stops suggesting it too
+  if (current().name === 'today' && !sheetOpen()) rerender({ keepScroll: true });
+});
 
 /* ---------- Boot ---------- */
 function check(cond, msg) {
@@ -120,6 +142,9 @@ function check(cond, msg) {
 }
 try { migrate(); } catch (e) { console.error('migration failed', e); } // render's error boundary takes it from here
 applyTheme();
+applyProfile();
+// Reloaded while a pop-up was open: nothing is open now, so step back off its entry onto this screen's own.
+if (onLayerEntry()) history.back();
 check(Object.values(SESSIONS).every(s => s.ex.every(id => EX[id])), 'Session references unknown exercise');
 setRenderer(render);
 render();

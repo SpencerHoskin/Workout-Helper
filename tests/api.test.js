@@ -69,3 +69,13 @@ test('report schema and safety prompt', () => {
   assert.ok(!CoachReport.safeParse({ headline: 'h' }).success);
   for (const rule of ['RPE 5–7', 'cleared_limits', 'supplements', '911']) assert.ok(SYSTEM.includes(rule), rule);
 });
+
+test('coach prompt follows the app profile; older apps get the original', async () => {
+  const { systemFor, SYSTEM_GENERAL } = await import('../api/coach.js');
+  assert.equal(systemFor({ health_profile: 'mine' }), SYSTEM);
+  assert.equal(systemFor({}), SYSTEM);
+  assert.equal(systemFor({ health_profile: 'general' }), SYSTEM_GENERAL);
+  assert.ok(!SYSTEM_GENERAL.includes('Brother'));
+  assert.ok(!/cardiolog|bleeding/i.test(SYSTEM_GENERAL));
+  for (const rule of ['RPE 5–7', 'supplements', '911', 'not their doctor']) assert.ok(SYSTEM_GENERAL.includes(rule), rule);
+});

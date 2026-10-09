@@ -1,10 +1,11 @@
 import { SESSIONS, DAYS } from '../catalog.js';
-import { getLog, getGoal, getSettings, getWeighins, exById, todaySession, setTodaySession, getMeta } from '../store.js';
+import { KEYS, save, getLog, getGoal, getSettings, getWeighins, exById, todaySession, setTodaySession, getMeta, myHealth } from '../store.js';
 import { exerciseHistory, suggestNext, weekStats, weekStreak } from '../analytics.js';
 import { ringsSvg } from '../charts.js';
 import { lastCoach } from '../coach.js';
 import { healthOn, sendWorkout, workoutMinutesToday } from '../health.js';
 import { esc, todayStr, fmtNum } from '../util.js';
+import { PLATFORM, standalone, canPromptInstall, promptInstall, toast } from '../ui.js';
 import { rerender } from '../router.js';
 import { icon } from '../icons.js';
 
@@ -20,11 +21,30 @@ export function activeSession() {
 
 function greeting() {
   const h = new Date().getHours();
-  if (h < 7) return '5am club, Brother';
-  if (h < 12) return 'Morning, Brother';
-  if (h < 17) return 'Afternoon, Brother';
-  return 'Evening, Brother';
+  const b = myHealth() ? ', Brother' : '';
+  if (h < 7) return '5am club' + b;
+  if (h < 12) return 'Morning' + b;
+  if (h < 17) return 'Afternoon' + b;
+  return 'Evening' + b;
 }
+
+// "Put Kiln on your home screen", per phone. Shown in the browser only, until installed or dismissed.
+function installCard() {
+  if (standalone() || getMeta().installHintOff) return '';
+  let how;
+  if (PLATFORM === 'ios') {
+    how = `<p class="muted small">In Safari, tap <b>Share</b> (the square with the arrow) → <b>Add to Home Screen</b>. Do it before you log: the home-screen app keeps its own data, separate from Safari.</p>`;
+  } else if (PLATFORM === 'android') {
+    how = canPromptInstall()
+      ? `<p class="muted small">One tap and Kiln opens full screen from your home screen, like a normal app. Your data comes with it.</p>
+         <button class="btn primary small" data-act="installApp">${icon('download', 16)} Install Kiln</button>`
+      : `<p class="muted small">Open the browser menu (<b>⋮</b>) → <b>Install app</b> or <b>Add to Home screen</b>. In Chrome your data comes with it.</p>`;
+  } else return '';
+  return `<section class="card install-card"><div class="row-between"><b>${icon('download', 18)} Put Kiln on your home screen</b>
+      <button class="icon-btn" data-act="installHintOff" aria-label="Hide this tip">${icon('close', 15, { stroke: 2.5 })}</button></div>${how}</section>`;
+}
+
+const BACKUP_WHERE = { ios: 'Save a copy to Files or iCloud Drive.', android: 'It lands in Downloads; keep a copy in Google Drive too.', other: 'Keep the file somewhere safe.' };
 
 export function render() {
   const date = todayStr();
@@ -54,6 +74,8 @@ export function render() {
     </div>
     <div class="hero-pill">${s ? `${esc(s.name)} · ${planned.length} lifts · ~45 min` : 'Rest day — or pick a session below'}</div>
   </section>
+
+  ${installCard()}
 
   <button class="cta" data-act="go" data-to="scan"><span class="cta-ic">${icon('scan', 24)}</span><span><b>Scan a machine</b><small>Point at the QR code to log sets</small></span></button>
 
@@ -112,7 +134,7 @@ export function render() {
   const lastBackup = getMeta().lastBackup || 0;
   if (new Set(log.map(e => e.date)).size >= 6 && Date.now() - lastBackup > 14 * 864e5) {
     h += `<section class="card backup-card"><b>${icon('download', 18)} Back up your logbook</b>
-      <p class="muted small">Everything lives on this phone. ${lastBackup ? 'Last backup ' + Math.floor((Date.now() - lastBackup) / 864e5) + ' days ago.' : 'No backup yet.'} Save a copy to Files or iCloud Drive.</p>
+      <p class="muted small">Everything lives on this phone. ${lastBackup ? 'Last backup ' + Math.floor((Date.now() - lastBackup) / 864e5) + ' days ago.' : 'No backup yet.'} ${BACKUP_WHERE[PLATFORM]}</p>
       <button class="btn small" data-act="exportJson">${icon('download', 16)} Back up now</button></section>`;
   }
 
@@ -135,5 +157,14 @@ export const changes = {
 export const actions = {
   healthWorkout() {
     sendWorkout(workoutMinutesToday(getLog()));
+  },
+  async installApp() {
+    const ok = await promptInstall();
+    if (ok) toast('Installing Kiln…');
+    rerender({ keepScroll: true });
+  },
+  installHintOff() {
+    save(KEYS.meta, { ...getMeta(), installHintOff: true });
+    rerender({ keepScroll: true });
   }
 };

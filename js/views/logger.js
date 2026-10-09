@@ -1,5 +1,5 @@
 import { BREATH, SESSIONS, MACHINE_TYPES } from '../catalog.js';
-import { getLog, getLimits, getMachines, getSettings, exById, addSet, removeSet, setEntryNote, getSetup, setSetup } from '../store.js';
+import { getLog, getLimits, getMachines, getSettings, exById, addSet, removeSet, setEntryNote, getSetup, setSetup, myHealth } from '../store.js';
 import { exerciseHistory, suggestNext, isPR, e1rm } from '../analytics.js';
 import { esc, todayStr, shortDate, num, fmtNum, safeUrl, parseRepRange } from '../util.js';
 import { $, $$, toast, confetti } from '../ui.js';
@@ -74,7 +74,7 @@ export function render(ctx) {
     ${coach ? `<div class="coach-tgt">${icon('sparkle', 16)}<span><b>Coach Claude</b> ${coach.sets} × ${esc(coach.reps)}${coach.weight_lb ? ' @ ' + coach.weight_lb + ' lb' : ''}${coach.note ? `<span class="muted small"> — ${esc(coach.note)}</span>` : ''}</span></div>` : ''}
     ${last ? `<p class="small">Last time (${shortDate(last.date)}): ${last.sets.map(s => esc(fmtSet(ex, s))).join(', ')}</p>` : ''}
     ${ex.flag ? `<div class="flag">${icon('alert', 16)}<span>${esc(ex.flag)}</span></div>` : ''}
-    ${limits.load && ex.kind === 'strength' ? `<div class="flag">${icon('doctor', 16)}<span>Cardiologist load limit: ${esc(limits.load)}</span></div>` : ''}
+    ${myHealth() && limits.load && ex.kind === 'strength' ? `<div class="flag">${icon('doctor', 16)}<span>Cardiologist load limit: ${esc(limits.load)}</span></div>` : ''}
     ${ex.kind !== 'cardio' ? `<div class="cue">${icon('breath', 16)}<span>${BREATH}</span></div>` : ''}
   </section>`;
 
@@ -229,7 +229,7 @@ export const submits = {
     addSet({ exId: ex.id, machineId: ctxNow.query.m || null, sessionId: sid && SESSIONS[sid].ex.includes(ex.id) ? sid : null, set });
 
     if (set.rpe >= 9) {
-      alert('Heads up, Brother: RPE 9+ is near max effort.\nTake a longer rest, drop the weight a bit next set, and stay around RPE 6–7.');
+      alert(`Heads up${myHealth() ? ', Brother' : ''}: RPE 9+ is near max effort.\nTake a longer rest, drop the weight a bit next set, and stay around RPE 6–7.`);
     } else if (pr) {
       confetti();
       toast(`${pr}! ${set.w} lb × ${set.r} · e1RM ${Math.round(e1rm(set.w, set.r))}`);

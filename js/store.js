@@ -2,7 +2,7 @@
 //
 // Reads go through an in-memory cache (parsed once, invalidated on write), so callers get the
 // SAME object back each time: mutate it only if you save it straight after.
-import { EX, DEFAULT_CHECKLIST, DEFAULT_GOAL, DEFAULT_SETTINGS } from './catalog.js';
+import { EX, DEFAULT_CHECKLIST, DEFAULT_GOAL, MY_GOAL, DEFAULT_SETTINGS } from './catalog.js';
 import { num, todayStr, uid, hashCode, normalizeCode } from './util.js';
 
 export const KEYS = {
@@ -86,6 +86,10 @@ export function remove(key) {
 
 /* ---------- Migration ---------- */
 export function migrate() {
+  // "Fresh" = nothing the owner would have entered: no sets, weigh-ins, daily checks, doctor notes or goal.
+  // (Just opening an older version leaves a schema stamp, which doesn't make you the owner.)
+  const fresh = !getLog().length && !getWeighins().length &&
+    ['daily', 'checklist', 'limits', 'supps', 'goal'].every(k => load(KEYS[k], undefined) === undefined);
   const v = Number(load(KEYS.schema, 0)) || 0;
   if (v > SCHEMA) console.warn('Data is from a newer version', v);
   if (v < 2) migrateTo2();
@@ -97,6 +101,16 @@ export function migrate() {
     const s = loadTyped('settings', {});
     if (s.theme === 'auto') save(KEYS.settings, { ...s, theme: 'dark' });
     save(KEYS.meta, { ...meta, darkDefault: true });
+  }
+  // "My health profile" (Oct 2026): the cardiologist plan, supplement clearance, bleeding-risk notes and
+  // the "Brother" voice belong to the app's first user. Anyone who already has data keeps them on; a fresh
+  // install (a friend trying the app) starts with the general profile. One time only; after that the
+  // switch in Me → Settings decides.
+  const meta2 = getMeta();
+  if (!meta2.profileSet) {
+    const s = loadTyped('settings', {});
+    if (typeof s.myHealth !== 'boolean') save(KEYS.settings, { ...s, myHealth: !fresh });
+    save(KEYS.meta, { ...meta2, profileSet: true });
   }
 }
 
@@ -142,9 +156,12 @@ export function getSettings() {
   return { ...DEFAULT_SETTINGS, ...s, health: { ...DEFAULT_SETTINGS.health, ...(isObj(s.health) ? s.health : {}) } };
 }
 export const setSettings = s => save(KEYS.settings, s);
+export const myHealth = () => getSettings().myHealth === true;
 
-export const getGoal = () => ({ ...DEFAULT_GOAL, ...loadTyped('goal', {}) });
+export const getGoal = () => ({ ...DEFAULT_GOAL, ...(myHealth() ? MY_GOAL : {}), ...loadTyped('goal', {}) });
 export const setGoal = g => save(KEYS.goal, g);
+/** Save one goal field. Only what you actually set is stored; the rest keeps following the profile defaults. */
+export const setGoalField = (k, v) => save(KEYS.goal, { ...loadTyped('goal', {}), [k]: v });
 
 export const getChecklist = () => loadTyped('checklist', null) || DEFAULT_CHECKLIST.map(c => ({ ...c }));
 
@@ -254,6 +271,11 @@ export function exportAll() {
     const v = load(k, undefined);
     if (v !== undefined) out.data[k] = v;
   }
+  // The coach passcode unlocks your API credits: it stays on this phone, never in a file you might share.
+  if (isObj(out.data[KEYS.settings])) {
+    const { coachPass, ...rest } = out.data[KEYS.settings];
+    out.data[KEYS.settings] = rest;
+  }
   return out;
 }
 
@@ -273,7 +295,20 @@ export function importAll(obj) {
     writes.push([k, v]);
   }
   if (!writes.length) throw new Error('Backup is empty');
-  for (const [k, v] of writes) save(k, v);
+  // A backup from before "My health profile" existed says nothing about it: if it holds training data it's
+  // the owner's, so restore it with the profile on (whatever this phone decided when it was new).
+  const bs = isObj(obj.data[KEYS.settings]) ? obj.data[KEYS.settings] : null;
+  const decided = bs && typeof bs.myHealth === 'boolean';
+  const ownerData = (Array.isArray(obj.data[KEYS.log]) && obj.data[KEYS.log].length > 0) ||
+    (Array.isArray(obj.data[KEYS.weighins]) && obj.data[KEYS.weighins].length > 0);
+  const phoneMine = myHealth();
+  // Backups don't carry the coach passcode, so keep the one already on this phone.
+  const pass = getSettings().coachPass;
+  for (const [k, v] of writes) save(k, k === KEYS.settings && pass ? { ...v, coachPass: pass } : v);
+  if (!decided) {
+    save(KEYS.settings, { ...loadTyped('settings', {}), myHealth: ownerData || phoneMine });
+    save(KEYS.meta, { ...getMeta(), profileSet: true });
+  }
   migrate();
 }
 
@@ -284,5 +319,7 @@ export function rawDump() {
     const k = localStorage.key(i);
     if (k && k.startsWith('wh_')) out[k] = localStorage.getItem(k);
   }
+  // Same rule as exportAll: no coach passcode in files. Text-level, so it works even on damaged settings.
+  if (out[KEYS.settings]) out[KEYS.settings] = out[KEYS.settings].replace(/"coachPass"\s*:\s*"(?:[^"\\]|\\.)*"/g, '"coachPass":""');
   return out;
 }
