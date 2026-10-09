@@ -88,7 +88,7 @@ export function render(ctx) {
     h += stepper('min', 'Minutes', lastSet ? lastSet.min : 10, 1, 'numeric')
       + `<label class="lbl">Level / speed <span class="muted">(optional)</span></label><input name="lvl" placeholder="e.g. level 6, 3.2 mph" value="${esc(lastSet ? lastSet.lvl || '' : '')}">`;
   } else {
-    if (ex.kind === 'strength') h += weightSwipe(ex.assisted ? 'Assist (lb)' : 'Weight (lb)', defW, inc);
+    if (ex.kind === 'strength') h += weightSwipe(ex.assisted ? 'Assist (lb)' : 'Weight (lb)', defW, inc, Math.min(1, sets.length / (ex.sets || 3)));
     h += repChips(ex, defR) + stepper('r', 'Reps', defR, 1, 'numeric');
   }
   const rpe = lastSet && lastSet.rpe ? lastSet.rpe : '';  // carried forward so every set keeps its effort rating
@@ -120,15 +120,16 @@ export function render(ctx) {
 
 const sideVal = (v, d) => { const n = num(v); return n == null ? '–' : fmtNum(Math.max(0, n + d), 1); };
 
-/** Big weight number with the next step down/up either side: swipe it, tap a side, or type. */
-function weightSwipe(label, value, inc) {
+/** Weight dial: big number in a sunken dial whose ring fills with today's sets, the next step
+    down/up either side. Swipe it, tap a side, or type. */
+function weightSwipe(label, value, inc, done) {
   return `<label class="lbl" for="f_w">${label}</label>
     <div class="wswipe" data-inc="${inc}">
       <button type="button" class="wside" data-act="step" data-f="w" data-d="-${inc}" aria-label="Decrease by ${inc}">${sideVal(value, -inc)}</button>
-      <input id="f_w" name="w" class="wbig" inputmode="decimal" data-input="wtype" value="${esc(value ?? '')}" placeholder="0">
+      <div class="wdial" style="--p:${done}"><input id="f_w" name="w" class="wbig" inputmode="decimal" data-input="wtype" value="${esc(value ?? '')}" placeholder="0"><small aria-hidden="true">lb</small></div>
       <button type="button" class="wside" data-act="step" data-f="w" data-d="${inc}" aria-label="Increase by ${inc}">${sideVal(value, inc)}</button>
     </div>
-    <p class="wnote">lb · swipe or tap a side · ${inc} lb steps</p>`;
+    <p class="wnote">Swipe or tap a side · ${inc} lb steps · ring = sets done today</p>`;
 }
 function syncSides(wrap) {
   if (!wrap) return;
