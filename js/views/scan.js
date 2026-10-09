@@ -21,6 +21,12 @@ export function render() {
 }
 
 function found(text) {
+  // The camera keeps running behind Safety or a sheet. Don't act on a code read there: it would jump to
+  // another screen under the pop-up. Try again shortly instead.
+  if (sheetOpen() || !$('#safety').hidden) {
+    setTimeout(() => { if (current().name === 'scan' && !document.hidden) mount(); }, 1500);
+    return;
+  }
   beep(1320, 120);
   handleScanned(text);
   // New code → a "what machine is this?" sheet opened. If it's dismissed, resume scanning.

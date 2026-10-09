@@ -1,8 +1,8 @@
 // Boot, routing, and event delegation. Views export render/mount/unmount + handler maps.
-import { migrate, getLimits, rawDump } from './store.js';
+import { migrate, getLimits, rawDump, getMeta, save, KEYS } from './store.js';
 import { EX, SESSIONS, PENDING } from './catalog.js';
 import { esc, todayStr } from './util.js';
-import { $, closeSheet, sheetOpen, unlockAudio, download, sweep, pushLayer, dropLayer, onLayerEntry, setInstallPrompt } from './ui.js';
+import { $, closeSheet, sheetOpen, unlockAudio, download, sweep, pushLayer, dropLayer, onLayerEntry, setInstallPrompt, PLATFORM } from './ui.js';
 import { current, setRenderer, go, rerender } from './router.js';
 import { addRest, stopRest } from './timer.js';
 import { applyTheme, applyProfile } from './theme.js';
@@ -107,8 +107,8 @@ document.addEventListener('submit', e => {
 });
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
-  if (sheetOpen()) closeSheet();
-  else closeSafety();
+  if (!$('#safety').hidden) closeSafety(); // Safety sits above a sheet
+  else closeSheet();
 });
 $('#sheet').addEventListener('click', e => { if (e.target.id === 'sheet') closeSheet(); });
 $('#safety').addEventListener('click', e => { if (e.target.id === 'safety') closeSafety(); });
@@ -116,7 +116,7 @@ $('#safety').addEventListener('click', e => { if (e.target.id === 'safety') clos
 // Same hash but off a pop-up's history entry = Back was pressed on a pop-up: close it, stay on this screen.
 const onNav = () => {
   if (location.hash !== renderedHash) { closeSheet(); closeSafety(); render(); }
-  else if (!onLayerEntry()) { if (sheetOpen()) closeSheet(); else closeSafety(); }
+  else if (!onLayerEntry()) { if (!$('#safety').hidden) closeSafety(); else closeSheet(); }
 };
 window.addEventListener('hashchange', onNav);
 window.addEventListener('popstate', onNav);
@@ -125,12 +125,14 @@ document.addEventListener('pointerdown', sweep, { passive: true, capture: true }
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 // Android/Chrome: keep the install dialog for the "Install Kiln" button on Today instead of the browser's mini-bar.
 window.addEventListener('beforeinstallprompt', e => {
+  if (PLATFORM !== 'android' || getMeta().installHintOff) return; // no button of ours → let the browser offer it
   e.preventDefault();
   setInstallPrompt(e);
   if (current().name === 'today' && !sheetOpen()) rerender({ keepScroll: true });
 });
 window.addEventListener('appinstalled', () => {
   setInstallPrompt(null);
+  save(KEYS.meta, { ...getMeta(), installHintOff: true }); // the browser tab stops suggesting it too
   if (current().name === 'today' && !sheetOpen()) rerender({ keepScroll: true });
 });
 
@@ -141,8 +143,8 @@ function check(cond, msg) {
 try { migrate(); } catch (e) { console.error('migration failed', e); } // render's error boundary takes it from here
 applyTheme();
 applyProfile();
-// Reloaded while a pop-up was open: nothing is open now, so this entry is just a normal one.
-if (onLayerEntry()) history.replaceState(null, '', location.href);
+// Reloaded while a pop-up was open: nothing is open now, so step back off its entry onto this screen's own.
+if (onLayerEntry()) history.back();
 check(Object.values(SESSIONS).every(s => s.ex.every(id => EX[id])), 'Session references unknown exercise');
 setRenderer(render);
 render();

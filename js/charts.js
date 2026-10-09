@@ -23,7 +23,10 @@ export function lineChart(el, spec) {
   if (x0 === x1) { x0 -= 3; x1 += 3; }
   const ys = all.map(p => p.y).concat(refs.map(r => r.y));
   let y0 = Math.min(...ys), y1 = Math.max(...ys);
-  const pad = (y1 - y0) * 0.12 || Math.max(1, Math.abs(y1) * 0.05);
+  // A flat (or float-noise-flat, e.g. 180.6 vs 180.60000000000002) series gets a sensible band instead of a
+  // near-zero step, which would never get from y0 to y1 in the grid loop below.
+  const span = y1 - y0;
+  const pad = span > 1e-6 * Math.max(1, Math.abs(y1)) ? span * 0.12 : Math.max(1, Math.abs(y1) * 0.05);
   y0 -= pad; y1 += pad;
   const step = niceStep(y1 - y0, 4);
   y0 = Math.floor(y0 / step) * step; y1 = Math.ceil(y1 / step) * step;
@@ -32,7 +35,7 @@ export function lineChart(el, spec) {
   const sy = y => P.t + (1 - (y - y0) / (y1 - y0)) * (H - P.t - P.b);
 
   let g = '';
-  for (let v = y0; v <= y1 + step / 2; v += step) {
+  for (let i = 0, v = y0; v <= y1 + step / 2 && i <= 12; v = y0 + ++i * step) {
     g += `<line class="grid" x1="${P.l}" x2="${W - P.r}" y1="${sy(v)}" y2="${sy(v)}"/>`;
     g += `<text class="tick" x="${P.l - 6}" y="${sy(v) + 4}" text-anchor="end">${esc(yFmt(v))}</text>`;
   }

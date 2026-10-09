@@ -114,7 +114,7 @@ export function lastCoach() {
 export function promptText(question = '') {
   const intro = myHealth()
     ? `You're my strength coach. Call me Brother. I'm training at ${getSettings().gymName} and follow a cardiologist-guided plan: keep effort at RPE 5–7, machines/cables over free weights, no max-effort lifts, no breath-holding, no supplement advice.`
-    : `You're my strength coach. I'm training at ${getSettings().gymName}. Keep it safe and sustainable: good form, effort mostly RPE 6–8, steady progression, no supplement or medication advice.`;
+    : `You're my strength coach. I'm training at ${getSettings().gymName}. Keep it safe and sustainable: good form, effort at RPE 5–7, steady progression, no supplement or medication advice.`;
   return `${intro}
 
 Analyze my data below and forecast the best path to my goal: (1) honest assessment, (2) forecast with a date and confidence, (3) exact weight × reps for each exercise next session, (4) a 4-week plan, (5) habits, (6) any safety flags or questions for my doctor.

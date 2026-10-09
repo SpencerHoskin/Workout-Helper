@@ -77,5 +77,5 @@ test('coach prompt follows the app profile; older apps get the original', async 
   assert.equal(systemFor({ health_profile: 'general' }), SYSTEM_GENERAL);
   assert.ok(!SYSTEM_GENERAL.includes('Brother'));
   assert.ok(!/cardiolog|bleeding/i.test(SYSTEM_GENERAL));
-  for (const rule of ['supplements', '911', 'not their doctor']) assert.ok(SYSTEM_GENERAL.includes(rule), rule);
+  for (const rule of ['RPE 5–7', 'supplements', '911', 'not their doctor']) assert.ok(SYSTEM_GENERAL.includes(rule), rule);
 });

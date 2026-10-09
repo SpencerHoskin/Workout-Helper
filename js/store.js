@@ -86,8 +86,10 @@ export function remove(key) {
 
 /* ---------- Migration ---------- */
 export function migrate() {
-  // A brand-new install has no schema stamp and nothing logged yet (checked before anything is written).
-  const fresh = load(KEYS.schema, undefined) === undefined && !getLog().length && !getWeighins().length;
+  // "Fresh" = nothing the owner would have entered: no sets, weigh-ins, daily checks, doctor notes or goal.
+  // (Just opening an older version leaves a schema stamp, which doesn't make you the owner.)
+  const fresh = !getLog().length && !getWeighins().length &&
+    ['daily', 'checklist', 'limits', 'supps', 'goal'].every(k => load(KEYS[k], undefined) === undefined);
   const v = Number(load(KEYS.schema, 0)) || 0;
   if (v > SCHEMA) console.warn('Data is from a newer version', v);
   if (v < 2) migrateTo2();
@@ -158,6 +160,8 @@ export const myHealth = () => getSettings().myHealth === true;
 
 export const getGoal = () => ({ ...DEFAULT_GOAL, ...(myHealth() ? MY_GOAL : {}), ...loadTyped('goal', {}) });
 export const setGoal = g => save(KEYS.goal, g);
+/** Save one goal field. Only what you actually set is stored; the rest keeps following the profile defaults. */
+export const setGoalField = (k, v) => save(KEYS.goal, { ...loadTyped('goal', {}), [k]: v });
 
 export const getChecklist = () => loadTyped('checklist', null) || DEFAULT_CHECKLIST.map(c => ({ ...c }));
 
@@ -291,9 +295,20 @@ export function importAll(obj) {
     writes.push([k, v]);
   }
   if (!writes.length) throw new Error('Backup is empty');
+  // A backup from before "My health profile" existed says nothing about it: if it holds training data it's
+  // the owner's, so restore it with the profile on (whatever this phone decided when it was new).
+  const bs = isObj(obj.data[KEYS.settings]) ? obj.data[KEYS.settings] : null;
+  const decided = bs && typeof bs.myHealth === 'boolean';
+  const ownerData = (Array.isArray(obj.data[KEYS.log]) && obj.data[KEYS.log].length > 0) ||
+    (Array.isArray(obj.data[KEYS.weighins]) && obj.data[KEYS.weighins].length > 0);
+  const phoneMine = myHealth();
   // Backups don't carry the coach passcode, so keep the one already on this phone.
   const pass = getSettings().coachPass;
   for (const [k, v] of writes) save(k, k === KEYS.settings && pass ? { ...v, coachPass: pass } : v);
+  if (!decided) {
+    save(KEYS.settings, { ...loadTyped('settings', {}), myHealth: ownerData || phoneMine });
+    save(KEYS.meta, { ...getMeta(), profileSet: true });
+  }
   migrate();
 }
 

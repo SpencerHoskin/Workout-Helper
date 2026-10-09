@@ -1,5 +1,5 @@
 import { SESSIONS, DAYS, SUPPS, AVOID, PENDING } from '../catalog.js';
-import { KEYS, save, getGoal, setGoal, getSettings, setSettings, getChecklist, getLog, getDaily, getLimits, getSupps, allExercises, exportAll, importAll, setTodaySession, markBackedUp, myHealth } from '../store.js';
+import { KEYS, save, getGoal, setGoalField, getSettings, setSettings, getChecklist, getLog, getDaily, getLimits, getSupps, allExercises, exportAll, importAll, setTodaySession, markBackedUp, myHealth } from '../store.js';
 import { HEALTH_STEPS, sendWeight, sendWorkout } from '../health.js';
 import { esc, todayStr, csvCell } from '../util.js';
 import { toast, download, PLATFORM } from '../ui.js';
@@ -97,9 +97,7 @@ export function render(ctx) {
 
 export const changes = {
   goal(el) {
-    const g = getGoal();
-    g[el.name] = ['targetWeight', 'sessionsPerWeek'].includes(el.name) ? (el.value === '' ? '' : Number(el.value)) : el.value;
-    setGoal(g);
+    setGoalField(el.name, ['targetWeight', 'sessionsPerWeek'].includes(el.name) ? (el.value === '' ? '' : Number(el.value)) : el.value);
     toast('Goal saved');
   },
   clDone(el) {
