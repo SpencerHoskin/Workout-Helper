@@ -42,25 +42,40 @@ export function confetti() {
   })(t0);
 }
 
-// Light sweep: when you press something, a diagonal laser band crosses it and its edge glows for a moment.
-// It's drawn in a throwaway fixed layer sized to the element, so the element's own layout, clipping
-// and pseudo-elements are never touched. Skipped entirely when the phone asks for reduced motion.
+// Light sweep: when you press something, a diagonal laser band crosses it, its edge glows for a moment,
+// and a trail of violet sparks lifts off behind the beam. It's drawn in a throwaway fixed layer sized to
+// the element, so the element's own layout, clipping and pseudo-elements are never touched.
+// Skipped entirely when the phone asks for reduced motion.
 const SWEEP_TARGETS = '.btn, .cta, .chip, .rpe-chip, .repchip, .type, .wside, .stepper button, .icon-btn, .safety-btn, .seg a, .tabs a, .plan-row, .mrow, .xlist a, a.card, .pill-select, .sheet-x';
+const SWEEP_MS = 1050;   // band crossing time; keep in step with .sweep-fx::before in app.css
 export function sweep(e) {
   if (e.button > 0 || reducedMotion()) return;
   const el = e.target.closest && e.target.closest(SWEEP_TARGETS);
   if (!el || el.disabled) return;
   const r = el.getBoundingClientRect();
   if (!r.width || !r.height) return;
+  const wrap = document.createElement('span');
+  wrap.className = 'sweep-wrap';
+  wrap.setAttribute('aria-hidden', 'true');
+  Object.assign(wrap.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
   const fx = document.createElement('span');
   fx.className = 'sweep-fx';
-  fx.setAttribute('aria-hidden', 'true');
-  Object.assign(fx.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px',
-    borderRadius: getComputedStyle(el).borderRadius });
-  document.body.appendChild(fx);
-  const done = () => fx.remove();
-  fx.addEventListener('animationend', e2 => { if (!e2.pseudoElement) done(); }); // the edge glow ends last
-  setTimeout(done, 1000); // belt and braces if animationend never fires
+  fx.style.borderRadius = getComputedStyle(el).borderRadius;
+  wrap.appendChild(fx);
+  // Sparks spawn where the beam is at that moment (left → right), then drift up and out of the element.
+  const n = Math.max(8, Math.min(22, Math.round(r.width / 16)));
+  for (let i = 0; i < n; i++) {
+    const f = (i + Math.random() * 0.8) / n;
+    const s = document.createElement('i');
+    s.className = 'spark' + (Math.random() < 0.3 ? ' lite' : '');
+    const size = 4 + Math.random() * 5;
+    s.style.cssText = `--x:${(f * 100).toFixed(1)}%;--y:${(15 + Math.random() * 70).toFixed(1)}%;--s:${size.toFixed(1)}px;` +
+      `--dx:${((Math.random() - 0.35) * 34).toFixed(0)}px;--dy:${(-12 - Math.random() * 34).toFixed(0)}px;` +
+      `--d:${Math.round(120 + f * SWEEP_MS * 0.7)}ms;--t:${Math.round(650 + Math.random() * 450)}ms`;
+    wrap.appendChild(s);
+  }
+  document.body.appendChild(wrap);
+  setTimeout(() => wrap.remove(), SWEEP_MS + 1100); // after the last spark has faded
 }
 
 let audioCtx;
