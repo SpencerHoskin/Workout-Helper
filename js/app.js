@@ -2,7 +2,7 @@
 import { migrate, getLimits, rawDump } from './store.js';
 import { EX, SESSIONS, PENDING } from './catalog.js';
 import { esc, todayStr } from './util.js';
-import { $, closeSheet, sheetOpen, unlockAudio, download } from './ui.js';
+import { $, closeSheet, sheetOpen, unlockAudio, download, sweep } from './ui.js';
 import { current, setRenderer, go } from './router.js';
 import { addRest, stopRest } from './timer.js';
 import { applyTheme } from './theme.js';
@@ -111,6 +111,7 @@ const onNav = () => { if (location.hash !== renderedHash) { closeSheet(); render
 window.addEventListener('hashchange', onNav);
 window.addEventListener('popstate', onNav);
 document.addEventListener('pointerdown', unlockAudio, { once: true, capture: true });
+document.addEventListener('pointerdown', sweep, { passive: true, capture: true });
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 
 /* ---------- Boot ---------- */

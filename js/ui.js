@@ -42,6 +42,27 @@ export function confetti() {
   })(t0);
 }
 
+// Light sweep: when you press something, a diagonal laser band crosses it and its edge glows for a moment.
+// It's drawn in a throwaway fixed layer sized to the element, so the element's own layout, clipping
+// and pseudo-elements are never touched. Skipped entirely when the phone asks for reduced motion.
+const SWEEP_TARGETS = '.btn, .cta, .chip, .rpe-chip, .repchip, .type, .wside, .stepper button, .icon-btn, .safety-btn, .seg a, .tabs a, .plan-row, .mrow, .xlist a, a.card, .pill-select, .sheet-x';
+export function sweep(e) {
+  if (e.button > 0 || reducedMotion()) return;
+  const el = e.target.closest && e.target.closest(SWEEP_TARGETS);
+  if (!el || el.disabled) return;
+  const r = el.getBoundingClientRect();
+  if (!r.width || !r.height) return;
+  const fx = document.createElement('span');
+  fx.className = 'sweep-fx';
+  fx.setAttribute('aria-hidden', 'true');
+  Object.assign(fx.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px',
+    borderRadius: getComputedStyle(el).borderRadius });
+  document.body.appendChild(fx);
+  const done = () => fx.remove();
+  fx.addEventListener('animationend', e2 => { if (!e2.pseudoElement) done(); }); // the edge glow ends last
+  setTimeout(done, 1000); // belt and braces if animationend never fires
+}
+
 let audioCtx;
 /** iOS only lets audio start inside a tap. Call this from the first tap so later beeps (scan, rest done) can play. */
 export function unlockAudio() {
