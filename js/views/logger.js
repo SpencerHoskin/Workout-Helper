@@ -1,7 +1,7 @@
 import { BREATH, SESSIONS, MACHINE_TYPES } from '../catalog.js';
 import { getLog, getLimits, getMachines, getSettings, exById, addSet, removeSet, setEntryNote, getSetup, setSetup } from '../store.js';
 import { exerciseHistory, suggestNext, isPR, e1rm } from '../analytics.js';
-import { esc, todayStr, shortDate, num, fmtNum, safeUrl } from '../util.js';
+import { esc, todayStr, shortDate, num, fmtNum, safeUrl, parseRepRange } from '../util.js';
 import { $, $$, toast, confetti } from '../ui.js';
 import { startRest } from '../timer.js';
 import { rerender } from '../router.js';
@@ -88,8 +88,8 @@ export function render(ctx) {
     h += stepper('min', 'Minutes', lastSet ? lastSet.min : 10, 1, 'numeric')
       + `<label class="lbl">Level / speed <span class="muted">(optional)</span></label><input name="lvl" placeholder="e.g. level 6, 3.2 mph" value="${esc(lastSet ? lastSet.lvl || '' : '')}">`;
   } else {
-    if (ex.kind === 'strength') h += stepper('w', ex.assisted ? 'Assist (lb)' : 'Weight (lb)', defW, inc, 'decimal');
-    h += stepper('r', 'Reps', defR, 1, 'numeric');
+    if (ex.kind === 'strength') h += weightSwipe(ex.assisted ? 'Assist (lb)' : 'Weight (lb)', defW, inc, Math.min(1, sets.length / (ex.sets || 3)));
+    h += repChips(ex, defR) + stepper('r', 'Reps', defR, 1, 'numeric');
   }
   const rpe = lastSet && lastSet.rpe ? lastSet.rpe : '';  // carried forward so every set keeps its effort rating
   h += `<label class="lbl">How hard? (RPE) <span class="muted">— 5 moderate · 7 hard, 3 left · 9+ too much</span></label>
@@ -118,10 +118,67 @@ export function render(ctx) {
   return h;
 }
 
+const sideVal = (v, d) => { const n = num(v); return n == null ? '–' : fmtNum(Math.max(0, n + d), 1); };
+
+/** Weight dial: big number in a sunken dial whose ring fills with today's sets, the next step
+    down/up either side. Swipe it, tap a side, or type. */
+function weightSwipe(label, value, inc, done) {
+  return `<label class="lbl" for="f_w">${label}</label>
+    <div class="wswipe" data-inc="${inc}">
+      <button type="button" class="wside" data-act="step" data-f="w" data-d="-${inc}" aria-label="Decrease by ${inc}">${sideVal(value, -inc)}</button>
+      <div class="wdial" style="--p:${done}"><input id="f_w" name="w" class="wbig" inputmode="decimal" data-input="wtype" value="${esc(value ?? '')}" placeholder="0"><small aria-hidden="true">lb · ${inc} steps</small></div>
+      <button type="button" class="wside" data-act="step" data-f="w" data-d="${inc}" aria-label="Increase by ${inc}">${sideVal(value, inc)}</button>
+    </div>`;
+}
+function syncSides(wrap) {
+  if (!wrap) return;
+  const inc = Number(wrap.dataset.inc), v = wrap.querySelector('input').value;
+  const [lo, hi] = wrap.querySelectorAll('.wside');
+  lo.textContent = sideVal(v, -inc); hi.textContent = sideVal(v, inc);
+}
+
+/** One-tap rep buttons around the target range; the stepper below handles anything else. */
+function repChips(ex, value) {
+  const [lo, hi] = parseRepRange(ex.reps);
+  const vals = [];
+  for (let r = Math.max(1, lo - 1); r <= hi + 1 && vals.length < 6; r++) vals.push(r);
+  return `<div class="repchips" role="group" aria-label="Quick reps">${vals.map(r =>
+    `<button type="button" class="repchip" data-act="repChip" data-v="${r}" aria-pressed="${num(value) === r}">${r}</button>`).join('')}</div>`;
+}
+function syncRepChips(form) {
+  const v = num(form.elements.r.value);
+  $$('.repchip', form).forEach(b => b.setAttribute('aria-pressed', Number(b.dataset.v) === v));
+}
+
+// Horizontal swipe on the weight: left = heavier (the right-hand number slides in), right = lighter.
+export function mount(root) {
+  const wrap = root.querySelector('.wswipe');
+  if (!wrap) return;
+  let x0 = null, y0 = 0, swiped = false;
+  // A swipe that ends on a side button must not also count as a tap on it.
+  wrap.addEventListener('click', e => { if (swiped) { swiped = false; e.stopPropagation(); e.preventDefault(); } }, true);
+  wrap.addEventListener('pointerdown', e => { x0 = e.clientX; y0 = e.clientY; });
+  wrap.addEventListener('pointercancel', () => { x0 = null; });
+  wrap.addEventListener('pointerup', e => {
+    if (x0 == null) return;
+    const dx = e.clientX - x0, dy = e.clientY - y0;
+    x0 = null;
+    if (Math.abs(dx) < 36 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    swiped = true;
+    setTimeout(() => { swiped = false; }, 80);  // the click (if any) follows pointerup immediately
+    const input = wrap.querySelector('input');
+    const inc = Number(wrap.dataset.inc);
+    input.value = Math.max(0, Math.round(((num(input.value) || 0) + (dx < 0 ? inc : -inc)) * 10) / 10);
+    syncSides(wrap);
+    wrap.classList.remove('nudge-l', 'nudge-r'); void wrap.offsetWidth;
+    wrap.classList.add(dx < 0 ? 'nudge-l' : 'nudge-r');
+  });
+}
+
 function stepper(name, label, value, step, mode) {
   return `<label class="lbl" for="f_${name}">${label}</label>
     <div class="stepper"><button type="button" data-act="step" data-f="${name}" data-d="-${step}" aria-label="Decrease ${label}">−</button>
-    <input id="f_${name}" name="${name}" inputmode="${mode}" value="${esc(value ?? '')}" placeholder="0">
+    <input id="f_${name}" name="${name}" inputmode="${mode}" value="${esc(value ?? '')}" placeholder="0"${name === 'r' ? ' data-input="rtype"' : ''}>
     <button type="button" data-act="step" data-f="${name}" data-d="${step}" aria-label="Increase ${label}">+</button></div>`;
 }
 
@@ -130,6 +187,13 @@ export const actions = {
     const input = el.closest('form').elements[el.dataset.f];
     const v = num(input.value) || 0;
     input.value = Math.max(0, Math.round((v + Number(el.dataset.d)) * 10) / 10);
+    syncSides(input.closest('.wswipe'));
+    if (el.dataset.f === 'r') syncRepChips(el.closest('form'));
+  },
+  repChip(el) {
+    const f = el.closest('form');
+    f.elements.r.value = el.dataset.v;
+    syncRepChips(f);
   },
   rpe(el) {
     const f = el.closest('form');
@@ -178,6 +242,8 @@ export const submits = {
 };
 
 export const inputs = {
+  wtype(el) { syncSides(el.closest('.wswipe')); },
+  rtype(el) { syncRepChips(el.closest('form')); },
   setupNote(el) { setSetup(el.dataset.ex, el.value.trim()); },
   entryNote(el) { setEntryNote(el.dataset.ex, el.value.trim()); }
 };

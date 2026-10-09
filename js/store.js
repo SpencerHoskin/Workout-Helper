@@ -90,6 +90,14 @@ export function migrate() {
   if (v > SCHEMA) console.warn('Data is from a newer version', v);
   if (v < 2) migrateTo2();
   save(KEYS.schema, Math.max(v, SCHEMA));
+  // Laser theme (Oct 2026): dark is the default look. One time only, move anyone still on
+  // "Match iPhone" to dark; after that, whatever they pick in Me → Theme sticks.
+  const meta = getMeta();
+  if (!meta.darkDefault) {
+    const s = loadTyped('settings', {});
+    if (s.theme === 'auto') save(KEYS.settings, { ...s, theme: 'dark' });
+    save(KEYS.meta, { ...meta, darkDefault: true });
+  }
 }
 
 function normSet(s) {

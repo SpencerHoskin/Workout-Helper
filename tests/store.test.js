@@ -97,3 +97,18 @@ test('exercise catalog is memoised, and refreshes when a custom exercise is adde
   assert.equal(b[id].name, 'Cable lateral raise');
   assert.equal(b[id].kind, 'strength');
 });
+
+test('Laser theme: dark is the default, and "Match iPhone" moves to dark once', async () => {
+  const { getSettings, setSettings } = await import('../js/store.js');
+  reset();
+  migrate();
+  assert.equal(getSettings().theme, 'dark');            // fresh install
+  reset();
+  localStorage.setItem('wh_settings', JSON.stringify({ theme: 'auto', restSec: 120 }));
+  migrate();
+  assert.equal(raw('wh_settings').theme, 'dark');        // one-time switch, other settings kept
+  assert.equal(raw('wh_settings').restSec, 120);
+  setSettings({ ...getSettings(), theme: 'auto' });      // a later deliberate choice sticks
+  clearCache(); migrate();
+  assert.equal(raw('wh_settings').theme, 'auto');
+});

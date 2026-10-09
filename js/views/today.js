@@ -40,20 +40,20 @@ export function render() {
   const setsToday = todayLog.reduce((t, e) => t + e.sets.length, 0);
 
   const ringData = [
-    { value: setsToday, goal: plannedSets || 12, color: 'var(--accent)', label: 'sets today' },
-    { value: ws.sessions, goal: goal.sessionsPerWeek, color: 'var(--secondary)', label: 'workouts this week' },
-    { value: ws.weighins, goal: 2, color: 'var(--c1)', label: 'weigh-ins this week' }
+    { value: setsToday, goal: plannedSets || 12, color: 'var(--g1)', label: 'sets today' },
+    { value: ws.sessions, goal: goal.sessionsPerWeek, color: 'var(--g2)', label: 'workouts this week' },
+    { value: ws.weighins, goal: 2, color: 'var(--violet)', label: 'weigh-ins this week' }
   ];
 
-  let h = `<section class="card hero sig">
+  // The session card: greeting, today's rings and the plan size, with the laser beam across its top.
+  let h = `<section class="card hero">
     <div class="eyebrow">${esc(new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }))} · ${esc(getSettings().gymName)}</div>
     <h2 class="big">${greeting()}</h2>
-    <div class="hero-sub">${s ? `${esc(s.name)} today · ${planned.length} lifts · ~45 min` : 'Rest day — or pick a session below'}</div>
+    <div class="ring-row">${ringsSvg(ringData, 112)}
+      <ul class="ring-legend">${ringData.map(r => `<li><i style="background:${r.color}"></i><b>${r.value}/${r.goal}</b> ${esc(r.label)}</li>`).join('')}</ul>
+    </div>
+    <div class="hero-pill">${s ? `${esc(s.name)} · ${planned.length} lifts · ~45 min` : 'Rest day — or pick a session below'}</div>
   </section>
-
-  <section class="card"><div class="ring-row">${ringsSvg(ringData)}
-    <ul class="ring-legend">${ringData.map(r => `<li><i style="background:${r.color}"></i><b>${r.value}/${r.goal}</b> ${esc(r.label)}</li>`).join('')}</ul>
-  </div></section>
 
   <button class="cta" data-act="go" data-to="scan"><span class="cta-ic">${icon('scan', 24)}</span><span><b>Scan a machine</b><small>Point at the QR code to log sets</small></span></button>
 
