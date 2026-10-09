@@ -44,7 +44,6 @@
   --knurl-a: rgba(14, 21, 19, .10); --knurl-b: rgba(255, 255, 255, .95);
   --dial-shadow: 0 18px 36px rgba(14, 21, 19, .14), 0 2px 6px rgba(14, 21, 19, .08);
   --float-bg: #0E1513; --float-text: #F3F5F4;
-  --sweep-blend: normal; --sweep-core: rgba(255, 255, 255, .7);
   --scrim: rgba(8, 11, 10, .35); --overlay: rgba(8, 11, 10, .55);
   --lift: 0 10px 30px rgba(14, 21, 19, .12);
   --r-panel: 14px; --r-ctl: 10px;
@@ -65,7 +64,6 @@
     --dial-shadow: 0 22px 44px rgba(0, 0, 0, .6), 0 0 30px rgba(34, 211, 238, .12);
     --float-bg: #E9EFEC; --float-text: #080B0A; --scrim: rgba(0, 0, 0, .55); --overlay: rgba(0, 0, 0, .75);
     --lift: 0 14px 34px rgba(0, 0, 0, .55);
-    --sweep-blend: screen; --sweep-core: rgba(255, 255, 255, .6);
     color-scheme: dark;
   }
 }
@@ -81,7 +79,6 @@
   --dial-shadow: 0 22px 44px rgba(0, 0, 0, .6), 0 0 30px rgba(34, 211, 238, .12);
   --float-bg: #E9EFEC; --float-text: #080B0A; --scrim: rgba(0, 0, 0, .55); --overlay: rgba(0, 0, 0, .75);
   --lift: 0 14px 34px rgba(0, 0, 0, .55);
-  --sweep-blend: screen; --sweep-core: rgba(255, 255, 255, .6);
   color-scheme: dark;
 }
 
@@ -382,24 +379,11 @@ table.hist td > .icon-btn { margin-left: auto; }
 .toast.show { opacity: 1; transform: none; }
 .toast.warn { background: var(--panel); color: var(--danger); box-shadow: var(--lift), inset 0 0 0 1px var(--danger); }
 body.resting .toast { bottom: calc(156px + env(safe-area-inset-bottom)); }
-/* Press effect: see sweep() in js/ui.js. The band takes ~1s to cross; sparks trail it. */
-.sweep-wrap { position: fixed; z-index: 46; pointer-events: none; }
-.sweep-fx { position: absolute; inset: 0; overflow: hidden; animation: sweep-ring 1.25s ease-out forwards; }
-.sweep-fx::before { content: ""; position: absolute; top: -60%; bottom: -60%; left: 0; width: max(42%, 48px); mix-blend-mode: var(--sweep-blend);
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--violet) 45%, transparent) 30%, var(--sweep-core) 46%,
-    color-mix(in srgb, var(--g2) 75%, transparent) 54%, color-mix(in srgb, var(--g1) 40%, transparent) 68%, transparent);
-  transform: translateX(-140%) skewX(-24deg); animation: sweep-band 1.05s cubic-bezier(.45, .05, .4, 1) forwards; }
-@keyframes sweep-band { to { transform: translateX(380%) skewX(-24deg); } }
-@keyframes sweep-ring { 0% { box-shadow: inset 0 0 0 1.5px var(--g2), 0 0 18px var(--glow); } 100% { box-shadow: inset 0 0 0 1.5px transparent, 0 0 0 transparent; } }
-.spark { position: absolute; left: var(--x); top: var(--y); width: var(--s); height: var(--s); margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2);
-  border-radius: 50%; opacity: 0;
-  background: radial-gradient(circle, #F5F0FF 0 18%, #A855F7 42%, #7C3AED 70%);
-  box-shadow: 0 0 10px 2px rgba(147, 51, 234, .75), 0 0 3px #E9D5FF; animation: spark var(--t) var(--d) cubic-bezier(.2, .7, .3, 1) forwards; }
-.spark.lite { background: radial-gradient(circle, #FFFFFF 0 25%, #C084FC 55%, #9333EA 80%); box-shadow: 0 0 8px 2px rgba(192, 132, 252, .7); }
-@keyframes spark {
-  0% { opacity: 0; transform: translate(0, 0) scale(.3); }
-  18% { opacity: 1; transform: translate(calc(var(--dx) * .2), calc(var(--dy) * .2)) scale(1); }
-  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(.15); } }
+/* Press effect: see sweep() in js/ui.js. The canvas paints the pixels; the layer adds a brief violet edge glow. */
+.sweep-wrap { position: fixed; z-index: 46; pointer-events: none; overflow: hidden; animation: pix-ring 1.15s ease-out forwards; }
+.sweep-wrap canvas { display: block; width: 100%; height: 100%; }
+@keyframes pix-ring { 0% { box-shadow: inset 0 0 0 1.5px var(--violet), 0 0 16px var(--violet-soft); }
+  100% { box-shadow: inset 0 0 0 1.5px transparent, 0 0 0 transparent; } }
 .confetti { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 60; pointer-events: none; }
 
 /* ---------- Machines ---------- */
