@@ -100,12 +100,18 @@ export const DEFAULT_CHECKLIST = [
 ].map((text, i) => ({ id: 'c' + (i + 1), text, done: false, note: '' }));
 
 export const DEFAULT_GOAL = {
-  type: 'recomp',            // 'lose' | 'recomp' | 'strength' | 'general'
-  targetWeight: 165,
+  type: 'general',           // 'lose' | 'recomp' | 'strength' | 'general'
+  targetWeight: '',
   targetDate: '',
   sessionsPerWeek: 3,
   strengthEx: 'legpress',
   strengthTarget: '',
+  why: ''
+};
+// Goal defaults for "My health profile" (the app's first user). Anything they've saved still wins.
+export const MY_GOAL = {
+  type: 'recomp',
+  targetWeight: 165,
   why: 'Get to 165 lbs, or hold weight while losing fat / adding muscle.'
 };
 
@@ -115,5 +121,6 @@ export const DEFAULT_SETTINGS = {
   theme: 'dark',              // 'auto' | 'light' | 'dark' — dark is the Laser default
   coachUrl: '/api/coach',
   coachPass: '',
+  myHealth: false,            // "My health profile": cardiologist plan, supplement clearance, bleeding-risk notes, "Brother"
   health: { enabled: false, weightShortcut: 'WH Log Weight', workoutShortcut: 'WH Log Workout' }
 };

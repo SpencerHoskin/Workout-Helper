@@ -2,13 +2,15 @@
 // two tiny Apple Shortcuts the user creates once ("Log Health Sample" / "Log Workout").
 import { getSettings } from './store.js';
 import { todayStr } from './util.js';
+import { PLATFORM } from './ui.js';
 
 export function runShortcut(name, text) {
   window.location.href = 'shortcuts://run-shortcut?name=' + encodeURIComponent(name) +
     '&input=text&text=' + encodeURIComponent(String(text));
 }
 
-export const healthOn = () => getSettings().health.enabled;
+// Shortcuts only exists on iPhone, so the Health buttons never show anywhere else (even if switched on there).
+export const healthOn = () => PLATFORM === 'ios' && getSettings().health.enabled;
 
 export function sendWeight(lb) {
   runShortcut(getSettings().health.weightShortcut, Math.round(lb * 10) / 10);

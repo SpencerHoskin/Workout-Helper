@@ -13,7 +13,10 @@ export function current() {
 
 export function go(hash, { replace = false } = {}) {
   const target = hash.startsWith('#') ? hash : '#/' + hash;
-  if (location.hash !== target) history[replace ? 'replaceState' : 'pushState'](null, '', target);
+  // A pop-up's own history entry (see pushLayer in ui.js) is taken over rather than stacked on, so Back
+  // from the new screen goes to the screen you were on, not to a stale copy of it.
+  const onLayer = !!(history.state && history.state.kilnLayer);
+  if (location.hash !== target || onLayer) history[replace || onLayer ? 'replaceState' : 'pushState'](null, '', target);
   renderFn();
 }
 

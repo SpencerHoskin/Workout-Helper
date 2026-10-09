@@ -1,10 +1,10 @@
 import { SESSIONS, DAYS, SUPPS, AVOID, PENDING } from '../catalog.js';
-import { KEYS, save, getGoal, setGoal, getSettings, setSettings, getChecklist, getLog, getDaily, getLimits, getSupps, allExercises, exportAll, importAll, setTodaySession, markBackedUp } from '../store.js';
+import { KEYS, save, getGoal, setGoal, getSettings, setSettings, getChecklist, getLog, getDaily, getLimits, getSupps, allExercises, exportAll, importAll, setTodaySession, markBackedUp, myHealth } from '../store.js';
 import { HEALTH_STEPS, sendWeight, sendWorkout } from '../health.js';
 import { esc, todayStr, csvCell } from '../util.js';
-import { toast, download } from '../ui.js';
+import { toast, download, PLATFORM } from '../ui.js';
 import { go, rerender, current } from '../router.js';
-import { applyTheme } from '../theme.js';
+import { applyTheme, applyProfile } from '../theme.js';
 import { icon } from '../icons.js';
 
 function suppStatus() {
@@ -16,6 +16,7 @@ const statusPill = v => v === 'ok' ? '<span class="pill ok">cleared</span>' : v 
 export function render(ctx) {
   const goal = getGoal();
   const set = getSettings();
+  const mine = myHealth();
   const exs = Object.values(allExercises()).filter(x => x.kind === 'strength');
   const open = ctx.arg || 'goal';
   const sec = (id, ic, title, body) => `<details class="card sec" ${open === id ? 'open' : ''}><summary><h2>${icon(ic, 20)}${title}</h2></summary>${body}</details>`;
@@ -35,7 +36,7 @@ export function render(ctx) {
   const daily = getDaily();
   const d = daily[todayStr()] || { supps: {}, note: '' };
   const st = suppStatus();
-  const dailyHtml = SUPPS.map(s => `<div class="check"><input type="checkbox" data-supp="${s.id}" ${d.supps && d.supps[s.id] && st[s.id] === 'ok' ? 'checked' : ''} ${st[s.id] === 'ok' ? '' : 'disabled'} aria-label="${esc(s.name)} taken">
+  const dailyHtml = (mine ? SUPPS : []).map(s => `<div class="check"><input type="checkbox" data-supp="${s.id}" ${d.supps && d.supps[s.id] && st[s.id] === 'ok' ? 'checked' : ''} ${st[s.id] === 'ok' ? '' : 'disabled'} aria-label="${esc(s.name)} taken">
       <div class="body"><b>${esc(s.name)}</b>${statusPill(st[s.id])}<div class="muted small">${esc(s.note)}</div></div></div>`).join('') +
     `<label class="lbl">Note</label><textarea id="dNote" placeholder="Sleep, energy, anything odd…">${esc(d.note || '')}</textarea>
     <button class="btn primary wide" data-act="saveDaily">Save today</button>
@@ -74,19 +75,22 @@ export function render(ctx) {
   const appHtml = `
     <label class="lbl">Gym</label><input data-change="setting" data-k="gymName" value="${esc(set.gymName)}">
     <label class="lbl">Rest timer (seconds)</label><select data-change="setting" data-k="restSec">${[60, 75, 90, 120, 150, 180].map(n => `<option ${+set.restSec === n ? 'selected' : ''}>${n}</option>`).join('')}</select>
-    <label class="lbl">Theme</label><select data-change="setting" data-k="theme">${[['auto', 'Match iPhone'], ['light', 'Light'], ['dark', 'Dark']].map(([v, l]) => `<option value="${v}" ${set.theme === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
-    <h3>Your data</h3><p class="muted small">Everything is stored on this phone. Back it up now and then.</p>
+    <label class="switch"><input type="checkbox" data-change="myHealth" ${mine ? 'checked' : ''}><span></span> My health profile</label>
+    <p class="muted small">Adds the cardiologist plan, supplement clearance, bleeding-risk safety notes and the “Brother” voice. Leave it off if you’re a friend trying Kiln.</p>
+    <label class="lbl">Theme</label><select data-change="setting" data-k="theme">${[['auto', 'Match phone'], ['light', 'Light'], ['dark', 'Dark']].map(([v, l]) => `<option value="${v}" ${set.theme === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
+    <h3>Your data</h3><p class="muted small">Everything is stored on this phone. Back it up now and then${PLATFORM === 'ios' ? ' (save it to Files or iCloud Drive)' : PLATFORM === 'android' ? ' (it lands in Downloads; keep a copy in Google Drive)' : ''}. Backups never include your coach passcode.</p>
     <div class="row btn-row"><button class="btn small" data-act="exportJson">${icon('download', 16)} Backup</button>
       <label class="btn small">${icon('upload', 16)} Restore<input type="file" accept="application/json,.json" data-change="importJson" hidden></label>
       <button class="btn small" data-act="exportCsv">${icon('file', 16)} CSV</button></div>`;
 
   return `<section class="card me-hero"><div class="eyebrow">You</div><h2 class="big">Goal: ${esc({ lose: 'lose weight', recomp: 'recomp', strength: 'get stronger', general: 'general fitness' }[goal.type])}${goal.targetWeight ? ' · ' + esc(goal.targetWeight) + ' lb' : ''}</h2>
-      <p class="hero-sub">${esc(goal.why)}</p></section>` +
+      ${goal.why ? `<p class="hero-sub">${esc(goal.why)}</p>` : ''}</section>` +
     sec('goal', 'target', 'Goal', goalHtml) +
     sec('daily', 'check', 'Daily check', dailyHtml) +
-    sec('doctor', 'doctor', 'Doctor', doctorHtml) +
+    (mine ? sec('doctor', 'doctor', 'Doctor', doctorHtml) : '') +
     sec('plan', 'calendar', 'Weekly plan', planHtml) +
-    sec('health', 'heart', 'Apple Health', healthHtml) +
+    // Apple Health works through the Shortcuts app, which only exists on iPhone.
+    (PLATFORM === 'ios' ? sec('health', 'heart', 'Apple Health', healthHtml) : '') +
     sec('coach', 'sparkle', 'Coach Claude setup', coachHtml) +
     sec('settings', 'gear', 'Settings &amp; data', appHtml);
 }
@@ -116,6 +120,12 @@ export const changes = {
     if (el.dataset.k === 'theme') applyTheme();
     toast('Saved');
   },
+  myHealth(el) {
+    setSettings({ ...getSettings(), myHealth: el.checked });
+    applyProfile();
+    toast(el.checked ? 'My health profile on' : 'My health profile off');
+    rerender({ keepScroll: true });
+  },
   healthOn(el) {
     const s = getSettings();
     s.health.enabled = el.checked;
@@ -134,6 +144,8 @@ export const changes = {
       const obj = JSON.parse(await file.text());
       if (!confirm('Replace data on this phone with the backup?')) return;
       importAll(obj);
+      applyTheme();
+      applyProfile();
       toast('Restored');
       go('today');
     } catch (e) {
@@ -159,9 +171,10 @@ export const inputs = {
 export const actions = {
   saveDaily() {
     const all = { ...getDaily() };
-    const supps = {};
-    document.querySelectorAll('[data-supp]').forEach(c => { supps[c.dataset.supp] = c.checked; });
     const prev = all[todayStr()] || {};
+    const boxes = document.querySelectorAll('[data-supp]');
+    const supps = boxes.length ? {} : { ...(prev.supps || {}) }; // no boxes shown (profile off) → keep today's ticks
+    boxes.forEach(c => { supps[c.dataset.supp] = c.checked; });
     all[todayStr()] = { ...prev, supps, note: document.getElementById('dNote').value.trim() };
     save(KEYS.daily, all);
     toast('Saved');

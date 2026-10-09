@@ -1,5 +1,5 @@
 import { startScanner, stopScanner, scanFile } from '../scanner.js';
-import { $, beep, openSheet, closeSheet, toast, sheetOpen, onSheetClosed } from '../ui.js';
+import { $, beep, openSheet, closeSheet, toast, sheetOpen, onSheetClosed, PLATFORM, standalone } from '../ui.js';
 import { current } from '../router.js';
 import { handleScanned } from './machines.js';
 import { icon } from '../icons.js';
@@ -27,6 +27,14 @@ function found(text) {
   if (sheetOpen()) onSheetClosed(() => setTimeout(() => { if (current().name === 'scan') mount(); }, 300));
 }
 
+// How to un-block the camera, per phone.
+const CAMERA_FIX = {
+  ios: 'iPhone: Settings → Safari → Camera → Allow.',
+  android: 'Android: tap the icon left of the address bar → Permissions → Camera → Allow.',
+  androidApp: 'Android: long-press the Kiln icon → App info → Permissions → Camera → Allow.',
+  other: 'Allow camera access for this site in your browser settings.'
+};
+
 export function mount() {
   document.removeEventListener('visibilitychange', onVisibility);
   document.addEventListener('visibilitychange', onVisibility);
@@ -37,7 +45,7 @@ export function mount() {
       console.warn(err);
       hint.classList.add('err');
       hint.textContent = err.name === 'NotAllowedError'
-        ? 'Camera blocked. iPhone: Settings → Safari → Camera → Allow. Or use “From photo”.'
+        ? 'Camera blocked. ' + CAMERA_FIX[PLATFORM === 'android' && standalone() ? 'androidApp' : PLATFORM] + ' Or use “From photo”.'
         : (err.message || 'Camera unavailable') + ' — try “From photo”.';
     });
 }

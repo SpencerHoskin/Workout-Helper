@@ -12,6 +12,31 @@ export function toast(msg, kind = 'good') {
 
 const reducedMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/* ---------- Which phone ---------- */
+// 'ios' | 'android' | 'other'. iPadOS reports itself as a Mac, so a touch "Mac" counts as iOS.
+export const PLATFORM = (() => {
+  const ua = navigator.userAgent || '';
+  if (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return 'ios';
+  if (/Android/i.test(ua)) return 'android';
+  return 'other';
+})();
+/** Running as the installed home-screen app (not in a browser tab)? */
+export const standalone = () => navigator.standalone === true ||
+  !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+
+// Android/Chrome offers its own install dialog; we hold on to it until you tap "Install Kiln".
+let installEvt = null;
+export const canPromptInstall = () => !!installEvt;
+export function setInstallPrompt(e) { installEvt = e; }
+export async function promptInstall() {
+  if (!installEvt) return false;
+  const e = installEvt;
+  installEvt = null; // the browser only lets each prompt be used once
+  e.prompt();
+  const choice = await e.userChoice.catch(() => null);
+  return !!(choice && choice.outcome === 'accepted');
+}
+
 /** Tiny celebratory burst for PRs. */
 export function confetti() {
   if (reducedMotion()) return;
@@ -135,6 +160,23 @@ export function beep(freq = 880, ms = 140) {
   if (navigator.vibrate) navigator.vibrate(60);
 }
 
+/* ---------- Pop-ups and the Back button ---------- */
+// Android's Back gesture (and the browser's back button) should close the pop-up on top, not leave the
+// screen under it, which used to lose a half-typed weigh-in. So each open pop-up sits on its own history
+// entry with the same URL: Back pops it and app.js closes the pop-up. Closing it any other way (X, Escape,
+// tapping outside, saving) drops that entry again.
+const LAYER = 'kilnLayer';
+export const onLayerEntry = () => !!(history.state && history.state[LAYER]);
+const layerOpen = () => sheetOpen() || !!($('#safety') && !$('#safety').hidden);
+export function pushLayer() {
+  if (!onLayerEntry()) history.pushState({ [LAYER]: 1 }, '', location.href);
+}
+export function dropLayer() {
+  // Deferred, so a close followed straight away by navigation (go() takes over the entry) or by another
+  // pop-up (which reuses it) leaves history alone.
+  setTimeout(() => { if (onLayerEntry() && !layerOpen()) history.back(); }, 0);
+}
+
 /* ---------- Bottom sheet (modal) ---------- */
 let onSheetClose = null;
 let opener = null;
@@ -145,6 +187,7 @@ export function openSheet(html, { onClose } = {}) {
   s.classList.add('open');
   s.setAttribute('aria-hidden', 'false');
   onSheetClose = onClose || null;
+  pushLayer();
   const f = $('#sheetBody [autofocus]');
   if (f) setTimeout(() => f.focus(), 250);
 }
@@ -156,6 +199,7 @@ export function closeSheet() {
   const cb = onSheetClose; onSheetClose = null;
   if (opener && opener.isConnected && typeof opener.focus === 'function') opener.focus({ preventScroll: true });
   opener = null;
+  dropLayer();
   if (cb) cb();
 }
 export const sheetOpen = () => $('#sheet').classList.contains('open');

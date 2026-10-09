@@ -1,5 +1,6 @@
 // Rest timer pill. Uses an absolute end time so it survives re-renders and app switches.
 import { $, beep, toast } from './ui.js';
+import { myHealth } from './store.js';
 
 let end = 0, tick = null;
 
@@ -13,7 +14,7 @@ function paint() {
   if (left <= 0) {
     stopRest();
     beep(988, 220);
-    toast('Rest done — next set, Brother');
+    toast(myHealth() ? 'Rest done — next set, Brother' : 'Rest done — next set');
   }
 }
 

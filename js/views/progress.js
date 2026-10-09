@@ -1,4 +1,4 @@
-import { KEYS, load, save, getLog, getGoal, getWeighins, setWeighins, allExercises, exById, getChecklist } from '../store.js';
+import { KEYS, load, save, getLog, getGoal, getWeighins, setWeighins, allExercises, exById, getChecklist, myHealth } from '../store.js';
 import { exerciseHistory, forecast, weightPoints, movingAverage, weeklyCap } from '../analytics.js';
 import { lineChart } from '../charts.js';
 import { askCoach, lastCoach, promptText } from '../coach.js';
@@ -95,7 +95,7 @@ function body() {
   const lastBf = [...wins].reverse().find(w => w.bodyFat);
   let h = `<button class="cta" data-act="weighin"><span class="cta-ic">${icon('scale', 24)}</span><span><b>Log a weigh-in</b><small>Step on the Crunch scale</small></span></button>
   <div class="tiles">
-    <div class="tile"><b>${cur ? fmtNum(cur, 1) : '–'}</b><span>7-day avg (lb)</span></div>
+    <div class="tile"><b>${cur ? fmtNum(cur, 1) : '–'}</b><span>7-day avg</span></div>
     <div class="tile"><b>${cur && monthAgo ? (cur - monthAgo.y > 0 ? '+' : '') + fmtNum(cur - monthAgo.y, 1) : '–'}</b><span>vs 30 days</span></div>
     <div class="tile"><b>${lastBf ? fmtNum(lastBf.bodyFat, 1) + '%' : '–'}</b><span>body fat</span></div>
   </div>`;
@@ -148,7 +148,7 @@ function coach() {
   let h = `<section class="card">
     <div class="eyebrow">${icon('sparkle', 14)} Coach Claude</div>
     <h2>Analyze &amp; forecast</h2>
-    <p>Claude reads your machine log, scale weigh-ins and goal, then maps the best path forward — within your cardiologist-safe limits.</p>
+    <p>Claude reads your machine log, scale weigh-ins and goal, then maps the best path forward — ${myHealth() ? 'within your cardiologist-safe limits' : 'at a safe, steady pace'}.</p>
     <form id="coach"><textarea name="q" rows="2" placeholder="Optional: ask something (“Should I add a 4th day?”)"></textarea>
     <button class="btn primary wide" type="submit" id="coachBtn">${icon('sparkle', 18)} Analyze my training</button></form>
     <button class="btn ghost wide" data-act="copyPrompt">${icon('copy', 18)} Copy for the Claude app instead</button>
@@ -177,7 +177,7 @@ function reportHtml(c) {
   <section class="card"><h2>Next 4 weeks</h2><ol class="weeks">${r.four_week_plan.map(w => `<li><b>Week ${w.week}: ${esc(w.focus)}</b><p class="muted small">${esc(w.details)}</p></li>`).join('')}</ol></section>
   <section class="card"><h2>Habits</h2><ul>${r.habits.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>
   ${r.questions_for_doctor.length ? `<section class="card"><h2>Ask your doctor</h2><ul class="qlist">${r.questions_for_doctor.map(q => `<li>${esc(q)}
-    ${open.has(q) ? '<span class="pill ok">on checklist</span>' : `<button class="btn small" data-act="addDocQ" data-q="${esc(q)}">${icon('plus', 15)} Checklist</button>`}</li>`).join('')}</ul></section>` : ''}
+    ${!myHealth() ? '' : open.has(q) ? '<span class="pill ok">on checklist</span>' : `<button class="btn small" data-act="addDocQ" data-q="${esc(q)}">${icon('plus', 15)} Checklist</button>`}</li>`).join('')}</ul></section>` : ''}
   <p class="muted small center">Model: ${esc(c.model || '')} · Coaching, not medical advice.</p>`;
 }
 

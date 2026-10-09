@@ -112,3 +112,44 @@ test('Laser theme: dark is the default, and "Match iPhone" moves to dark once', 
   clearCache(); migrate();
   assert.equal(raw('wh_settings').theme, 'auto');
 });
+
+test('"My health profile": on for anyone with data, off for a fresh install, decided once', async () => {
+  const { getSettings, setSettings, myHealth, getGoal } = await import('../js/store.js');
+  reset();
+  migrate();
+  assert.equal(myHealth(), false);                        // fresh install = a friend trying the app
+  assert.equal(getGoal().targetWeight, '');               // no owner goal leaking in
+  assert.equal(getGoal().type, 'general');
+  reset();
+  localStorage.setItem('wh_schema', '2');                 // the owner's phone: data from before this change
+  localStorage.setItem('wh_settings', JSON.stringify({ theme: 'dark', restSec: 120 }));
+  migrate();
+  assert.equal(myHealth(), true);
+  assert.equal(raw('wh_settings').restSec, 120);
+  assert.equal(getGoal().targetWeight, 165);              // owner defaults still apply
+  setSettings({ ...getSettings(), myHealth: false });     // switching it off sticks
+  clearCache(); migrate();
+  assert.equal(myHealth(), false);
+  reset();
+  addSet({ exId: 'legpress', set: { w: 100, r: 12 } });   // logged sets but no schema stamp yet still count as data
+  migrate();
+  assert.equal(myHealth(), true);
+});
+
+test('backups and rescue files leave out the coach passcode; restore keeps the one on the phone', async () => {
+  const { getSettings, setSettings, rawDump } = await import('../js/store.js');
+  reset();
+  migrate();
+  setSettings({ ...getSettings(), coachPass: 's3cr"et', restSec: 150 });
+  const backup = JSON.parse(JSON.stringify(exportAll()));
+  assert.equal('coachPass' in backup.data.wh_settings, false);
+  assert.equal(backup.data.wh_settings.restSec, 150);
+  assert.ok(!JSON.stringify(rawDump()).includes('s3cr'));
+  assert.equal(getSettings().coachPass, 's3cr"et');      // exporting doesn't touch the phone's copy
+  importAll(backup);
+  assert.equal(getSettings().coachPass, 's3cr"et');      // restoring on the same phone keeps the passcode
+  reset();
+  importAll(backup);
+  assert.equal(getSettings().coachPass, '');              // a new phone has none until you type it
+  assert.equal(getSettings().restSec, 150);
+});

@@ -1,6 +1,6 @@
 // Coach Claude client: builds a compact training snapshot and asks the /api/coach function.
 import { SESSIONS, DAYS, SUPPS, PENDING } from './catalog.js';
-import { KEYS, load, save, getLog, getGoal, getSettings, getWeighins, allExercises, getChecklist, getLimits, getSupps, getDaily } from './store.js';
+import { KEYS, load, save, getLog, getGoal, getSettings, getWeighins, allExercises, getChecklist, getLimits, getSupps, getDaily, myHealth } from './store.js';
 import { exerciseHistory, forecast, weightPoints, movingAverage, suggestNext, weekStats } from './analytics.js';
 import { todayStr, dayNum, fromDayNum, weekKey } from './util.js';
 
@@ -49,18 +49,21 @@ export function buildSnapshot() {
   const daily = getDaily();
   Object.keys(daily).sort().slice(-7).forEach(d => { if (daily[d].note) notes.push({ date: d, exercise: 'daily', note: daily[d].note }); });
 
+  const mine = myHealth();
   return {
     app: 'Kiln', gym: getSettings().gymName, today, units: 'lb',
+    // 'mine' = the cardiologist-guided owner profile; 'general' = anyone else (see api/coach.js systemFor)
+    health_profile: mine ? 'mine' : 'general',
     goal: {
       type: goal.type, target_weight_lb: goal.targetWeight || null, target_date: goal.targetDate || null,
       sessions_per_week: goal.sessionsPerWeek, strength_goal: goal.strengthTarget ? { exercise_id: goal.strengthEx, target_lb: +goal.strengthTarget } : null,
       why: goal.why
     },
-    safety: {
+    safety: mine ? {
       cleared_limits: { load: limits.load || PENDING, intensity: limits.intensity || PENDING, other: limits.other || PENDING },
       supplements: Object.fromEntries(SUPPS.map(s => [s.name, suppSt[s.id] || s.def])),
       open_doctor_questions: getChecklist().filter(c => !c.done).map(c => c.text)
-    },
+    } : { note: 'No medical restrictions recorded in the app.' },
     plan: Object.fromEntries(Object.entries(SESSIONS).map(([k, s]) => [k, { day: DAYS[s.day], exercise_ids: s.ex }])),
     exercises,
     bodyweight: {
@@ -109,7 +112,10 @@ export function lastCoach() {
 
 /** Zero-setup fallback: paste this into the Claude app. */
 export function promptText(question = '') {
-  return `You're my strength coach. Call me Brother. I'm training at ${getSettings().gymName} and follow a cardiologist-guided plan: keep effort at RPE 5–7, machines/cables over free weights, no max-effort lifts, no breath-holding, no supplement advice.
+  const intro = myHealth()
+    ? `You're my strength coach. Call me Brother. I'm training at ${getSettings().gymName} and follow a cardiologist-guided plan: keep effort at RPE 5–7, machines/cables over free weights, no max-effort lifts, no breath-holding, no supplement advice.`
+    : `You're my strength coach. I'm training at ${getSettings().gymName}. Keep it safe and sustainable: good form, effort mostly RPE 6–8, steady progression, no supplement or medication advice.`;
+  return `${intro}
 
 Analyze my data below and forecast the best path to my goal: (1) honest assessment, (2) forecast with a date and confidence, (3) exact weight × reps for each exercise next session, (4) a 4-week plan, (5) habits, (6) any safety flags or questions for my doctor.
 ${question ? '\nMy question: ' + question + '\n' : ''}
