@@ -22,7 +22,7 @@ export function confetti() {
   document.body.appendChild(c);
   const ctx = c.getContext('2d');
   ctx.scale(dpr, dpr);
-  const colors = ['#FF6B5B', '#E0457B', '#7B5CFF', '#FFB547', '#8BE3B2', '#9DB4FF', '#FFFFFF'];
+  const colors = ['#3BF5A2', '#22D3EE', '#A78BFA', '#0C9B5F', '#0891B2', '#E9EFEC'];
   const parts = Array.from({ length: 90 }, () => ({
     x: innerWidth / 2, y: innerHeight * 0.35,
     vx: (Math.random() - 0.5) * 14, vy: Math.random() * -14 - 4,

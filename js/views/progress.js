@@ -56,7 +56,7 @@ function strength(ctx) {
     <div class="tile"><b>${hist.length ? Math.max(...hist.map(x => x.topW)) || '–' : '–'}</b><span>heaviest lb</span></div>
     <div class="tile"><b>${fc ? (fc.rawPerWeek > 0 ? '+' : '') + fmtNum(fc.rawPerWeek, 1) : '–'}</b><span>${unit}/wk lately</span></div>
   </div>
-  <section class="card"><h2>${esc(label)}</h2><p class="muted small">${esc(ex.name)} · dashed = forecast</p>
+  <section class="card"><h2>${esc(label)}</h2>
     <div class="chart" data-chart="strength"></div>
     <p class="forecast">${forecastText(fc, metric, unit, target, pts, ex)}</p></section>
   <section class="card"><h2>Sessions</h2><table class="hist"><thead><tr><th>Date</th><th>Sets</th>${metric === 'e1rm' ? '<th class="num">e1RM</th>' : ''}</tr></thead><tbody>
@@ -102,7 +102,7 @@ function body() {
   if (!pts.length) {
     return h + `<div class="card empty"><div class="empty-ic">${icon('scale', 26)}</div><b>No weigh-ins yet</b><p class="muted">Weigh in 2–3× a week, same time of day (e.g. right when you get to the gym). The 7-day average smooths out water-weight noise.</p></div>`;
   }
-  h += `<section class="card"><h2>Bodyweight</h2><p class="muted small">Dots = each weigh-in · line = 7-day average · dashed = forecast</p>
+  h += `<section class="card"><h2>Bodyweight</h2>
     <div class="chart" data-chart="body"></div>
     <p class="forecast">${bodyForecastText(fc, goal, cur)}</p>
     ${pctWeek > 1 ? `<div class="flag">${icon('alert', 16)}<span>Changing ${fmtNum(pctWeek, 1)}% of bodyweight per week — faster than the ~1%/week safe ceiling. Mention it to your doctor.</span></div>` : ''}

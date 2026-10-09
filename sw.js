@@ -6,7 +6,7 @@ const SHELL = [
   'js/app.js', 'js/catalog.js', 'js/store.js', 'js/util.js', 'js/analytics.js', 'js/ui.js', 'js/charts.js',
   'js/scanner.js', 'js/health.js', 'js/coach.js', 'js/router.js', 'js/timer.js', 'js/theme.js', 'js/icons.js',
   'js/views/today.js', 'js/views/machines.js', 'js/views/scan.js', 'js/views/logger.js', 'js/views/progress.js', 'js/views/me.js',
-  'vendor/jsQR.min.js', 'fonts/sora-latin.woff2', 'icons/icon.svg', 'icons/icon-192.png', 'icons/apple-touch-icon.png'
+  'vendor/jsQR.min.js', 'fonts/inter-latin.woff2', 'fonts/plexmono-500-latin.woff2', 'fonts/plexmono-600-latin.woff2', 'icons/icon.svg', 'icons/icon-192.png', 'icons/apple-touch-icon.png'
 ];
 const TIMEOUT_MS = 2500;
 

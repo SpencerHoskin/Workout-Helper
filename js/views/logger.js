@@ -126,10 +126,9 @@ function weightSwipe(label, value, inc, done) {
   return `<label class="lbl" for="f_w">${label}</label>
     <div class="wswipe" data-inc="${inc}">
       <button type="button" class="wside" data-act="step" data-f="w" data-d="-${inc}" aria-label="Decrease by ${inc}">${sideVal(value, -inc)}</button>
-      <div class="wdial" style="--p:${done}"><input id="f_w" name="w" class="wbig" inputmode="decimal" data-input="wtype" value="${esc(value ?? '')}" placeholder="0"><small aria-hidden="true">lb</small></div>
+      <div class="wdial" style="--p:${done}"><input id="f_w" name="w" class="wbig" inputmode="decimal" data-input="wtype" value="${esc(value ?? '')}" placeholder="0"><small aria-hidden="true">lb · ${inc} steps</small></div>
       <button type="button" class="wside" data-act="step" data-f="w" data-d="${inc}" aria-label="Increase by ${inc}">${sideVal(value, inc)}</button>
-    </div>
-    <p class="wnote">Swipe or tap a side · ${inc} lb steps · ring = sets done today</p>`;
+    </div>`;
 }
 function syncSides(wrap) {
   if (!wrap) return;

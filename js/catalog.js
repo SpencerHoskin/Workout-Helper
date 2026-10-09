@@ -112,7 +112,7 @@ export const DEFAULT_GOAL = {
 export const DEFAULT_SETTINGS = {
   gymName: GYM,
   restSec: 90,
-  theme: 'auto',              // 'auto' | 'light' | 'dark'
+  theme: 'dark',              // 'auto' | 'light' | 'dark' — dark is the Laser default
   coachUrl: '/api/coach',
   coachPass: '',
   health: { enabled: false, weightShortcut: 'WH Log Weight', workoutShortcut: 'WH Log Workout' }
