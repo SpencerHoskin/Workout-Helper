@@ -48,7 +48,7 @@ export function confetti() {
 // so the element's own layout, clipping and pseudo-elements are never touched.
 // Skipped entirely when the phone asks for reduced motion.
 const SWEEP_TARGETS = '.btn, .cta, .chip, .rpe-chip, .repchip, .type, .wside, .stepper button, .icon-btn, .safety-btn, .seg a, .tabs a, .plan-row, .mrow, .xlist a, a.card, .pill-select, .sheet-x';
-const PIX_MS = 1150;               // whole effect, fill → shimmer → fade
+const PIX_MS = 850;                // whole effect, fill → shimmer → fade
 const PIX_CELL = 4, PIX_PITCH = 5; // 4px squares on a 5px grid
 const PIX_SHADES = [[221, 214, 254], [196, 181, 253], [167, 139, 250], [139, 92, 246], [124, 58, 237], [109, 40, 217]];
 export function sweep(e) {
@@ -77,10 +77,10 @@ export function sweep(e) {
   for (let i = 0; i < cols; i++) {
     const f = cols > 1 ? i / (cols - 1) : 1;      // 0 at the left edge, 1 at the right
     for (let j = 0; j < rows; j++) {
-      if (Math.random() > 0.22 + 0.74 * f) continue; // sparse on the left, packed on the right
+      if (Math.random() > 0.05 + 0.9 * f ** 1.6) continue; // a scatter on the left, packed on the right
       const deep = Math.min(PIX_SHADES.length - 1, Math.floor((f * 0.75 + Math.random() * 0.45) * PIX_SHADES.length));
       cells.push({ x: ox + i * PIX_PITCH, y: oy + j * PIX_PITCH, f, rgb: PIX_SHADES[deep],
-        a: 0.3 + 0.55 * f + Math.random() * 0.15, lag: Math.random() * 0.08, tw: Math.random() * 6.28, tws: 9 + Math.random() * 14 });
+        a: 0.2 + 0.65 * f + Math.random() * 0.15, lag: Math.random() * 0.08, tw: Math.random() * 6.28, tws: 9 + Math.random() * 14 });
     }
   }
   const t0 = performance.now();

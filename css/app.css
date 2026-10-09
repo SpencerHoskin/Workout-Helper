@@ -380,7 +380,7 @@ table.hist td > .icon-btn { margin-left: auto; }
 .toast.warn { background: var(--panel); color: var(--danger); box-shadow: var(--lift), inset 0 0 0 1px var(--danger); }
 body.resting .toast { bottom: calc(156px + env(safe-area-inset-bottom)); }
 /* Press effect: see sweep() in js/ui.js. The canvas paints the pixels; the layer adds a brief violet edge glow. */
-.sweep-wrap { position: fixed; z-index: 46; pointer-events: none; overflow: hidden; animation: pix-ring 1.15s ease-out forwards; }
+.sweep-wrap { position: fixed; z-index: 46; pointer-events: none; overflow: hidden; animation: pix-ring .85s ease-out forwards; }
 .sweep-wrap canvas { display: block; width: 100%; height: 100%; }
 @keyframes pix-ring { 0% { box-shadow: inset 0 0 0 1.5px var(--violet), 0 0 16px var(--violet-soft); }
   100% { box-shadow: inset 0 0 0 1.5px transparent, 0 0 0 transparent; } }
