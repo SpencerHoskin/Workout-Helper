@@ -42,25 +42,74 @@ export function confetti() {
   })(t0);
 }
 
-// Light sweep: when you press something, a diagonal laser band crosses it and its edge glows for a moment.
-// It's drawn in a throwaway fixed layer sized to the element, so the element's own layout, clipping
-// and pseudo-elements are never touched. Skipped entirely when the phone asks for reduced motion.
+// Pixel press: when you press something, a grid of tiny purple squares fills it left to right, sparse and pale
+// at the start and dense and deep at the end (like the Ultracode effort slider), while a white shimmer runs
+// through the squares. It's painted on a throwaway canvas in a fixed layer sized and rounded to the element,
+// so the element's own layout, clipping and pseudo-elements are never touched.
+// Skipped entirely when the phone asks for reduced motion.
 const SWEEP_TARGETS = '.btn, .cta, .chip, .rpe-chip, .repchip, .type, .wside, .stepper button, .icon-btn, .safety-btn, .seg a, .tabs a, .plan-row, .mrow, .xlist a, a.card, .pill-select, .sheet-x';
+const PIX_MS = 850;                // whole effect, fill → shimmer → fade
+const PIX_CELL = 4, PIX_PITCH = 5; // 4px squares on a 5px grid
+const PIX_SHADES = [[221, 214, 254], [196, 181, 253], [167, 139, 250], [139, 92, 246], [124, 58, 237], [109, 40, 217]];
 export function sweep(e) {
   if (e.button > 0 || reducedMotion()) return;
   const el = e.target.closest && e.target.closest(SWEEP_TARGETS);
   if (!el || el.disabled) return;
   const r = el.getBoundingClientRect();
   if (!r.width || !r.height) return;
-  const fx = document.createElement('span');
-  fx.className = 'sweep-fx';
-  fx.setAttribute('aria-hidden', 'true');
-  Object.assign(fx.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px',
+  const wrap = document.createElement('span');
+  wrap.className = 'sweep-wrap';
+  wrap.setAttribute('aria-hidden', 'true');
+  Object.assign(wrap.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px',
     borderRadius: getComputedStyle(el).borderRadius });
-  document.body.appendChild(fx);
-  const done = () => fx.remove();
-  fx.addEventListener('animationend', e2 => { if (!e2.pseudoElement) done(); }); // the edge glow ends last
-  setTimeout(done, 1000); // belt and braces if animationend never fires
+  const c = document.createElement('canvas');
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  c.width = Math.ceil(r.width * dpr); c.height = Math.ceil(r.height * dpr);
+  wrap.appendChild(c);
+  document.body.appendChild(wrap);
+  const ctx = c.getContext('2d');
+  if (!ctx) { wrap.remove(); return; }
+  ctx.scale(dpr, dpr);
+  const w = r.width, h = r.height;
+  const cols = Math.ceil(w / PIX_PITCH), rows = Math.ceil(h / PIX_PITCH);
+  const ox = (w - cols * PIX_PITCH + 1) / 2, oy = (h - rows * PIX_PITCH + 1) / 2;
+  const cells = [];
+  for (let i = 0; i < cols; i++) {
+    const f = cols > 1 ? i / (cols - 1) : 1;      // 0 at the left edge, 1 at the right
+    for (let j = 0; j < rows; j++) {
+      if (Math.random() > 0.05 + 0.9 * f ** 1.6) continue; // a scatter on the left, packed on the right
+      const deep = Math.min(PIX_SHADES.length - 1, Math.floor((f * 0.75 + Math.random() * 0.45) * PIX_SHADES.length));
+      cells.push({ x: ox + i * PIX_PITCH, y: oy + j * PIX_PITCH, f, rgb: PIX_SHADES[deep],
+        a: 0.2 + 0.65 * f + Math.random() * 0.15, lag: Math.random() * 0.08, tw: Math.random() * 6.28, tws: 9 + Math.random() * 14 });
+    }
+  }
+  const t0 = performance.now();
+  let done = false;
+  const finish = () => { if (!done) { done = true; wrap.remove(); } };
+  (function frame(now) {
+    if (done) return;
+    const p = (now - t0) / PIX_MS;
+    if (p >= 1) return finish();
+    const front = Math.min(1, p / 0.38) ** 0.7 * 1.08;     // fill front, eased, slight overshoot past the edge
+    const runner = -0.25 + (p - 0.12) / 0.62 * 1.5;        // white shimmer crossing left → right
+    const fade = p < 0.72 ? 1 : 1 - (p - 0.72) / 0.28;
+    ctx.clearRect(0, 0, w, h);
+    for (const q of cells) {
+      const on = (front - q.f - q.lag) / 0.08;
+      if (on <= 0) continue;
+      const d = (q.f - runner) / 0.11;
+      let white = Math.exp(-d * d) * (0.55 + 0.45 * Math.sin(q.tw + now / 60));
+      const tw = Math.sin(q.tw + now / 1000 * q.tws);
+      if (tw > 0.93) white = Math.max(white, (tw - 0.93) / 0.07); // the odd square twinkles white on its own
+      const [R, G, B] = q.rgb;
+      const k = Math.min(1, white);
+      ctx.globalAlpha = Math.min(1, on) * fade * Math.min(1, q.a + k * 0.5);
+      ctx.fillStyle = `rgb(${Math.round(R + (255 - R) * k)},${Math.round(G + (255 - G) * k)},${Math.round(B + (255 - B) * k)})`;
+      ctx.fillRect(q.x, q.y, PIX_CELL, PIX_CELL);
+    }
+    requestAnimationFrame(frame);
+  })(t0);
+  setTimeout(finish, PIX_MS + 600); // in case frames stop (app backgrounded mid-press)
 }
 
 let audioCtx;
