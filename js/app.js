@@ -2,7 +2,7 @@
 import { migrate, getLimits, rawDump, getMeta, save, KEYS } from './store.js';
 import { EX, SESSIONS, PENDING } from './catalog.js';
 import { esc, todayStr } from './util.js';
-import { $, closeSheet, sheetOpen, unlockAudio, download, sweep, pushLayer, dropLayer, onLayerEntry, setInstallPrompt, PLATFORM } from './ui.js';
+import { $, closeSheet, sheetOpen, unlockAudio, download, sweep, clearPress, reducedMotion, pushLayer, dropLayer, onLayerEntry, setInstallPrompt, PLATFORM } from './ui.js';
 import { current, setRenderer, go, rerender } from './router.js';
 import { addRest, stopRest } from './timer.js';
 import { applyTheme, applyProfile } from './theme.js';
@@ -17,10 +17,21 @@ import * as me from './views/me.js';
 const VIEWS = { today, machines, scan, log: logger, progress, me };
 const TAB_FOR = { today: 'today', machines: 'machines', log: 'machines', scan: 'scan', progress: 'progress', me: 'me' };
 
+// Tap beat: a link or "go" button waits a moment before changing screens, so its pixel press plays on the
+// button you tapped rather than over the next screen. No wait when the phone asks for reduced motion
+// (there's no effect to see). A second tap inside the beat replaces the first.
+const BEAT_MS = 170;
+let beat = null;
+function afterBeat(fn) {
+  clearTimeout(beat);
+  if (reducedMotion()) { beat = null; fn(); return; }
+  beat = setTimeout(() => { beat = null; fn(); }, BEAT_MS);
+}
+
 const merge = key => Object.assign({}, ...Object.values(VIEWS).map(v => v[key] || {}));
 const ACTIONS = {
   ...merge('actions'),
-  go: el => go(el.dataset.to),
+  go: el => afterBeat(() => go(el.dataset.to)),
   closeSheet: () => closeSheet(),
   weighin: () => progress.openWeighin(),
   editMachine: el => machines.editMachine(el.dataset.id),
@@ -43,6 +54,7 @@ function render({ keepScroll = false } = {}) {
   const view = VIEWS[ctx.name] || today;
   if (active && active !== view && active.unmount) active.unmount();
   active = view;
+  if (location.hash !== renderedHash) clearPress(); // a new screen: no leftover press effect over it
   renderedHash = location.hash;
   const y = window.scrollY;
   const root = $('#view');
@@ -89,9 +101,19 @@ function closeSafety() {
 /* ---------- Event delegation ---------- */
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-act]');
-  if (!b) return;
-  const fn = ACTIONS[b.dataset.act];
-  if (fn) { e.preventDefault(); fn(b, e); }
+  if (b) {
+    const fn = ACTIONS[b.dataset.act];
+    if (fn) { e.preventDefault(); fn(b, e); }
+    return;
+  }
+  // In-app links (#/...) change screens after the tap beat, like the "go" buttons.
+  const a = e.target.closest('a[href^="#"]');
+  if (a && !e.defaultPrevented && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+    const href = a.getAttribute('href');
+    if (href === location.hash) return;
+    e.preventDefault();
+    afterBeat(() => { location.hash = href; });
+  }
 });
 document.addEventListener('change', e => {
   const t = e.target.closest('[data-change]');
