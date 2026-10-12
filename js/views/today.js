@@ -82,7 +82,7 @@ export function render() {
   <div class="tiles">
     <div class="tile"><b>${streak}</b><span>week streak</span></div>
     <div class="tile"><b>${ws.sessions}/${goal.sessionsPerWeek}</b><span>workouts/wk</span></div>
-    <div class="tile"><b>${fmtNum(ws.volume / 1000, 1)}k</b><span>lb this week</span></div>
+    <div class="tile"><b>${ws.volume ? fmtNum(ws.volume / 1000, 1) + 'k' : '0'}</b><span>lb this week</span></div>
   </div>
 
   <section class="card">

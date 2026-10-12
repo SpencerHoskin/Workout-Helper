@@ -1,30 +1,36 @@
 // Screen motion for the Signal design: section entrances, the tab push, odometer numbers, the gliding tab
 // indicator, and two headline typesetting touches. It only adds classes, CSS custom properties and aria-hidden
 // decoration: it never stops events and never touches data-* attributes, ids, form names or element order.
-// Entrances play only when location.hash changed since the last render, so in-place re-renders (logging a set)
-// never replay them. Nothing moves when the phone asks for reduced motion.
+// Entrances play only when the route (location.hash without its ?query) changed since the last render, so in-place
+// re-renders (logging a set, picking a chart's exercise) never replay them. Nothing moves when the phone asks for reduced motion.
 import { reducedMotion } from './ui.js';
 
 const TABS = ['today', 'machines', 'scan', 'progress', 'me'];
 const TAB_FOR = { log: 'machines' };
 const tabOf = h => { const n = (h || '').replace(/^#\/?/, '').split(/[/?]/)[0] || 'today'; return TAB_FOR[n] || n; };
-const ODO = '.tile b, .ring-legend b, .count, table.hist td.num';
+// Scoreboard numbers only (not table cells): each digit is a 20-span reel, so a long Sessions table would cost
+// thousands of elements and a slow first frame.
+const ODO = '.tile b, .ring-legend b, .count';
+const ODO_MAX_K = 8;   // last digit starts at 8 × 45 + 60 ms and ends by 880 ms, inside ENTER_MS
 const ENTER_MS = 900;
 const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const FX = ['fx-enter', 'fx-push-l', 'fx-push-r'];
+const route = h => h.split('?')[0];
 
 let view, bar, lastHash = null, lastTab = null, timer = 0;
 
-/** Each digit becomes a 0–9 reel that rolls to its value. The real value stays in a visually hidden span. */
+/** Each digit on the first screen becomes a 0–9 reel that rolls to its value. The real value stays in a
+    visually hidden span. Numbers below the fold are left as plain text. */
 function odometers() {
   let k = 0;
+  const fold = innerHeight;
   view.querySelectorAll(ODO).forEach(el => {
-    if (el.children.length) return;
+    if (el.children.length || el.getBoundingClientRect().top > fold) return;
     const txt = el.textContent.trim();
     if (!/\d/.test(txt) || txt.length > 10) return;
     const digits = Array.from({ length: 20 }, (_, i) => `<span>${i % 10}</span>`).join('');
     const body = [...txt].map(ch => /\d/.test(ch)
-      ? `<span class="od"><span class="od-r" style="--n:${ch};--k:${k++}">${digits}</span></span>`
+      ? `<span class="od"><span class="od-r" style="--n:${ch};--k:${Math.min(k++, ODO_MAX_K)}">${digits}</span></span>`
       : `<span>${esc(ch)}</span>`).join('');
     el.innerHTML = `<span class="sr-only">${esc(txt)}</span><span aria-hidden="true">${body}</span>`;
   });
@@ -66,8 +72,15 @@ function moveBar() {
   bar.style.setProperty('--x', (on.offsetLeft + on.offsetWidth / 2 - w / 2) + 'px');
 }
 
+/** Today's date for the hero's outline numeral; refreshed on every render so a PWA resumed the next morning is right. */
+function setDay() {
+  const d = `"${new Date().getDate()}"`;
+  if (document.documentElement.style.getPropertyValue('--day') !== d) document.documentElement.style.setProperty('--day', d);
+}
+
 function onRender() {
-  const h = location.hash || '#/today';
+  const h = route(location.hash || '#/today');
+  setDay();
   moveBar();
   typesetGoal(); typesetTitle();
   if (h === lastHash) { view.classList.remove(...FX); return; } // in-place re-render: settle instantly, no replay
@@ -88,7 +101,6 @@ function onRender() {
 export function initMotion() {
   view = document.getElementById('view');
   if (!view) return;
-  document.documentElement.style.setProperty('--day', `"${new Date().getDate()}"`);
   new MutationObserver(onRender).observe(view, { childList: true });
   if (view.children.length) onRender();
   addEventListener('resize', moveBar);
