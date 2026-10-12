@@ -68,27 +68,24 @@ export function render(ctx) {
     ${m && safeUrl(m.video) ? `<a class="btn ghost small" href="${esc(safeUrl(m.video))}" target="_blank" rel="noopener">${icon('play', 14)} Training video</a>` : ''}
   </section>`;
 
+  // Today's target: the headline and Coach Claude's numbers only, so the dial comes up on the first screen.
   h += `<section class="card sug ${sug.caution ? 'caution' : sug.up ? 'up' : ''}">
     <div class="eyebrow">${sug.up ? icon('up', 14, { stroke: 2.5 }) + ' Level up' : sug.caution ? icon('alert', 14, { stroke: 2.5 }) + ' Ease off' : icon('target', 14, { stroke: 2.5 }) + ' Today’s target'}</div>
-    <b>${esc(sug.text)}</b>${sug.why ? `<p class="muted small">${esc(sug.why)}</p>` : ''}
-    ${coach ? `<div class="coach-tgt">${icon('sparkle', 16)}<span><b>Coach Claude</b> ${coach.sets} × ${esc(coach.reps)}${coach.weight_lb ? ' @ ' + coach.weight_lb + ' lb' : ''}${coach.note ? `<span class="muted small"> — ${esc(coach.note)}</span>` : ''}</span></div>` : ''}
-    ${last ? `<p class="small">Last time (${shortDate(last.date)}): ${last.sets.map(s => esc(fmtSet(ex, s))).join(', ')}</p>` : ''}
+    <b>${esc(sug.text)}</b>
+    ${coach ? `<div class="coach-tgt">${icon('sparkle', 16)}<span><b>Coach Claude</b> ${coach.sets} × ${esc(coach.reps)}${coach.weight_lb ? ' @ ' + coach.weight_lb + ' lb' : ''}</span></div>` : ''}
     ${ex.flag ? `<div class="flag">${icon('alert', 16)}<span>${esc(ex.flag)}</span></div>` : ''}
     ${myHealth() && limits.load && ex.kind === 'strength' ? `<div class="flag">${icon('doctor', 16)}<span>Cardiologist load limit: ${esc(limits.load)}</span></div>` : ''}
-    ${ex.kind !== 'cardio' ? `<div class="cue">${icon('breath', 16)}<span>${BREATH}</span></div>` : ''}
   </section>`;
 
+  // The form, then the sets already logged: a new set row lands below "Log set", so the button never moves.
   h += `<section class="card"><div class="row-between"><h2>Sets today</h2><span class="count">${sets.length}${ex.kind !== 'cardio' ? '/' + ex.sets : ''}</span></div>
-    ${sets.length ? `<ol class="setlist">${sets.map((s, i) => `<li><span class="sn">${i + 1}</span><b>${esc(fmtSet(ex, s))}</b>
-      <button class="icon-btn danger" data-act="delSet" data-entry="${esc(entry.id)}" data-i="${i}" aria-label="Delete set ${i + 1}">${icon('close', 15, { stroke: 2.5 })}</button></li>`).join('')}</ol>`
-      : '<p class="muted small">No sets yet — you’ve got this.</p>'}
     <form id="logSet" class="entry" autocomplete="off">`;
 
   if (ex.kind === 'cardio') {
     h += stepper('min', 'Minutes', lastSet ? lastSet.min : 10, 1, 'numeric')
       + `<label class="lbl">Level / speed <span class="muted">(optional)</span></label><input name="lvl" placeholder="e.g. level 6, 3.2 mph" value="${esc(lastSet ? lastSet.lvl || '' : '')}">`;
   } else {
-    if (ex.kind === 'strength') h += weightSwipe(ex.assisted ? 'Assist (lb)' : 'Weight (lb)', defW, inc, Math.min(1, sets.length / (ex.sets || 3)));
+    if (ex.kind === 'strength') h += weightSwipe(ex.assisted, defW, inc, Math.min(1, sets.length / (ex.sets || 3)));
     h += repChips(ex, defR) + stepper('r', 'Reps', defR, 1, 'numeric');
   }
   const rpe = lastSet && lastSet.rpe ? lastSet.rpe : '';  // carried forward so every set keeps its effort rating
@@ -97,13 +94,27 @@ export function render(ctx) {
       `<button type="button" class="rpe-chip r${v}" data-act="rpe" data-v="${v}" role="radio" aria-checked="${v === rpe}">${v}</button>`).join('')}</div>
     <input type="hidden" name="rpe" value="${rpe}">
     <button class="btn primary wide big-btn" type="submit">${icon('check', 20, { stroke: 2.6 })} Log set ${sets.length + 1}</button>
-  </form></section>`;
+  </form>
+    ${sets.length ? `<ol class="setlist">${sets.map((s, i) => `<li><span class="sn">${i + 1}</span><b>${esc(fmtSet(ex, s))}</b>
+      <button class="icon-btn danger" data-act="delSet" data-entry="${esc(entry.id)}" data-i="${i}" aria-label="Delete set ${i + 1}">${icon('close', 15, { stroke: 2.5 })}</button></li>`).join('')}</ol>`
+      : '<p class="muted small">No sets yet — you’ve got this.</p>'}
+  </section>`;
+
+  // Why today's target, Coach Claude's note, the breathing cue and last time: notes under the form.
+  const why = [sug.why && esc(sug.why), coach && coach.note && `<b>Coach Claude:</b> ${esc(coach.note)}`].filter(Boolean);
+  if (why.length || last || ex.kind !== 'cardio') {
+    h += `<section class="card notes">
+      ${why.length ? `<div class="eyebrow">${sug.up ? 'Why level up' : sug.caution ? 'Why ease off' : 'Why this target'}</div>${why.map(t => `<p class="muted small">${t}</p>`).join('')}` : ''}
+      ${ex.kind !== 'cardio' ? `<div class="cue">${icon('breath', 16)}<span>${BREATH}</span></div>` : ''}
+      ${last ? `<div class="eyebrow">Last time · ${shortDate(last.date)}</div><p class="small">${last.sets.map(s => esc(fmtSet(ex, s))).join(', ')}</p>` : ''}
+    </section>`;
+  }
 
   h += `<section class="card">
     <label class="lbl">Machine setup <span class="muted">(remembered)</span></label>
     <input data-input="setupNote" data-ex="${ex.id}" value="${esc(getSetup(ex.id))}" placeholder="Seat 4, back pad 2, pin 3…">
     <label class="lbl">Note for today</label>
-    <input data-input="entryNote" data-ex="${ex.id}" value="${esc(entry ? entry.note : '')}" placeholder="How it felt…" ${entry ? '' : 'disabled title="Log a set first"'}>
+    <input data-input="entryNote" data-ex="${ex.id}" value="${esc(entry ? entry.note : '')}" placeholder="${entry ? 'How it felt…' : 'Log a set first'}" ${entry ? '' : 'disabled'}>
   </section>`;
 
   if (next) h += `<a class="btn ghost wide" href="#/log/${nextId}">Next: ${esc(next.name)} ${icon('chevron', 16)}</a>`;
@@ -122,11 +133,12 @@ const sideVal = (v, d) => { const n = num(v); return n == null ? '–' : fmtNum(
 
 /** Weight dial: big number in a sunken dial whose ring fills with today's sets, the next step
     down/up either side. Swipe it, tap a side, or type. */
-function weightSwipe(label, value, inc, done) {
-  return `<label class="lbl" for="f_w">${label}</label>
+function weightSwipe(assisted, value, inc, done) {
+  // The field's label is for screen readers; on screen the dial says it ("lb · 5 steps", "assist lb · 5 steps").
+  return `<label class="sr-only" for="f_w">${assisted ? 'Assist (lb)' : 'Weight (lb)'}</label>
     <div class="wswipe" data-inc="${inc}">
       <button type="button" class="wside" data-act="step" data-f="w" data-d="-${inc}" aria-label="Decrease by ${inc}">${sideVal(value, -inc)}</button>
-      <div class="wdial" style="--p:${done}"><input id="f_w" name="w" class="wbig" inputmode="decimal" data-input="wtype" value="${esc(value ?? '')}" placeholder="0"><small aria-hidden="true">lb · ${inc} steps</small></div>
+      <div class="wdial" style="--p:${done}"><input id="f_w" name="w" class="wbig" inputmode="decimal" data-input="wtype" value="${esc(value ?? '')}" placeholder="0"><small aria-hidden="true">${assisted ? 'assist ' : ''}lb · ${inc} steps</small></div>
       <button type="button" class="wside" data-act="step" data-f="w" data-d="${inc}" aria-label="Increase by ${inc}">${sideVal(value, inc)}</button>
     </div>`;
 }

@@ -47,7 +47,7 @@ export function confetti() {
   document.body.appendChild(c);
   const ctx = c.getContext('2d');
   ctx.scale(dpr, dpr);
-  const colors = ['#3BF5A2', '#22D3EE', '#A78BFA', '#0C9B5F', '#0891B2', '#E9EFEC'];
+  const colors = ['#FF5CA8', '#5B21FF', '#FF8A1F', '#22E4FF', getComputedStyle(document.body).color];  // last: page text (paper on dark, ink on light)
   const parts = Array.from({ length: 90 }, () => ({
     x: innerWidth / 2, y: innerHeight * 0.35,
     vx: (Math.random() - 0.5) * 14, vy: Math.random() * -14 - 4,
@@ -67,29 +67,24 @@ export function confetti() {
   })(t0);
 }
 
-// Pixel press: when you press something, a grid of tiny purple squares fills it left to right, sparse and pale
-// at the start and dense and deep at the end (like the Ultracode effort slider), while a white shimmer runs
-// through the squares. It's painted on a throwaway canvas in a fixed layer sized and rounded to the element,
-// so the element's own layout, clipping and pseudo-elements are never touched. The layer follows the element
-// if the page scrolls, sits in the element's own layer (a sheet, the tab bar, the page), and is cleared the
-// moment the screen changes (clearPress, called by app.js). Skipped entirely when the phone asks for reduced motion.
+// Press effect: when you press something, a white bar wipes across it left to right and off the right edge,
+// inverting it (mix-blend-mode: difference; the animation is .sweep-wrap in css/app.css). The bar is a throwaway
+// span in a fixed layer sized to the element, so the element's own layout, clipping and pseudo-elements are never
+// touched. It follows the element if the page scrolls, sits in the element's own layer (a sheet, the tab bar, the
+// page), and is cleared the moment the screen changes (clearPress, called by app.js). If a re-render replaces the
+// pressed page element, its bar is hidden (the new element may sit elsewhere). Skipped entirely when the phone asks
+// for reduced motion.
 export { reducedMotion };
 const SWEEP_TARGETS = '.btn, .cta, .chip, .rpe-chip, .repchip, .type, .wside, .stepper button, .icon-btn, .safety-btn, .seg a, .tabs a, .plan-row, .mrow, .xlist a, a.card, .pill-select, .sheet-x';
-const PIX_MS = 850;                // whole effect, fill → shimmer → fade
-const PIX_CELL = 2, PIX_PITCH = 3; // 2px squares on a 3px grid
-const PIX_SHADES = [[221, 214, 254], [196, 181, 253], [167, 139, 250], [139, 92, 246], [124, 58, 237], [109, 40, 217]];
-const PIX_WHITE_STEPS = 8;         // shimmer mixes each shade toward white in this many steps (colours made once)
-const PIX_COLORS = PIX_SHADES.map(([R, G, B]) => Array.from({ length: PIX_WHITE_STEPS + 1 }, (_, i) => {
-  const k = i / PIX_WHITE_STEPS;
-  return `rgb(${Math.round(R + (255 - R) * k)},${Math.round(G + (255 - G) * k)},${Math.round(B + (255 - B) * k)})`;
-}));
+const PRESS_MS = 340;              // matches the press animation in app.css
 // Fixed layers the effect has to sit in (z-index from app.css). Page content gets 19: under the header and
-// tab bar (20), so a row scrolling beneath them doesn't glow on top of them, and under any sheet (40).
-const PIX_LAYERS = [['#safety', 46], ['#sheet', 41], ['#rest', 26], ['.tabs', 21], ['.top', 21]];
-let pixGen = 0;
+// tab bar (20), so a row scrolling beneath them doesn't flash on top of them, and under any sheet (40).
+const PRESS_LAYERS = [['#safety', 46], ['#sheet', 41], ['#rest', 26], ['.tabs', 21], ['.top', 21]];
+const PAGE_LAYER = 19;
+let pressGen = 0;
 /** Drop every running press effect (the screen just changed under it). */
 export function clearPress() {
-  pixGen++;
+  pressGen++;
   document.querySelectorAll('.sweep-wrap').forEach(w => w.remove());
 }
 export function sweep(e) {
@@ -101,61 +96,26 @@ export function sweep(e) {
   const wrap = document.createElement('span');
   wrap.className = 'sweep-wrap';
   wrap.setAttribute('aria-hidden', 'true');
-  const layer = PIX_LAYERS.find(([sel]) => el.closest(sel));
+  const layer = PRESS_LAYERS.find(([sel]) => el.closest(sel));
+  const z = layer ? layer[1] : PAGE_LAYER;
   const place = rect => Object.assign(wrap.style, { left: rect.left + 'px', top: rect.top + 'px' });
-  Object.assign(wrap.style, { width: r.width + 'px', height: r.height + 'px', zIndex: layer ? layer[1] : 19,
+  Object.assign(wrap.style, { width: r.width + 'px', height: r.height + 'px', zIndex: z,
     borderRadius: getComputedStyle(el).borderRadius });
   place(r);
-  const c = document.createElement('canvas');
-  const dpr = Math.min(window.devicePixelRatio || 1, 3);
-  c.width = Math.ceil(r.width * dpr); c.height = Math.ceil(r.height * dpr);
-  wrap.appendChild(c);
   document.body.appendChild(wrap);
-  const ctx = c.getContext('2d');
-  if (!ctx) { wrap.remove(); return; }
-  ctx.scale(dpr, dpr);
-  const w = r.width, h = r.height;
-  const cols = Math.ceil(w / PIX_PITCH), rows = Math.ceil(h / PIX_PITCH);
-  const ox = (w - cols * PIX_PITCH + 1) / 2, oy = (h - rows * PIX_PITCH + 1) / 2;
-  const cells = [];
-  for (let i = 0; i < cols; i++) {
-    const f = cols > 1 ? i / (cols - 1) : 1;      // 0 at the left edge, 1 at the right
-    for (let j = 0; j < rows; j++) {
-      if (Math.random() > 0.05 + 0.9 * f ** 1.6) continue; // a scatter on the left, packed on the right
-      const deep = Math.min(PIX_SHADES.length - 1, Math.floor((f * 0.75 + Math.random() * 0.45) * PIX_SHADES.length));
-      cells.push({ x: ox + i * PIX_PITCH, y: oy + j * PIX_PITCH, f, colors: PIX_COLORS[deep],
-        a: 0.2 + 0.65 * f + Math.random() * 0.15, lag: Math.random() * 0.08, tw: Math.random() * 6.28, tws: 9 + Math.random() * 14 });
-    }
-  }
   const t0 = performance.now();
-  const gen = pixGen;
+  const gen = pressGen;
   let done = false;
   const finish = () => { if (!done) { done = true; wrap.remove(); } };
   (function frame(now) {
     if (done) return;
-    const p = (now - t0) / PIX_MS;
-    if (p >= 1 || gen !== pixGen) return finish();
-    // Stay on the element if the page scrolled (a re-render may swap it for an identical one: keep the spot).
-    if (el.isConnected && (r = el.getBoundingClientRect()).width) place(r);
-    const front = Math.min(1, p / 0.38) ** 0.7 * 1.08;     // fill front, eased, slight overshoot past the edge
-    const runner = -0.25 + (p - 0.12) / 0.62 * 1.5;        // white shimmer crossing left → right
-    const fade = p < 0.72 ? 1 : 1 - (p - 0.72) / 0.28;
-    ctx.clearRect(0, 0, w, h);
-    for (const q of cells) {
-      const on = (front - q.f - q.lag) / 0.08;
-      if (on <= 0) continue;
-      const d = (q.f - runner) / 0.11;
-      let white = Math.exp(-d * d) * (0.55 + 0.45 * Math.sin(q.tw + now / 60));
-      const tw = Math.sin(q.tw + now / 1000 * q.tws);
-      if (tw > 0.93) white = Math.max(white, (tw - 0.93) / 0.07); // the odd square twinkles white on its own
-      const k = Math.min(1, white);
-      ctx.globalAlpha = Math.min(1, on) * fade * Math.min(1, q.a + k * 0.5);
-      ctx.fillStyle = q.colors[Math.round(k * PIX_WHITE_STEPS)];
-      ctx.fillRect(q.x, q.y, PIX_CELL, PIX_CELL);
-    }
+    if (now - t0 >= PRESS_MS || gen !== pressGen) return finish();
+    // Stay on the element if the page scrolled; hide if a re-render swapped the page element out.
+    if (el.isConnected) { if ((r = el.getBoundingClientRect()).width) place(r); }
+    else if (z === PAGE_LAYER) wrap.style.visibility = 'hidden';
     requestAnimationFrame(frame);
   })(t0);
-  setTimeout(finish, PIX_MS + 600); // in case frames stop (app backgrounded mid-press)
+  setTimeout(finish, PRESS_MS + 400); // in case frames stop (app backgrounded mid-press)
 }
 
 let audioCtx;
