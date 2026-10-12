@@ -60,12 +60,12 @@ export function render() {
   const setsToday = todayLog.reduce((t, e) => t + e.sets.length, 0);
 
   const ringData = [
-    { value: setsToday, goal: plannedSets || 12, color: 'var(--g1)', label: 'sets today' },
-    { value: ws.sessions, goal: goal.sessionsPerWeek, color: 'var(--g2)', label: 'workouts this week' },
-    { value: ws.weighins, goal: 2, color: 'var(--violet)', label: 'weigh-ins this week' }
+    { value: setsToday, goal: plannedSets || 12, color: 'var(--ring-1)', label: 'sets today' },
+    { value: ws.sessions, goal: goal.sessionsPerWeek, color: 'var(--ring-2)', label: 'workouts this week' },
+    { value: ws.weighins, goal: 2, color: 'var(--ring-3)', label: 'weigh-ins this week' }
   ];
 
-  // The session card: greeting, today's rings and the plan size, with the laser beam across its top.
+  // The session card: greeting, today's rings and the plan size, on the pink hero slab.
   let h = `<section class="card hero">
     <div class="eyebrow">${esc(new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }))} · ${esc(getSettings().gymName)}</div>
     <h2 class="big">${greeting()}</h2>
