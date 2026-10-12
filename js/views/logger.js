@@ -70,9 +70,8 @@ export function render(ctx) {
 
   h += `<section class="card sug ${sug.caution ? 'caution' : sug.up ? 'up' : ''}">
     <div class="eyebrow">${sug.up ? icon('up', 14, { stroke: 2.5 }) + ' Level up' : sug.caution ? icon('alert', 14, { stroke: 2.5 }) + ' Ease off' : icon('target', 14, { stroke: 2.5 }) + ' Today’s target'}</div>
-    <b>${esc(sug.text)}</b>${sug.why ? `<p class="muted small">${esc(sug.why)}</p>` : ''}
+    <b>${esc(sug.text)}</b>
     ${coach ? `<div class="coach-tgt">${icon('sparkle', 16)}<span><b>Coach Claude</b> ${coach.sets} × ${esc(coach.reps)}${coach.weight_lb ? ' @ ' + coach.weight_lb + ' lb' : ''}${coach.note ? `<span class="muted small"> — ${esc(coach.note)}</span>` : ''}</span></div>` : ''}
-    ${last ? `<p class="small">Last time (${shortDate(last.date)}): ${last.sets.map(s => esc(fmtSet(ex, s))).join(', ')}</p>` : ''}
     ${ex.flag ? `<div class="flag">${icon('alert', 16)}<span>${esc(ex.flag)}</span></div>` : ''}
     ${myHealth() && limits.load && ex.kind === 'strength' ? `<div class="flag">${icon('doctor', 16)}<span>Cardiologist load limit: ${esc(limits.load)}</span></div>` : ''}
     ${ex.kind !== 'cardio' ? `<div class="cue">${icon('breath', 16)}<span>${BREATH}</span></div>` : ''}
@@ -98,6 +97,14 @@ export function render(ctx) {
     <input type="hidden" name="rpe" value="${rpe}">
     <button class="btn primary wide big-btn" type="submit">${icon('check', 20, { stroke: 2.6 })} Log set ${sets.length + 1}</button>
   </form></section>`;
+
+  // The reasoning behind today's target sits under the form, so the dial and "Log set" come first.
+  if (sug.why || last) {
+    h += `<section class="card notes">
+      ${sug.why ? `<p class="muted small">${esc(sug.why)}</p>` : ''}
+      ${last ? `<p class="small">Last time (${shortDate(last.date)}): ${last.sets.map(s => esc(fmtSet(ex, s))).join(', ')}</p>` : ''}
+    </section>`;
+  }
 
   h += `<section class="card">
     <label class="lbl">Machine setup <span class="muted">(remembered)</span></label>
