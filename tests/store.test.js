@@ -98,19 +98,30 @@ test('exercise catalog is memoised, and refreshes when a custom exercise is adde
   assert.equal(b[id].kind, 'strength');
 });
 
-test('Laser theme: dark is the default, and "Match iPhone" moves to dark once', async () => {
+test('Candy Cloud is the default; Miami Heat dark (the old default) and "Match iPhone" move to it once', async () => {
   const { getSettings, setSettings } = await import('../js/store.js');
   reset();
   migrate();
-  assert.equal(getSettings().theme, 'dark');            // fresh install
+  assert.equal(getSettings().theme, 'candy');           // fresh install
   reset();
-  localStorage.setItem('wh_settings', JSON.stringify({ theme: 'auto', restSec: 120 }));
+  localStorage.setItem('wh_settings', JSON.stringify({ theme: 'dark', restSec: 120 }));
   migrate();
-  assert.equal(raw('wh_settings').theme, 'dark');        // one-time switch, other settings kept
+  assert.equal(raw('wh_settings').theme, 'candy');       // one-time switch, other settings kept
   assert.equal(raw('wh_settings').restSec, 120);
-  setSettings({ ...getSettings(), theme: 'auto' });      // a later deliberate choice sticks
+  reset();
+  localStorage.setItem('wh_settings', JSON.stringify({ theme: 'auto' }));
+  migrate();
+  assert.equal(raw('wh_settings').theme, 'candy');       // auto → dark (Laser) → candy, in one go
+  reset();
+  localStorage.setItem('wh_settings', JSON.stringify({ theme: 'light' }));
+  migrate();
+  assert.equal(raw('wh_settings').theme, 'light');       // Miami Heat light was a choice: kept
+  setSettings({ ...getSettings(), theme: 'dark' });      // a later deliberate choice sticks
   clearCache(); migrate();
-  assert.equal(raw('wh_settings').theme, 'auto');
+  assert.equal(raw('wh_settings').theme, 'dark');
+  setSettings({ ...getSettings(), theme: 'neon' });
+  clearCache(); migrate();
+  assert.equal(raw('wh_settings').theme, 'neon');
 });
 
 test('"My health profile": on for anyone with data, off for a fresh install, decided once', async () => {

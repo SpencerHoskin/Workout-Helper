@@ -70,7 +70,7 @@
   --mono: 'Plex Mono', ui-monospace, Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-theme="candy"]) {
+  :root:not([data-theme="light"]):not([data-theme="candy"]):not([data-theme="neon"]) {
     --acid-ink: var(--acid); --coral-ink: var(--coral); --aqua-ink: var(--aqua); --c1: var(--coral); --ph-a: .8;
     --bg: #0E0A16; --panel: #171024; --panel-2: #211833; --text: #FFF3F8; --muted: #B6A8C8;
     --hair: rgba(255, 243, 248, .12); --hair-2: rgba(255, 243, 248, .24);
@@ -121,6 +121,43 @@
     linear-gradient(165deg, #FCE0A2 0%, #FFD8B2 30%, #EFA595 58%, #E18E8D 80%, #D97E95 100%); }
 :root[data-theme="candy"] #view .card.me-hero { background: linear-gradient(160deg, #FCE0A2, #FFD8B2 55%, #EFA595); }
 :root[data-theme="candy"] :is(.wswipe, .sug, #view .cta) { background: linear-gradient(160deg, #8B5893 0%, #7D4F86 55%, #6A4275 100%); }
+/* the weight dial: a blush wheel on the grape band, butter pointer, peach set band, ink readout */
+:root[data-theme="candy"] .wswipe {
+  --dial-band-a: #8B5893; --dial-band-b: #6A4275; --dial-rim: #FDE3E8; --dial-core: #F6CBD3;
+  --dial-tick: rgba(255, 255, 255, .95); --dial-tick-dim: rgba(255, 255, 255, .45); --dial-num: #FFFFFF;
+  --dial-hi: #FCE0A2; --dial-prog: #EFA595; --dial-track: rgba(255, 255, 255, .2);
+  --dial-read: #1C1A1F; --dial-sub: rgba(28, 26, 31, .72); }
+
+/* ---------- Night Drive: the third theme (Me → Theme), a neon synthwave palette ----------
+   Dark only. Deep navy page, magenta = primary/hero, purple = action slabs (white text), cyan = done/tags/Me hero,
+   navy = wells. The palette has no warm colour, so caution/coach/safety borrow a sunset amber (#FFA24C).
+   Contrast: paper on page 17:1, mute on page 8.1:1, ink on magenta 4.6:1, ink on cyan 7.6:1, white on purple 9.2:1,
+   bright magenta text (#FF40EE) on page 6:1. */
+:root[data-theme="neon"] {
+  --ink: #091833; --paper: #EAF2FF; --mute: #9FB0D6; --on-blue: #FFFFFF;
+  --acid: #EA00D9; --blue: #711C91; --coral: #FFA24C; --aqua: #0ABDC6;
+  --acid-ink: #FF40EE; --coral-ink: var(--coral); --aqua-ink: var(--aqua);
+  --bg: #091833; --panel: #0D2247; --panel-2: #133E7C; --text: #EAF2FF; --muted: #9FB0D6;
+  --hair: rgba(10, 189, 198, .16); --hair-2: rgba(10, 189, 198, .32);
+  --good-soft: rgba(10, 189, 198, .14); --warn-soft: rgba(234, 0, 217, .12); --danger-soft: rgba(255, 162, 76, .14);
+  --scrim: rgba(3, 8, 20, .72); --overlay: rgba(3, 8, 20, .86); --lift: 0 18px 40px rgba(0, 0, 0, .55);
+  --c1: var(--coral); --ph-a: .8;
+  color-scheme: dark;
+}
+/* magenta would blur into the purple slabs: accents there are a pale neon cyan (6.9:1 on purple) */
+:root[data-theme="neon"] :is(.cta, .sug, .wswipe) { --acid-ink: #6EF6FF; --aqua-ink: #6EF6FF; --accent: #6EF6FF; }
+/* a purple glow over the top of every screen, like a sky after sunset */
+:root[data-theme="neon"] body { background-image: radial-gradient(130% 55% at 50% -12%, rgba(113, 28, 145, .55), transparent 70%); background-repeat: no-repeat; }
+/* on the magenta hero: text and rings in solid ink and white (the Miami tints are too faint on magenta) */
+:root[data-theme="neon"] #view .card.hero { --ring-1: var(--ink); --ring-2: #FFFFFF; --ring-3: #3D0A6B; }
+:root[data-theme="neon"] :is(.hero .eyebrow, .ring-legend, .me-hero .hero-sub, .coach-card .muted) { color: var(--ink); }
+:root[data-theme="neon"] :is(.wswipe, .sug, #view .cta) { background: linear-gradient(160deg, #7E22A2 0%, #711C91 55%, #5A1574 100%); }
+/* the weight dial: a navy wheel on the purple band, cyan pointer, magenta set band */
+:root[data-theme="neon"] .wswipe {
+  --dial-band-a: #7E22A2; --dial-band-b: #4A1260; --dial-rim: #133E7C; --dial-core: #091833;
+  --dial-tick: rgba(234, 242, 255, .9); --dial-tick-dim: rgba(234, 242, 255, .35); --dial-num: #FFFFFF;
+  --dial-hi: #0ABDC6; --dial-prog: #EA00D9; --dial-track: rgba(234, 242, 255, .14);
+  --dial-read: #FFFFFF; --dial-sub: rgba(10, 189, 198, .9); }
 
 /* ---------- Base ---------- */
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -340,8 +377,8 @@ label.btn { margin: 0; color: var(--text); }   /* .btn sets the face, caps and t
 .switch input:checked + span::after { transform: translateX(20px); background: var(--ink); }
 .switch input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* Presses: a quick squeeze (the wipe itself is .sweep-wrap below) */
-.btn, .cta, .rpe-chip, .repchip, .wside, .stepper button, .plan-row, .mrow { transition: transform .12s var(--ease), background-color .12s, color .12s; }
-.btn:active, .cta:active, .rpe-chip:active, .repchip:active, .wside:active, .stepper button:active, .plan-row:active, .mrow:active { transform: scale(.97); }
+.btn, .cta, .rpe-chip, .repchip, .stepper button, .plan-row, .mrow { transition: transform .12s var(--ease), background-color .12s, color .12s; }
+.btn:active, .cta:active, .rpe-chip:active, .repchip:active, .stepper button:active, .plan-row:active, .mrow:active { transform: scale(.97); }
 
 .pill { display: inline-block; font: 600 10.5px var(--mono); text-transform: uppercase; letter-spacing: .06em; padding: 2px 6px; margin-left: 6px; vertical-align: 1px; }
 .pill.ok { color: var(--good); background: var(--good-soft); }
@@ -408,40 +445,25 @@ label.btn { margin: 0; color: var(--text); }   /* .btn sets the face, caps and t
 .setlist b { flex: 1; font: 800 22px/1 var(--cond); font-stretch: 80%; text-transform: uppercase; }
 .sn { width: 28px; height: 28px; display: grid; place-items: center; font: 600 12px var(--mono); color: var(--ink); background: var(--aqua); }
 
-/* The weight dial, on a full-bleed violet band with an outlined "LB" watermark: tick bezel, ink face, a pink
-   index pointer at the top and a pink arc that fills with today's sets (--p = done / target). The lighter /
-   heavier steps sit in its lower corners. Swipe it, tap a side, or type. */
-.wswipe { position: relative; display: flex; justify-content: center; margin: 4px -16px 0; padding: 26px 16px 18px; overflow: hidden;
-  background: var(--blue); touch-action: pan-y; user-select: none; -webkit-user-select: none; }
-.wswipe::before { content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 3;
-  border: solid transparent; border-width: 18px 11px 0; border-top-color: var(--acid); }
+/* The weight dial: a full-bleed band showing the corner sweep of a big wheel whose centre sits off the bottom-right
+   corner (drawn by js/dial.js from the --dial-* tokens), an outlined "LB" watermark, and the readout in the
+   wheel's lower right. The canvas takes touches only over the wheel; the rest of the band still scrolls. */
+.wswipe { position: relative; height: 300px; margin: 4px -16px 0; overflow: hidden; background: var(--dial-band-a);
+  touch-action: pan-y; user-select: none; -webkit-user-select: none;
+  --dial-band-a: #5B21FF; --dial-band-b: #4A16E0; --dial-rim: #1A1230; --dial-core: #0E0A16;
+  --dial-tick: rgba(255, 255, 255, .9); --dial-tick-dim: rgba(255, 255, 255, .35); --dial-num: #FFFFFF;
+  --dial-hi: #FF5CA8; --dial-prog: #FF5CA8; --dial-track: rgba(255, 255, 255, .14);
+  --dial-read: #FFF3F8; --dial-sub: rgba(255, 243, 248, .72); }
+.wswipe canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 .wswipe::after { content: "LB"; content: "LB" / ""; position: absolute; left: 10px; top: 4px; font: 900 120px/1 var(--cond); font-stretch: 125%;
   color: transparent; -webkit-text-stroke: 1.5px rgba(255, 255, 255, .13); pointer-events: none; }
-.wdial { position: relative; z-index: 1; width: min(66vw, 256px); aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; padding: 12px;
-  background: var(--ink) content-box, repeating-conic-gradient(rgba(255, 255, 255, .5) 0 1deg, transparent 1deg 7.5deg); }
-.wdial::before { content: ""; position: absolute; inset: 28px; border-radius: 50%; opacity: .7;
-  background: repeating-conic-gradient(var(--paper) 0 1deg, transparent 1deg 30deg), repeating-conic-gradient(var(--mute) 0 .5deg, transparent .5deg 6deg);
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 12px), #000 calc(100% - 11px));
-          mask: radial-gradient(farthest-side, transparent calc(100% - 12px), #000 calc(100% - 11px)); }
-.wdial::after { content: ""; position: absolute; inset: 18px; border-radius: 50%;
-  background: conic-gradient(var(--acid) calc(var(--p, 0) * 360deg), rgba(255, 243, 248, .1) 0);
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 8.5px));
-          mask: radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 8.5px)); }
-.wbig { position: relative; z-index: 1; width: 3.2ch; padding: 0; border: 0; background: none; text-align: center;
-  font: 900 clamp(76px, 25vw, 104px)/1 var(--cond); font-stretch: 62%; letter-spacing: -.02em; font-variant-numeric: tabular-nums;
-  color: var(--paper); caret-color: var(--acid); }
-.wbig:focus { border: 0; text-decoration: underline 2px var(--acid); text-underline-offset: 8px; }
-.wdial small { position: absolute; z-index: 1; bottom: 24%; font: 500 10.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--mute); }
-.wside { position: absolute; bottom: 16px; z-index: 2; width: 58px; height: 58px; padding: 0; border: 0; background: var(--ink); color: var(--paper);
-  font: 900 22px/1 var(--cond); font-stretch: 62%; font-variant-numeric: tabular-nums; }
-.wside:first-of-type { left: 16px; }
-.wside:last-of-type { right: 16px; background: var(--acid); color: var(--ink); }
-.wside:active { background: var(--paper); color: var(--ink); }
-/* dial number: a quick horizontal slot roll on swipe */
-.wswipe.nudge-l .wbig { animation: nudge-l .2s var(--ease); }
-.wswipe.nudge-r .wbig { animation: nudge-r .2s var(--ease); }
-@keyframes nudge-l { from { transform: translateX(26px) skewX(-8deg); opacity: .2; } }
-@keyframes nudge-r { from { transform: translateX(-26px) skewX(8deg); opacity: .2; } }
+.wbig { position: absolute; right: 16px; bottom: 10px; z-index: 1; width: 5.4ch; padding: 0; border: 0; background: none; text-align: right;
+  font: 900 88px/1 var(--cond); font-stretch: 62%; letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+  color: var(--dial-read); caret-color: var(--dial-hi); touch-action: none; }
+.wbig::placeholder { color: var(--dial-sub); }
+.wbig:focus { border: 0; text-decoration: underline 2px var(--dial-hi); text-underline-offset: 8px; }
+.wcap { position: absolute; right: 18px; bottom: 106px; z-index: 1; font: 600 11px var(--mono); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--dial-sub); pointer-events: none; }
 
 /* rep + RPE pickers and the steppers: scoreboard strips of joined cells; the selected cell is pink */
 .rpe, .repchips, .stepper { display: flex; gap: 2px; }
@@ -686,9 +708,9 @@ details.sec[open] > summary::after { transform: rotate(45deg); }
 }
 /* Short phones (iPhone SE height): a smaller dial, so its number still lands on the first screen */
 @media (max-height: 700px) {
-  .wswipe { padding: 20px 16px 14px; }
-  .wdial { width: min(56vw, 212px); }
-  .wbig { font-size: clamp(64px, 20vw, 84px); }
+  .wswipe { height: 260px; }
+  .wbig { font-size: 76px; }
+  .wcap { bottom: 94px; }
   #view .card.sug { padding-top: 10px; padding-bottom: 10px; }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -102,6 +102,14 @@ export function migrate() {
     if (s.theme === 'auto') save(KEYS.settings, { ...s, theme: 'dark' });
     save(KEYS.meta, { ...meta, darkDefault: true });
   }
+  // Candy Cloud (Oct 2026) is the default look. One time only, move anyone on Miami Heat dark (the old default)
+  // to Candy Cloud; Miami Heat is still in Me → Theme, and whatever is picked after this sticks.
+  const metaC = getMeta();
+  if (!metaC.candyDefault) {
+    const s = loadTyped('settings', {});
+    if (s.theme === 'dark') save(KEYS.settings, { ...s, theme: 'candy' });
+    save(KEYS.meta, { ...metaC, candyDefault: true });
+  }
   // "My health profile" (Oct 2026): the cardiologist plan, supplement clearance, bleeding-risk notes and
   // the "Brother" voice belong to the app's first user. Anyone who already has data keeps them on; a fresh
   // install (a friend trying the app) starts with the general profile. One time only; after that the
