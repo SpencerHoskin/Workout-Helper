@@ -136,7 +136,7 @@ function weightSwipe(assisted, value, inc, done, setNo) {
   // The field's label is for screen readers; on screen the caption says it ("lb · 5 step", "assist lb · 5 step").
   return `<label class="sr-only" for="f_w">${assisted ? 'Assist (lb)' : 'Weight (lb)'}</label>
     <div class="wswipe" data-inc="${inc}" data-done="${done}">
-      <canvas aria-hidden="true"></canvas>
+      <canvas aria-hidden="true"></canvas><div class="wring" aria-hidden="true"></div>
       <small class="wcap" aria-hidden="true">${assisted ? 'assist ' : ''}lb · ${inc} step · set ${setNo}</small>
       <input id="f_w" name="w" class="wbig" inputmode="decimal" data-input="wtype" value="${esc(value ?? '')}" placeholder="0">
     </div>`;
@@ -196,6 +196,7 @@ export const actions = {
 
 export const submits = {
   logSet(form) {
+    if (dial) dial.settle();
     const ex = exById(ctxNow.arg);
     const f = form.elements;
     const set = { rpe: num(f.rpe.value) };

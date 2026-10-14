@@ -447,19 +447,21 @@ label.btn { margin: 0; color: var(--text); }   /* .btn sets the face, caps and t
 
 /* The weight dial: a full-bleed band showing the corner sweep of a big wheel whose centre sits off the bottom-right
    corner (drawn by js/dial.js from the --dial-* tokens), an outlined "LB" watermark, and the readout in the
-   wheel's lower right. The canvas takes touches only over the wheel; the rest of the band still scrolls. */
+   wheel's lower right. Only the band around the rim (.wring) takes drags; the rest of the box scrolls the page. */
 .wswipe { position: relative; height: 300px; margin: 4px -16px 0; overflow: hidden; background: var(--dial-band-a);
   touch-action: pan-y; user-select: none; -webkit-user-select: none;
   --dial-band-a: #5B21FF; --dial-band-b: #4A16E0; --dial-rim: #1A1230; --dial-core: #0E0A16;
   --dial-tick: rgba(255, 255, 255, .9); --dial-tick-dim: rgba(255, 255, 255, .35); --dial-num: #FFFFFF;
   --dial-hi: #FF5CA8; --dial-prog: #FF5CA8; --dial-track: rgba(255, 255, 255, .14);
   --dial-read: #FFF3F8; --dial-sub: rgba(255, 243, 248, .72); }
-.wswipe canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.wswipe canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+/* the touch band around the rim (clip-path set by js/dial.js): only here does a drag turn the wheel */
+.wring { position: absolute; inset: 0; touch-action: none; }
 .wswipe::after { content: "LB"; content: "LB" / ""; position: absolute; left: 10px; top: 4px; font: 900 120px/1 var(--cond); font-stretch: 125%;
   color: transparent; -webkit-text-stroke: 1.5px rgba(255, 255, 255, .13); pointer-events: none; }
 .wbig { position: absolute; right: 16px; bottom: 10px; z-index: 1; width: 5.4ch; padding: 0; border: 0; background: none; text-align: right;
   font: 900 88px/1 var(--cond); font-stretch: 62%; letter-spacing: -.02em; font-variant-numeric: tabular-nums;
-  color: var(--dial-read); caret-color: var(--dial-hi); touch-action: none; }
+  color: var(--dial-read); caret-color: var(--dial-hi); }
 .wbig::placeholder { color: var(--dial-sub); }
 .wbig:focus { border: 0; text-decoration: underline 2px var(--dial-hi); text-underline-offset: 8px; }
 .wcap { position: absolute; right: 18px; bottom: 106px; z-index: 1; font: 600 11px var(--mono); letter-spacing: .1em; text-transform: uppercase;
