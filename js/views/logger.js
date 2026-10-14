@@ -8,6 +8,7 @@ import { rerender } from '../router.js';
 import { activeSession } from './today.js';
 import { lastCoach } from '../coach.js';
 import { icon } from '../icons.js';
+import { arcDial } from '../dial.js';
 
 // Plain text — callers escape once.
 // Non-breaking spaces keep "120 lb × 12" from splitting across lines.
@@ -85,7 +86,7 @@ export function render(ctx) {
     h += stepper('min', 'Minutes', lastSet ? lastSet.min : 10, 1, 'numeric')
       + `<label class="lbl">Level / speed <span class="muted">(optional)</span></label><input name="lvl" placeholder="e.g. level 6, 3.2 mph" value="${esc(lastSet ? lastSet.lvl || '' : '')}">`;
   } else {
-    if (ex.kind === 'strength') h += weightSwipe(ex.assisted, defW, inc, Math.min(1, sets.length / (ex.sets || 3)));
+    if (ex.kind === 'strength') h += weightSwipe(ex.assisted, defW, inc, Math.min(1, sets.length / (ex.sets || 3)), sets.length + 1);
     h += repChips(ex, defR) + stepper('r', 'Reps', defR, 1, 'numeric');
   }
   const rpe = lastSet && lastSet.rpe ? lastSet.rpe : '';  // carried forward so every set keeps its effort rating
@@ -129,24 +130,16 @@ export function render(ctx) {
   return h;
 }
 
-const sideVal = (v, d) => { const n = num(v); return n == null ? '–' : fmtNum(Math.max(0, n + d), 1); };
-
-/** Weight dial: big number in a sunken dial whose ring fills with today's sets, the next step
-    down/up either side. Swipe it, tap a side, or type. */
-function weightSwipe(assisted, value, inc, done) {
-  // The field's label is for screen readers; on screen the dial says it ("lb · 5 steps", "assist lb · 5 steps").
+/** Weight dial: the corner arc wheel (js/dial.js) on a full-bleed band, with the readout in its lower right.
+    Turn it, tap a number on its rim, or type into the readout. The rim band fills with today's sets. */
+function weightSwipe(assisted, value, inc, done, setNo) {
+  // The field's label is for screen readers; on screen the caption says it ("lb · 5 step", "assist lb · 5 step").
   return `<label class="sr-only" for="f_w">${assisted ? 'Assist (lb)' : 'Weight (lb)'}</label>
-    <div class="wswipe" data-inc="${inc}">
-      <button type="button" class="wside" data-act="step" data-f="w" data-d="-${inc}" aria-label="Decrease by ${inc}">${sideVal(value, -inc)}</button>
-      <div class="wdial" style="--p:${done}"><input id="f_w" name="w" class="wbig" inputmode="decimal" data-input="wtype" value="${esc(value ?? '')}" placeholder="0"><small aria-hidden="true">${assisted ? 'assist ' : ''}lb · ${inc} steps</small></div>
-      <button type="button" class="wside" data-act="step" data-f="w" data-d="${inc}" aria-label="Increase by ${inc}">${sideVal(value, inc)}</button>
+    <div class="wswipe" data-inc="${inc}" data-done="${done}">
+      <canvas aria-hidden="true"></canvas><div class="wring" aria-hidden="true"></div>
+      <small class="wcap" aria-hidden="true">${assisted ? 'assist ' : ''}lb · ${inc} step · set ${setNo}</small>
+      <input id="f_w" name="w" class="wbig" inputmode="decimal" data-input="wtype" value="${esc(value ?? '')}" placeholder="0">
     </div>`;
-}
-function syncSides(wrap) {
-  if (!wrap) return;
-  const inc = Number(wrap.dataset.inc), v = wrap.querySelector('input').value;
-  const [lo, hi] = wrap.querySelectorAll('.wside');
-  lo.textContent = sideVal(v, -inc); hi.textContent = sideVal(v, inc);
 }
 
 /** One-tap rep buttons around the target range; the stepper below handles anything else. */
@@ -162,30 +155,12 @@ function syncRepChips(form) {
   $$('.repchip', form).forEach(b => b.setAttribute('aria-pressed', Number(b.dataset.v) === v));
 }
 
-// Horizontal swipe on the weight: left = heavier (the right-hand number slides in), right = lighter.
+let dial = null;
 export function mount(root) {
   const wrap = root.querySelector('.wswipe');
-  if (!wrap) return;
-  let x0 = null, y0 = 0, swiped = false;
-  // A swipe that ends on a side button must not also count as a tap on it.
-  wrap.addEventListener('click', e => { if (swiped) { swiped = false; e.stopPropagation(); e.preventDefault(); } }, true);
-  wrap.addEventListener('pointerdown', e => { x0 = e.clientX; y0 = e.clientY; });
-  wrap.addEventListener('pointercancel', () => { x0 = null; });
-  wrap.addEventListener('pointerup', e => {
-    if (x0 == null) return;
-    const dx = e.clientX - x0, dy = e.clientY - y0;
-    x0 = null;
-    if (Math.abs(dx) < 36 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-    swiped = true;
-    setTimeout(() => { swiped = false; }, 80);  // the click (if any) follows pointerup immediately
-    const input = wrap.querySelector('input');
-    const inc = Number(wrap.dataset.inc);
-    input.value = Math.max(0, Math.round(((num(input.value) || 0) + (dx < 0 ? inc : -inc)) * 10) / 10);
-    syncSides(wrap);
-    wrap.classList.remove('nudge-l', 'nudge-r'); void wrap.offsetWidth;
-    wrap.classList.add(dx < 0 ? 'nudge-l' : 'nudge-r');
-  });
+  dial = wrap ? arcDial(wrap) : null;
 }
+export function unmount() { dial = null; }
 
 function stepper(name, label, value, step, mode) {
   return `<label class="lbl" for="f_${name}">${label}</label>
@@ -199,7 +174,6 @@ export const actions = {
     const input = el.closest('form').elements[el.dataset.f];
     const v = num(input.value) || 0;
     input.value = Math.max(0, Math.round((v + Number(el.dataset.d)) * 10) / 10);
-    syncSides(input.closest('.wswipe'));
     if (el.dataset.f === 'r') syncRepChips(el.closest('form'));
   },
   repChip(el) {
@@ -222,6 +196,7 @@ export const actions = {
 
 export const submits = {
   logSet(form) {
+    if (dial) dial.settle();
     const ex = exById(ctxNow.arg);
     const f = form.elements;
     const set = { rpe: num(f.rpe.value) };
@@ -254,7 +229,7 @@ export const submits = {
 };
 
 export const inputs = {
-  wtype(el) { syncSides(el.closest('.wswipe')); },
+  wtype() { if (dial) dial.fromInput(); },
   rtype(el) { syncRepChips(el.closest('form')); },
   setupNote(el) { setSetup(el.dataset.ex, el.value.trim()); },
   entryNote(el) { setEntryNote(el.dataset.ex, el.value.trim()); }

@@ -2,7 +2,7 @@
 import { migrate, getLimits, rawDump, getMeta, save, KEYS } from './store.js';
 import { EX, SESSIONS, PENDING } from './catalog.js';
 import { esc, todayStr } from './util.js';
-import { $, closeSheet, sheetOpen, unlockAudio, download, sweep, clearPress, reducedMotion, pushLayer, dropLayer, onLayerEntry, setInstallPrompt, PLATFORM } from './ui.js';
+import { $, closeSheet, sheetOpen, unlockAudio, download, sweep, clearPress, reducedMotion, pushLayer, dropLayer, onLayerEntry, setInstallPrompt, PLATFORM, standalone } from './ui.js';
 import { current, setRenderer, go, rerender } from './router.js';
 import { addRest, stopRest } from './timer.js';
 import { applyTheme, applyProfile } from './theme.js';
@@ -166,6 +166,9 @@ function check(cond, msg) {
 try { migrate(); } catch (e) { console.error('migration failed', e); } // render's error boundary takes it from here
 applyTheme();
 applyProfile();
+// iOS 26 blurs a band across the top of home-screen web apps (system chrome, no way to switch it off).
+// .ios-app moves the header's content below that band, so the blur only ever covers plain header colour.
+document.documentElement.classList.toggle('ios-app', PLATFORM === 'ios' && standalone());
 // Reloaded while a pop-up was open: nothing is open now, so step back off its entry onto this screen's own.
 if (onLayerEntry()) history.back();
 check(Object.values(SESSIONS).every(s => s.ex.every(id => EX[id])), 'Session references unknown exercise');
