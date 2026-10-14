@@ -77,7 +77,7 @@ export function render(ctx) {
     <label class="lbl">Rest timer (seconds)</label><select data-change="setting" data-k="restSec">${[60, 75, 90, 120, 150, 180].map(n => `<option ${+set.restSec === n ? 'selected' : ''}>${n}</option>`).join('')}</select>
     <label class="switch"><input type="checkbox" data-change="myHealth" ${mine ? 'checked' : ''}><span></span> My health profile</label>
     <p class="muted small">Adds the cardiologist plan, supplement clearance, bleeding-risk safety notes and the “Brother” voice. Leave it off if you’re a friend trying Kiln.</p>
-    <label class="lbl">Theme</label><select data-change="setting" data-k="theme">${[['auto', 'Match phone'], ['light', 'Light'], ['dark', 'Dark']].map(([v, l]) => `<option value="${v}" ${set.theme === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
+    <label class="lbl">Theme</label><select data-change="setting" data-k="theme">${[['dark', 'Miami Heat (dark)'], ['light', 'Miami Heat (light)'], ['auto', 'Miami Heat (match phone)'], ['candy', 'Candy Cloud']].map(([v, l]) => `<option value="${v}" ${set.theme === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
     <h3>Your data</h3><p class="muted small">Everything is stored on this phone. Back it up now and then${PLATFORM === 'ios' ? ' (save it to Files or iCloud Drive)' : PLATFORM === 'android' ? ' (it lands in Downloads; keep a copy in Google Drive)' : ''}. Backups never include your coach passcode.</p>
     <div class="row btn-row"><button class="btn small" data-act="exportJson">${icon('download', 16)} Backup</button>
       <label class="btn small">${icon('upload', 16)} Restore<input type="file" accept="application/json,.json" data-change="importJson" hidden></label>

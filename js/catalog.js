@@ -118,7 +118,7 @@ export const MY_GOAL = {
 export const DEFAULT_SETTINGS = {
   gymName: GYM,
   restSec: 90,
-  theme: 'dark',              // 'auto' | 'light' | 'dark' — dark is the default look
+  theme: 'dark',              // 'auto' | 'light' | 'dark' | 'candy' — dark (Miami Heat) is the default look
   coachUrl: '/api/coach',
   coachPass: '',
   myHealth: false,            // "My health profile": cardiologist plan, supplement clearance, bleeding-risk notes, "Brother"

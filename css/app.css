@@ -70,7 +70,7 @@
   --mono: 'Plex Mono', ui-monospace, Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root:not([data-theme="light"]):not([data-theme="candy"]) {
     --acid-ink: var(--acid); --coral-ink: var(--coral); --aqua-ink: var(--aqua); --c1: var(--coral); --ph-a: .8;
     --bg: #0E0A16; --panel: #171024; --panel-2: #211833; --text: #FFF3F8; --muted: #B6A8C8;
     --hair: rgba(255, 243, 248, .12); --hair-2: rgba(255, 243, 248, .24);
@@ -91,6 +91,37 @@
 .hero, .cta, .sug, .coach-card, .me-hero, .forecast-box, .wswipe, .coach-tgt, .rest {
   --acid-ink: var(--acid); --coral-ink: var(--coral); --aqua-ink: var(--aqua); --accent: var(--acid); }
 
+/* ---------- Candy Cloud: the second theme (Me → Theme), from the Phil & Sebastian bag ----------
+   Light only. design/palettes/candy-cloud.md has the palette and its contrast figures. Same roles as Miami
+   Heat: peach coral = primary/hero, grape = action slabs (white text), watermelon = coach/safety, butter =
+   done/tags/Me hero. Text accents on the blush page use the deeper "-ink" shades (each >= 4.5:1). */
+:root[data-theme="candy"] {
+  --ink: #1C1A1F; --paper: #FFF7F9; --mute: #6B5560; --on-blue: #FFFFFF;
+  --acid: #EFA595; --blue: #7D4F86; --coral: #E18E8D; --aqua: #FCE0A2;
+  --acid-ink: #9C3F70; --coral-ink: #A8484E; --aqua-ink: #7D4F86;
+  --bg: #FDE3E8; --panel: #FFF6F8; --panel-2: #F9D3DB; --text: #1C1A1F; --muted: #6B5560;
+  --hair: rgba(28, 26, 31, .12); --hair-2: rgba(28, 26, 31, .24);
+  --good-soft: rgba(125, 79, 134, .1); --warn-soft: rgba(156, 63, 112, .08); --danger-soft: rgba(168, 72, 78, .1);
+  --scrim: rgba(28, 26, 31, .45); --overlay: rgba(28, 26, 31, .76); --lift: 0 18px 40px rgba(90, 40, 70, .18);
+  --c1: #A8484E; --ph-a: 1;
+  color-scheme: light;
+}
+/* On the grape slabs, accents switch to butter (4.9:1 on grape); on the light slabs they read in ink. */
+:root[data-theme="candy"] :is(.cta, .sug, .wswipe) { --acid-ink: #FCE0A2; --coral-ink: #FFD8B2; --aqua-ink: #FCE0A2; --accent: #FCE0A2; }
+:root[data-theme="candy"] :is(.hero, .coach-card, .me-hero, .forecast-box, .rest) {
+  --acid-ink: var(--ink); --coral-ink: var(--ink); --aqua-ink: var(--ink); --accent: var(--ink); }
+/* the bag's fine wavy contour lines, faint, behind every screen */
+:root[data-theme="candy"] body {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='60' viewBox='0 0 240 60'%3E%3Cpath d='M0 30 C40 10 80 50 120 30 S200 10 240 30' fill='none' stroke='%23B95A8A' stroke-opacity='.1' stroke-width='1'/%3E%3C/svg%3E");
+  background-size: 240px 14px; }
+/* Today's hero and the Me hero carry the bag's sunset gradient; the text stays on its light half */
+:root[data-theme="candy"] #view .card.hero { --ring-1: #1C1A1F; --ring-2: #6A3A73; --ring-3: #8E3666;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='40' viewBox='0 0 300 40'%3E%3Cpath d='M0 20 C50 4 100 36 150 20 S250 4 300 20' fill='none' stroke='%23FFFFFF' stroke-opacity='.35' stroke-width='1.2'/%3E%3C/svg%3E") 0 0 / 300px 11px,
+    linear-gradient(165deg, #FCE0A2 0%, #FFD8B2 30%, #EFA595 58%, #E18E8D 80%, #D97E95 100%); }
+:root[data-theme="candy"] #view .card.me-hero { background: linear-gradient(160deg, #FCE0A2, #FFD8B2 55%, #EFA595); }
+:root[data-theme="candy"] :is(.wswipe, .sug, #view .cta) { background: linear-gradient(160deg, #8B5893 0%, #7D4F86 55%, #6A4275 100%); }
+
 /* ---------- Base ---------- */
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; min-height: 100%; }
@@ -98,6 +129,7 @@ html, body { margin: 0; min-height: 100%; }
    overflow-x: clip keeps the sideways tab push from ever causing horizontal scroll. */
 html { background: var(--bg); overflow-x: clip; scroll-padding: 72px 0 calc(100px + env(safe-area-inset-bottom)); }
 html:has(body.resting) { scroll-padding-bottom: calc(160px + env(safe-area-inset-bottom)); }
+html.ios-app { scroll-padding-top: calc(72px + 2rem + env(safe-area-inset-top)); }   /* the taller header (see .ios-app .top) */
 body { color: var(--text); background: var(--bg); font: 450 16px/1.45 var(--font); font-stretch: 100%;
   -webkit-font-smoothing: antialiased; overflow-x: clip; }
 /* Swiss column rules: four faint verticals behind everything */
@@ -122,6 +154,9 @@ h1, h2, h3 { font-weight: 650; letter-spacing: 0; }
 .top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 10px;
   padding: 8px 16px; padding-top: max(8px, env(safe-area-inset-top));
   background: var(--bg); border-bottom: 1px solid var(--hair-2); }
+/* Installed iPhone app (class set in app.js): iOS 26 blurs the top of the screen, a band a little taller than
+   the status bar. Pad the header so its logo and Safety button sit below it; the band then only covers colour. */
+.ios-app .top { padding-top: calc(env(safe-area-inset-top) + 2rem); }
 .brand { flex: 1; display: flex; align-items: center; gap: 9px; text-decoration: none; }
 .logo { width: 30px; height: 30px; display: grid; place-items: center; background: var(--acid); color: var(--ink); }
 .brand-name { font: 900 21px/1 var(--cond); font-stretch: 125%; letter-spacing: -.01em; text-transform: uppercase; }
