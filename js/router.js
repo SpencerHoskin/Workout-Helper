@@ -17,7 +17,8 @@ export function go(hash, { replace = false } = {}) {
   // from the new screen goes to the screen you were on, not to a stale copy of it.
   // Same screen: leave history alone (the pop-up's entry is dropped or reused by the next pop-up).
   const onLayer = !!(history.state && history.state.kilnLayer);
-  if (location.hash !== target) history[replace || onLayer ? 'replaceState' : 'pushState'](null, '', target);
+  // A plain replace keeps the entry's own state (e.g. Food's "opened from Today" mark, see swipe.js).
+  if (location.hash !== target) history[replace || onLayer ? 'replaceState' : 'pushState'](replace && !onLayer ? history.state : null, '', target);
   renderFn();
 }
 

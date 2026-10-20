@@ -88,7 +88,7 @@
   color-scheme: dark;
 }
 /* On a colour slab the accents read as they do on ink, in both modes. */
-.hero, .cta, .sug, .coach-card, .me-hero, .forecast-box, .wswipe, .coach-tgt, .rest {
+.hero, .cta, .sug, .coach-card, .me-hero, .forecast-box, .wswipe, .coach-tgt, .rest, .food-hero, .food-coach {
   --acid-ink: var(--acid); --coral-ink: var(--coral); --aqua-ink: var(--aqua); --accent: var(--acid); }
 
 /* ---------- Candy Cloud: the second theme (Me → Theme), from the Phil & Sebastian bag ----------
@@ -108,7 +108,7 @@
 }
 /* On the grape slabs, accents switch to butter (4.9:1 on grape); on the light slabs they read in ink. */
 :root[data-theme="candy"] :is(.cta, .sug, .wswipe) { --acid-ink: #FCE0A2; --coral-ink: #FFD8B2; --aqua-ink: #FCE0A2; --accent: #FCE0A2; }
-:root[data-theme="candy"] :is(.hero, .coach-card, .me-hero, .forecast-box, .rest) {
+:root[data-theme="candy"] :is(.hero, .coach-card, .me-hero, .forecast-box, .rest, .food-hero, .food-coach) {
   --acid-ink: var(--ink); --coral-ink: var(--ink); --aqua-ink: var(--ink); --accent: var(--ink); }
 /* the bag's fine wavy contour lines, faint, behind every screen */
 :root[data-theme="candy"] body {
@@ -120,6 +120,7 @@
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='40' viewBox='0 0 300 40'%3E%3Cpath d='M0 20 C50 4 100 36 150 20 S250 4 300 20' fill='none' stroke='%23FFFFFF' stroke-opacity='.35' stroke-width='1.2'/%3E%3C/svg%3E") 0 0 / 300px 11px,
     linear-gradient(165deg, #FCE0A2 0%, #FFD8B2 30%, #EFA595 58%, #E18E8D 80%, #D97E95 100%); }
 :root[data-theme="candy"] #view .card.me-hero { background: linear-gradient(160deg, #FCE0A2, #FFD8B2 55%, #EFA595); }
+:root[data-theme="candy"] #view .card.food-hero { background: linear-gradient(165deg, #FCE0A2 0%, #FFE7C2 45%, #FFD8B2 100%); }
 :root[data-theme="candy"] :is(.wswipe, .sug, #view .cta) { background: linear-gradient(160deg, #8B5893 0%, #7D4F86 55%, #6A4275 100%); }
 /* the weight dial: a blush wheel on the grape band, butter pointer, peach set band, ink readout */
 :root[data-theme="candy"] .wswipe {
@@ -150,7 +151,7 @@
 :root[data-theme="neon"] body { background-image: radial-gradient(130% 55% at 50% -12%, rgba(113, 28, 145, .55), transparent 70%); background-repeat: no-repeat; }
 /* on the magenta hero: text and rings in solid ink and white (the Miami tints are too faint on magenta) */
 :root[data-theme="neon"] #view .card.hero { --ring-1: var(--ink); --ring-2: #FFFFFF; --ring-3: #3D0A6B; }
-:root[data-theme="neon"] :is(.hero .eyebrow, .ring-legend, .me-hero .hero-sub, .coach-card .muted) { color: var(--ink); }
+:root[data-theme="neon"] :is(.hero .eyebrow, .ring-legend, .me-hero .hero-sub, .coach-card .muted, .food-coach p, .food-coach small) { color: var(--ink); }
 :root[data-theme="neon"] :is(.wswipe, .sug, #view .cta) { background: linear-gradient(160deg, #7E22A2 0%, #711C91 55%, #5A1574 100%); }
 /* the weight dial: a navy wheel on the purple band, cyan pointer, magenta set band */
 :root[data-theme="neon"] .wswipe {
@@ -251,7 +252,7 @@ h2.big, .big { font: 900 44px/.92 var(--cond); font-stretch: 62%; letter-spacing
   font-size: 13px; font-weight: 750; font-stretch: 112%; text-transform: uppercase; letter-spacing: .06em; }
 ul, ol { padding-left: 20px; margin: 6px 0; } li { margin: 4px 0; }
 /* list markers: pink squares */
-#view .card ul:not(.plan):not(.targets):not(.mlist):not(.xlist):not(.ring-legend) { list-style: square; }
+#view .card ul:not(.plan):not(.targets):not(.mlist):not(.xlist):not(.ring-legend):not(.macros):not(.meals) { list-style: square; }
 #view .card li::marker { color: var(--acid-ink); }
 .safety-card ul { list-style: square; }
 .safety-card li::marker { color: var(--acid-ink); }
@@ -664,6 +665,95 @@ body:not(.my-health) .mine, body.my-health .general { display: none; }
 .me-hero .hero-l2 { display: block; color: transparent; -webkit-text-stroke: 1.6px var(--ink); }
 .hero-sub { margin: 0; }
 .me-hero .hero-sub { margin-top: 8px; color: rgba(14, 10, 22, .8); }
+
+/* ---------- Food (swipe left from Today) ----------
+   The day on a full-bleed cyan slab (big calories, a bar against the target, macro scoreboard), the photo CTA
+   hanging off it like Today's Scan, today's meals as rows with thumbnails, 7-day bars, and Coach on the orange slab. */
+#view .card.food-hero { margin: 0 -16px; padding: 14px 16px 40px; border: 0; background: var(--aqua); color: var(--ink); }
+.food-hero .eyebrow { color: var(--ink); }
+.food-day { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 -8px; }
+.day-btn { width: 44px; height: 44px; display: grid; place-items: center; border: 0; background: none; color: var(--ink); }
+.day-btn:disabled { opacity: .25; }
+.food-kcal-row { display: flex; align-items: baseline; gap: 10px; margin-top: 6px; }
+.food-kcal { font: 900 clamp(84px, 27vw, 116px)/.86 var(--cond); font-stretch: 62%; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.food-kcal-row > span { font: 600 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+.kbar { position: relative; height: 10px; margin-top: 14px; background: rgba(14, 10, 22, .14); }
+.kbar i { position: absolute; inset: 0 auto 0 0; width: calc(var(--p, 0) * 100%); background: var(--ink); transition: width .5s var(--ease); }
+.kbar.is-over i { background: repeating-linear-gradient(-45deg, var(--ink) 0 6px, transparent 6px 9px), var(--ink); }
+/* sodium: its own line under the macros, with a bar against the daily limit */
+.sodium { margin-top: 16px; padding-top: 10px; border-top: 1px solid rgba(14, 10, 22, .3); }
+.sodium-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.sodium-row .lbl { margin: 0; color: var(--ink); }
+.sodium-row b { font: 900 34px/1 var(--cond); font-stretch: 62%; font-variant-numeric: tabular-nums; }
+.sodium-row > span:not(.lbl) { font: 600 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.sodium-row em { margin-left: auto; font: 600 10.5px var(--mono); font-style: normal; letter-spacing: .08em; text-transform: uppercase; }
+.sodium .kbar { margin-top: 8px; height: 8px; }
+.sodium.over em { padding: 3px 6px; background: var(--ink); color: var(--aqua); }
+.salty { color: var(--coral-ink); font-weight: 700; }
+.metric-seg { display: flex; gap: 2px; }
+.week-head { flex-wrap: wrap; row-gap: 8px; }
+.week-head h2 { flex: 1 0 100%; margin: 0; }
+.meal-row .plan-main small, .food-row .plan-main small { white-space: normal; }
+.metric-seg button { min-height: 36px; padding: 6px 9px; border: 0; background: var(--panel-2); color: var(--muted); font: 600 10px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.metric-seg button[aria-pressed="true"] { background: var(--acid); color: var(--ink); }
+.macros { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 0; padding: 0; margin: 22px 0 0; border-top: 1px solid rgba(14, 10, 22, .3); }
+.macros li { min-width: 0; margin: 0; padding: 10px 6px 0 0; }
+.macros b { display: block; font: 900 34px/1 var(--cond); font-stretch: 62%; font-variant-numeric: tabular-nums; }
+.macros span { display: block; margin-top: 4px; font: 500 9.5px/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.food-hero .hero-pill { gap: 6px; align-items: center; border: 0; cursor: pointer; color: var(--aqua); }
+#view .food-hero + .cta { margin-top: -24px; }
+.file-hidden { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.food-more { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+.food-more .btn { width: 100%; }
+.again .lbl { margin-top: 4px; }
+.again-chips { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px; }
+.again-chip { flex: 0 0 auto; min-height: 44px; padding: 8px 12px; border: 0; background: var(--panel-2); color: var(--text); font: 700 14px var(--font); white-space: nowrap; }
+.again-chip small { margin-left: 6px; font: 600 11px var(--mono); color: var(--muted); }
+.meals { list-style: none; padding: 0; margin: 4px 0 0; }
+.meals li { margin: 0; border-top: 1px solid var(--hair); }
+.meal-row { width: 100%; display: flex; align-items: center; gap: 12px; padding: 10px 0; min-height: 68px; border: 0; background: none; color: inherit; text-align: left; }
+.mthumb { flex: 0 0 52px; width: 52px; height: 52px; display: grid; place-items: center; overflow: hidden; background: var(--panel-2); color: var(--acid-ink); }
+.mthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mkcal { flex: 0 0 auto; text-align: right; font: 900 30px/1 var(--cond); font-stretch: 62%; font-variant-numeric: tabular-nums; }
+.mkcal small { display: block; font: 500 9.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.weekbars { position: relative; display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; height: 130px; margin: 10px 0 6px; }
+.wb { display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding: 0; border: 0; background: none; color: var(--muted); }
+.wb-bar { position: relative; flex: 1; background: var(--panel-2); }
+.wb-bar i { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--h, 0) * 100%); background: var(--aqua-ink); transition: height .5s var(--ease); }
+.wb.over .wb-bar i { background: var(--coral-ink); }
+.wb.on small { color: var(--text); box-shadow: inset 0 -3px 0 var(--acid-ink); }
+.wb small { font: 600 10.5px/1 var(--mono); padding-bottom: 4px; text-align: center; }
+.wb-target { position: absolute; left: 0; right: 0; bottom: calc(20.5px + (100% - 20.5px) * var(--t, 1)); border-top: 2px dashed var(--text); pointer-events: none; }
+#view .card.food-coach { margin: 18px -16px 0; padding: 22px 16px; border: 0; background: var(--coral); color: var(--ink); }
+.food-coach .eyebrow { color: var(--ink); }
+.food-coach > b { display: block; margin: 10px 0 8px; font: 900 30px/1 var(--cond); font-stretch: 62%; text-transform: uppercase; }
+.food-coach p, .food-coach li { color: rgba(14, 10, 22, .86); }
+.food-coach ul { margin: 10px 0; }
+.food-coach li::marker { color: var(--ink) !important; }
+.food-coach-tgt { display: flex; gap: 2px; margin: 12px 0; }
+.food-coach-tgt span { flex: 1; padding: 10px 12px; background: var(--ink); color: var(--paper); font: 900 22px/1 var(--cond); font-stretch: 62%; }
+.food-coach-tgt small { display: block; margin-bottom: 6px; font: 600 9.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--coral); }
+.food-coach .btn { background: var(--ink); color: var(--paper); border: 0; }
+.food-coach .link { color: var(--ink); margin-top: 14px; border-bottom: 2px solid var(--ink); padding-bottom: 2px; }
+.food-coach :focus-visible { outline-color: var(--ink); }
+/* the way in from Today */
+.food-row { display: flex; align-items: center; gap: 14px; padding: 14px 0; min-height: 68px; text-decoration: none; border-bottom: 1px solid var(--hair-2); }
+.fr-ic { width: 44px; height: 44px; flex: 0 0 44px; display: grid; place-items: center; background: var(--aqua); color: var(--ink); }
+.fr-hint { font: 600 10px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+/* meal sheet */
+.meal-photo { display: block; width: calc(100% + 32px); max-height: 34vh; margin: 8px -16px 4px; object-fit: cover; }
+.meal-comment { display: flex; gap: 8px; align-items: flex-start; margin: 4px 0 0; font-size: 15px; }
+.meal-comment .i { margin-top: 2px; color: var(--acid-ink); }
+.item-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) 40px; gap: 6px; align-items: start; padding: 8px 0; border-top: 1px solid var(--hair); }
+.item-name { grid-column: 1 / 4; }
+.item-row .item-num { grid-row: 2; }
+.item-name small { display: block; margin-top: 4px; font: 500 10.5px var(--mono); letter-spacing: .04em; color: var(--muted); }
+.item-num { margin: 0; text-transform: none; letter-spacing: 0; }
+.item-num input { text-align: right; font: 800 18px var(--font); font-variant-numeric: tabular-nums; padding-left: 4px; padding-right: 4px; }
+.item-num small { display: block; margin-top: 3px; text-align: right; font: 500 9.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.item-row .icon-btn { margin-top: 3px; border: 0; color: var(--muted); }
+.meal-sum { margin: 14px 0 0; font-size: 15px; }
+.meal-sum b { font: 900 26px/1 var(--cond); font-stretch: 62%; }
 #view details.sec { padding: 0; }
 details.sec > summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; min-height: 60px; padding: 18px 0; }
 details.sec > summary::-webkit-details-marker { display: none; }

@@ -1,6 +1,7 @@
 // Coach Claude client: builds a compact training snapshot and asks the /api/coach function.
 import { SESSIONS, DAYS, SUPPS, PENDING } from './catalog.js';
-import { KEYS, load, save, getLog, getGoal, getSettings, getWeighins, allExercises, getChecklist, getLimits, getSupps, getDaily, myHealth } from './store.js';
+import { KEYS, load, save, getLog, getGoal, getSettings, getWeighins, allExercises, getChecklist, getLimits, getSupps, getDaily, myHealth, getMeals } from './store.js';
+import { lastDays, average, mealsOn, mealTotals } from './nutrition.js';
 import { exerciseHistory, forecast, weightPoints, movingAverage, suggestNext, weekStats } from './analytics.js';
 import { todayStr, dayNum, fromDayNum, weekKey } from './util.js';
 
@@ -73,7 +74,23 @@ export function buildSnapshot() {
       app_eta_to_goal: wfc && wfc.etaDate
     },
     adherence_last_8_weeks: weeks,
-    recent_notes: notes
+    recent_notes: notes,
+    nutrition: nutritionSnapshot(today, goal)
+  };
+}
+
+/** Food log for the coach: daily totals for the last 14 days and today's meals. null when nothing is logged. */
+function nutritionSnapshot(today, goal) {
+  const meals = getMeals();
+  const days = lastDays(meals, today, 14);
+  if (!days.some(d => d.meals)) return null;
+  const day = d => ({ date: d.date, meals: d.meals, kcal: d.kcal, protein_g: d.protein_g, carbs_g: d.carbs_g, fat_g: d.fat_g, sodium_mg: d.sodium_mg });
+  return {
+    note: 'Logged from meal photos (Claude estimates, often ±25%) and by hand. Days with no meals were not logged, not fasted.',
+    targets: { kcal: Number(goal.kcalTarget) || null, protein_g: Number(goal.proteinTarget) || null, sodium_mg_limit: Number(goal.sodiumLimit) || null },
+    logged_days: days.filter(d => d.meals).map(day),
+    avg_last_7_logged_days: average(days.slice(-7)),
+    today_meals: mealsOn(meals, today).map(m => ({ name: m.name, ...mealTotals(m) }))
   };
 }
 

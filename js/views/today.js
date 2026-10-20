@@ -1,5 +1,6 @@
 import { SESSIONS, DAYS } from '../catalog.js';
-import { KEYS, save, getLog, getGoal, getSettings, getWeighins, exById, todaySession, setTodaySession, getMeta, myHealth } from '../store.js';
+import { KEYS, save, getLog, getGoal, getSettings, getWeighins, exById, todaySession, setTodaySession, getMeta, myHealth, getMeals } from '../store.js';
+import { dayTotals } from '../nutrition.js';
 import { exerciseHistory, suggestNext, weekStats, weekStreak } from '../analytics.js';
 import { ringsSvg } from '../charts.js';
 import { lastCoach } from '../coach.js';
@@ -26,6 +27,15 @@ function greeting() {
   if (h < 12) return 'Morning' + b;
   if (h < 17) return 'Afternoon' + b;
   return 'Evening' + b;
+}
+
+// The way into Food (also a swipe left): today's calories and protein so far.
+function foodRow(date, goal) {
+  const d = dayTotals(getMeals(), date);
+  const kT = Number(goal.kcalTarget) || 0, sL = Number(goal.sodiumLimit) || 0;
+  return `<a class="food-row" href="#/food" data-act="openFood"><span class="fr-ic">${icon('flame', 20)}</span>
+    <span class="plan-main"><b>Food today</b><small>${d.meals ? `${d.kcal.toLocaleString()}${kT ? ' / ' + kT.toLocaleString() : ''} kcal · ${d.protein_g} g protein · <span class="${sL && d.sodium_mg > sL ? 'salty' : ''}">${d.sodium_mg.toLocaleString()} mg sodium</span>` : 'Snap a meal — Claude counts the calories'}</small></span>
+    <span class="fr-hint" aria-hidden="true">swipe ←</span><span class="chev">${icon('chevron', 18)}</span></a>`;
 }
 
 // "Put Kiln on your home screen", per phone. Shown in the browser only, until installed or dismissed.
@@ -84,6 +94,8 @@ export function render() {
     <div class="tile"><b>${ws.sessions}/${goal.sessionsPerWeek}</b><span>workouts/wk</span></div>
     <div class="tile"><b>${ws.volume ? fmtNum(ws.volume / 1000, 1) + 'k' : '0'}</b><span>lb this week</span></div>
   </div>
+
+  ${foodRow(date, goal)}
 
   <section class="card">
     <div class="row-between"><h2>Today's plan</h2>

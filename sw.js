@@ -1,12 +1,12 @@
 // Offline support. Network-first for our own files (so a new deploy shows up on the next open),
 // falling back to the cache when offline or when the gym Wi-Fi is too slow (2.5 s).
 // Bump the version whenever SHELL changes: activate then deletes the old cache, files that were dropped included.
-const CACHE = 'wh-shell-v6';
+const CACHE = 'wh-shell-v7';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/app.js', 'js/catalog.js', 'js/store.js', 'js/util.js', 'js/analytics.js', 'js/ui.js', 'js/charts.js',
-  'js/scanner.js', 'js/health.js', 'js/coach.js', 'js/router.js', 'js/timer.js', 'js/theme.js', 'js/icons.js', 'js/motion.js', 'js/dial.js',
-  'js/views/today.js', 'js/views/machines.js', 'js/views/scan.js', 'js/views/logger.js', 'js/views/progress.js', 'js/views/me.js',
+  'js/scanner.js', 'js/health.js', 'js/coach.js', 'js/router.js', 'js/timer.js', 'js/theme.js', 'js/icons.js', 'js/motion.js', 'js/dial.js', 'js/nutrition.js', 'js/photo.js', 'js/swipe.js',
+  'js/views/today.js', 'js/views/machines.js', 'js/views/scan.js', 'js/views/logger.js', 'js/views/progress.js', 'js/views/me.js', 'js/views/food.js',
   'vendor/jsQR.min.js', 'fonts/archivo-var-latin.woff2', 'fonts/archivo-var-arrows.woff2', 'fonts/plexmono-500-latin.woff2', 'fonts/plexmono-600-latin.woff2', 'icons/icon.svg', 'icons/icon-192.png', 'icons/apple-touch-icon.png'
 ];
 const TIMEOUT_MS = 2500;

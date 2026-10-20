@@ -3,7 +3,7 @@
 // Reads go through an in-memory cache (parsed once, invalidated on write), so callers get the
 // SAME object back each time: mutate it only if you save it straight after.
 import { EX, DEFAULT_CHECKLIST, DEFAULT_GOAL, MY_GOAL, DEFAULT_SETTINGS } from './catalog.js';
-import { num, todayStr, uid, hashCode, normalizeCode } from './util.js';
+import { num, todayStr, uid, hashCode, normalizeCode, dayNum } from './util.js';
 
 export const KEYS = {
   schema: 'wh_schema',       // number
@@ -22,7 +22,9 @@ export const KEYS = {
   coach: 'wh_coach',         // last Coach Claude report {ts, report, model, question}
   today: 'wh_today',         // {date, sessionId} — which session is picked today
   setup: 'wh_setup',         // {exId: "seat 4, pin 3"} machine setup notes
-  meta: 'wh_meta'            // {lastBackup: ms}
+  meta: 'wh_meta',           // {lastBackup: ms}
+  meals: 'wh_meals'          // [{id, date, ts, name, items:[{name, portion, kcal, protein_g, carbs_g, fat_g, sodium_mg, confidence}],
+                             //   kcal_low, kcal_high, label_read, comment, source:'photo'|'hand', thumb: jpeg data URL | null}]
 };
 export const SCHEMA = 2;
 
@@ -30,7 +32,7 @@ export const SCHEMA = 2;
 const SHAPE = {
   schema: 'number', log: 'array', daily: 'object', checklist: 'array', limits: 'object', supps: 'object',
   draft: 'object?', machines: 'object', exercises: 'object', weighins: 'array', goal: 'object', settings: 'object',
-  coach: 'object?', today: 'object?', setup: 'object', meta: 'object'
+  coach: 'object?', today: 'object?', setup: 'object', meta: 'object', meals: 'array'
 };
 const isObj = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 function fits(shape, v) {
@@ -268,6 +270,27 @@ export function setEntryNote(exId, note) {
   if (e) { e.note = note; setLog(log); }
 }
 
+/* ---------- Food ---------- */
+// Meal photos are kept as small thumbnails for two weeks (so you can scroll back), then dropped to save
+// space; the numbers stay forever.
+const THUMB_DAYS = 14;
+const okMeal = m => isObj(m) && typeof m.date === 'string' && Array.isArray(m.items) && m.items.every(isObj) &&
+  (m.name === undefined || typeof m.name === 'string');
+/** Damaged entries (an old bug, a hand-edited backup) are skipped rather than breaking Today, Food or the coach. */
+export const getMeals = () => loadTyped('meals', []).filter(okMeal);
+function saveMeals(meals) {
+  const cutoff = dayNum(todayStr()) - THUMB_DAYS;
+  return save(KEYS.meals, meals.map(m => (m.thumb && (typeof m.date !== 'string' || dayNum(m.date) < cutoff) ? { ...m, thumb: null } : m)));
+}
+export function addMeal(meal) {
+  const m = { id: uid('f'), ts: Date.now(), date: todayStr(), thumb: null, ...meal };
+  if (saveMeals(getMeals().concat(m))) return m;
+  // Phone storage nearly full: the numbers matter more than the picture.
+  return m.thumb && saveMeals(getMeals().concat({ ...m, thumb: null })) ? { ...m, thumb: null } : null;
+}
+export const updateMeal = (id, patch) => saveMeals(getMeals().map(m => (m.id === id ? { ...m, ...patch } : m)));
+export const deleteMeal = id => saveMeals(getMeals().filter(m => m.id !== id));
+
 /* ---------- Backup ---------- */
 export const getMeta = () => loadTyped('meta', {});
 export const markBackedUp = () => save(KEYS.meta, { ...getMeta(), lastBackup: Date.now() });
@@ -300,6 +323,7 @@ export function importAll(obj) {
       throw new Error('Backup workout log is damaged');
     }
     if (name === 'weighins' && !v.every(w => isObj(w) && typeof w.date === 'string')) throw new Error('Backup weigh-ins are damaged');
+    if (name === 'meals' && !v.every(okMeal)) throw new Error('Backup food log is damaged');
     writes.push([k, v]);
   }
   if (!writes.length) throw new Error('Backup is empty');

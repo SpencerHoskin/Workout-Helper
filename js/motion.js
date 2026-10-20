@@ -5,12 +5,12 @@
 // re-renders (logging a set, picking a chart's exercise) never replay them. Nothing moves when the phone asks for reduced motion.
 import { reducedMotion } from './ui.js';
 
-const TABS = ['today', 'machines', 'scan', 'progress', 'me'];
+const TABS = ['today', 'food', 'machines', 'scan', 'progress', 'me'];   // food sits right of Today (swipe left to reach it)
 const TAB_FOR = { log: 'machines' };
 const tabOf = h => { const n = (h || '').replace(/^#\/?/, '').split(/[/?]/)[0] || 'today'; return TAB_FOR[n] || n; };
 // Scoreboard numbers only (not table cells): each digit is a 20-span reel, so a long Sessions table would cost
 // thousands of elements and a slow first frame.
-const ODO = '.tile b, .ring-legend b, .count';
+const ODO = '.tile b, .ring-legend b, .count, .food-kcal, .macros b';
 const ODO_MAX_K = 8;   // last digit starts at 8 × 45 + 60 ms and ends by 880 ms, inside ENTER_MS
 const ENTER_MS = 900;
 const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
