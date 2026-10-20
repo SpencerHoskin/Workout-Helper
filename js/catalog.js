@@ -106,7 +106,9 @@ export const DEFAULT_GOAL = {
   sessionsPerWeek: 3,
   strengthEx: 'legpress',
   strengthTarget: '',
-  why: ''
+  why: '',
+  kcalTarget: '',            // daily calories (Food screen); blank = no target yet
+  proteinTarget: ''          // daily protein, grams
 };
 // Goal defaults for "My health profile" (the app's first user). Anything they've saved still wins.
 export const MY_GOAL = {

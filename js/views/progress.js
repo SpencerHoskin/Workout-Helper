@@ -176,6 +176,10 @@ function reportHtml(c) {
     <small class="muted">${esc(t.note)}</small></li>`).join('')}</ul></section>
   <section class="card"><h2>Next 4 weeks</h2><ol class="weeks">${r.four_week_plan.map(w => `<li><b>Week ${w.week}: ${esc(w.focus)}</b><p class="muted small">${esc(w.details)}</p></li>`).join('')}</ol></section>
   <section class="card"><h2>Habits</h2><ul>${r.habits.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>
+  ${r.nutrition && typeof r.nutrition.summary === 'string' ? `<section class="card"><h2>Food</h2><p>${esc(r.nutrition.summary)}</p>
+    ${r.nutrition.calorie_range || r.nutrition.protein_g_per_day ? `<p class="small"><b>${esc(r.nutrition.calorie_range || '')}</b>${r.nutrition.calorie_range && r.nutrition.protein_g_per_day ? ' · ' : ''}${r.nutrition.protein_g_per_day ? `<b>${esc(String(r.nutrition.protein_g_per_day))} g protein</b> a day` : ''}</p>` : ''}
+    ${Array.isArray(r.nutrition.tips) && r.nutrition.tips.length ? `<ul>${r.nutrition.tips.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+    <a class="link" href="#/food">Open Food ${icon('chevron', 16)}</a></section>` : ''}
   ${r.questions_for_doctor.length ? `<section class="card"><h2>Ask your doctor</h2><ul class="qlist">${r.questions_for_doctor.map(q => `<li>${esc(q)}
     ${!myHealth() ? '' : open.has(q) ? '<span class="pill ok">on checklist</span>' : `<button class="btn small" data-act="addDocQ" data-q="${esc(q)}">${icon('plus', 15)} Checklist</button>`}</li>`).join('')}</ul></section>` : ''}
   <p class="muted small center">Model: ${esc(c.model || '')} · Coaching, not medical advice.</p>`;

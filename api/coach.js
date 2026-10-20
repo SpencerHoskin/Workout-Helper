@@ -29,6 +29,12 @@ export const CoachReport = z.object({
   })),
   four_week_plan: z.array(z.object({ week: z.number(), focus: z.string(), details: z.string() })),
   habits: z.array(z.string()).describe('Recovery, protein, sleep, consistency — specific and short.'),
+  nutrition: z.object({
+    summary: z.string().describe('2–3 sentences on eating vs the goal and training, from the food log. If nothing is logged, say what to log on the Food screen.'),
+    calorie_range: z.string().describe('Suggested daily calories as a range, e.g. "2,100–2,300 kcal", or empty string if there is not enough data.'),
+    protein_g_per_day: z.number().describe('Suggested daily protein in grams, or 0 if there is not enough data.'),
+    tips: z.array(z.string()).describe('Up to 3 short, specific food habits. Empty if none.')
+  }),
   safety_flags: z.array(z.string()).describe('Anything in the data that needs caution. Empty if none.'),
   questions_for_doctor: z.array(z.string()).describe('Medical questions to bring to the cardiologist. Empty if none.')
 });
@@ -46,7 +52,15 @@ Safety rules (non-negotiable — the member trains under a cardiologist's guidan
 - If notes or data mention chest pain/pressure, dizziness, palpitations, unusual breathlessness, a head impact, black stools, or unusual muscle pain/dark urine: add a safety flag telling them to stop and contact their doctor (call 911 for chest pain).
 - You are not their doctor. Medical questions go in questions_for_doctor.
 
-Forecasting: ground dates in the trends in the data and say how confident you are. With little data, say exactly what to log to sharpen the forecast. Use exercise_id values from the snapshot. Weights are in pounds.`;
+Forecasting: ground dates in the trends in the data and say how confident you are. With little data, say exactly what to log to sharpen the forecast. Use exercise_id values from the snapshot. Weights are in pounds.
+
+Nutrition (snapshot.nutrition, from meal photos and hand entries; null when nothing is logged):
+- Photo estimates are rough (often ±25%): talk in trends and ranges, not exact numbers. Unlogged days were not logged, not fasted.
+- Tie eating to the goal and the weigh-in trend: compare intake with the weight change, and protein with training days.
+- Suggest a daily calorie range that keeps weight change within the 1%-per-week limit, never below 1,500 kcal/day, and no fasting, cleanses or extreme diets.
+- Protein: suggest a sensible daily amount for strength training (around 0.7–1 g per lb of goal body weight), spread over meals.
+- Food only: no supplements, shakes with additives, medications or dose advice.
+- This member is on a cardiologist-guided plan: watch sodium (sodium_mg) and flag days over about 2,300 mg; favour a heart-healthy pattern. Do not suggest changing any foods that interact with their medication (e.g. vitamin K with a blood thinner) — put such questions in questions_for_doctor instead.`;
 
 // Everyone who hasn't switched on "My health profile" in the app (friends trying Kiln): no persona name,
 // no cardiac plan, but the same baseline caution — the coach still knows nothing about their health.
@@ -62,7 +76,14 @@ Safety rules (non-negotiable — you know nothing about the member's health):
 - If notes or data mention chest pain/pressure, dizziness, palpitations, unusual breathlessness, sharp or joint pain, or unusual muscle pain/dark urine: add a safety flag telling them to stop and see a doctor (call 911 for chest pain).
 - You are not their doctor. Medical questions go in questions_for_doctor.
 
-Forecasting: ground dates in the trends in the data and say how confident you are. With little data, say exactly what to log to sharpen the forecast. Use exercise_id values from the snapshot. Weights are in pounds.`;
+Forecasting: ground dates in the trends in the data and say how confident you are. With little data, say exactly what to log to sharpen the forecast. Use exercise_id values from the snapshot. Weights are in pounds.
+
+Nutrition (snapshot.nutrition, from meal photos and hand entries; null when nothing is logged):
+- Photo estimates are rough (often ±25%): talk in trends and ranges, not exact numbers. Unlogged days were not logged, not fasted.
+- Tie eating to the goal and the weigh-in trend: compare intake with the weight change, and protein with training days.
+- Suggest a daily calorie range that keeps weight change within the 1%-per-week limit, never below 1,500 kcal/day, and no fasting, cleanses or extreme diets.
+- Protein: suggest a sensible daily amount for strength training (around 0.7–1 g per lb of goal body weight), spread over meals.
+- Food only: no supplements, shakes with additives, medications or dose advice.`;
 
 /** The app says which profile it's on; older app versions don't, and get the original (owner) prompt. */
 export const systemFor = snapshot => (snapshot && snapshot.health_profile === 'general' ? SYSTEM_GENERAL : SYSTEM);

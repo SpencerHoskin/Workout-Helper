@@ -7,6 +7,7 @@ import { current, setRenderer, go, rerender } from './router.js';
 import { addRest, stopRest } from './timer.js';
 import { applyTheme, applyProfile } from './theme.js';
 import { initMotion } from './motion.js';
+import { initPageSwipe, noteRoute } from './swipe.js';
 import { icon } from './icons.js';
 import * as today from './views/today.js';
 import * as machines from './views/machines.js';
@@ -14,9 +15,10 @@ import * as scan from './views/scan.js';
 import * as logger from './views/logger.js';
 import * as progress from './views/progress.js';
 import * as me from './views/me.js';
+import * as food from './views/food.js';
 
-const VIEWS = { today, machines, scan, log: logger, progress, me };
-const TAB_FOR = { today: 'today', machines: 'machines', log: 'machines', scan: 'scan', progress: 'progress', me: 'me' };
+const VIEWS = { today, machines, scan, log: logger, progress, me, food };
+const TAB_FOR = { today: 'today', food: 'today', machines: 'machines', log: 'machines', scan: 'scan', progress: 'progress', me: 'me' };
 
 // Tap beat: a link or "go" button waits a moment before changing screens, so its press wipe plays on the
 // button you tapped rather than over the next screen. No wait when the phone asks for reduced motion
@@ -55,6 +57,7 @@ function render({ keepScroll = false } = {}) {
   const view = VIEWS[ctx.name] || today;
   if (active && active !== view && active.unmount) active.unmount();
   active = view;
+  noteRoute(VIEWS[ctx.name] ? ctx.name : 'today');
   if (location.hash !== renderedHash) clearPress(); // a new screen: no leftover press effect over it
   renderedHash = location.hash;
   const y = window.scrollY;
@@ -175,6 +178,7 @@ check(Object.values(SESSIONS).every(s => s.ex.every(id => EX[id])), 'Session ref
 setRenderer(render);
 render();
 initMotion();
+initPageSwipe();
 
 // Ask iOS/Chrome not to evict our storage under pressure (granted silently for installed apps).
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});

@@ -63,11 +63,12 @@ test('report schema and safety prompt', () => {
   const ok = CoachReport.safeParse({
     headline: 'h', assessment: 'a', goal_forecast: { summary: 's', projected_date: '', confidence: 'low' },
     next_session: [{ exercise_id: 'legpress', exercise: 'Leg press', sets: 3, reps: '10–12', weight_lb: 120, note: '' }],
-    four_week_plan: [], habits: [], safety_flags: [], questions_for_doctor: []
+    four_week_plan: [], habits: [], safety_flags: [], questions_for_doctor: [],
+    nutrition: { summary: 's', calorie_range: '', protein_g_per_day: 0, tips: [] }
   });
   assert.ok(ok.success);
   assert.ok(!CoachReport.safeParse({ headline: 'h' }).success);
-  for (const rule of ['RPE 5–7', 'cleared_limits', 'supplements', '911']) assert.ok(SYSTEM.includes(rule), rule);
+  for (const rule of ['RPE 5–7', 'cleared_limits', 'supplements', '911', '1,500 kcal', 'sodium', 'questions_for_doctor']) assert.ok(SYSTEM.includes(rule), rule);
 });
 
 test('coach prompt follows the app profile; older apps get the original', async () => {
@@ -77,5 +78,49 @@ test('coach prompt follows the app profile; older apps get the original', async 
   assert.equal(systemFor({ health_profile: 'general' }), SYSTEM_GENERAL);
   assert.ok(!SYSTEM_GENERAL.includes('Brother'));
   assert.ok(!/cardiolog|bleeding/i.test(SYSTEM_GENERAL));
-  for (const rule of ['RPE 5–7', 'supplements', '911', 'not their doctor']) assert.ok(SYSTEM_GENERAL.includes(rule), rule);
+  for (const rule of ['RPE 5–7', 'supplements', '911', 'not their doctor', '1,500 kcal', 'no fasting']) assert.ok(SYSTEM_GENERAL.includes(rule), rule);
+});
+
+/* ---------- /api/meal ---------- */
+const meal = (await import('../api/meal.js'));
+function callMeal(method, body, headers = {}) {
+  return new Promise(resolve => {
+    const res = {
+      code: 0, headers: {},
+      status(c) { this.code = c; return this; },
+      setHeader(k, v) { this.headers[k] = v; return this; },
+      end(b) { resolve({ code: this.code, body: JSON.parse(b) }); }
+    };
+    meal.default({ method, body, headers }, res);
+  });
+}
+
+test('meal: same lock as the coach', async () => {
+  env({ ANTHROPIC_API_KEY: 'sk-test' });
+  assert.equal((await callMeal('POST', { image: 'AAAA' })).code, 503);
+  env({ COACH_PASSCODE: 'brother', ANTHROPIC_API_KEY: 'sk-test' });
+  assert.equal((await callMeal('GET')).code, 405);
+  assert.equal((await callMeal('POST', { image: 'AAAA' }, { 'x-coach-pass': 'nope' })).code, 401);
+  assert.equal((await callMeal('POST', { image: 'AAAA' })).code, 401);
+  env({ COACH_PASSCODE: 'brother' });
+  assert.match((await callMeal('POST', { image: 'AAAA' }, { 'x-coach-pass': 'brother' })).body.error, /ANTHROPIC_API_KEY/);
+});
+
+test('meal: validates the photo', async () => {
+  env({ COACH_PASSCODE: 'brother', ANTHROPIC_API_KEY: 'sk-test' });
+  const h = { 'x-coach-pass': 'brother' };
+  assert.equal((await callMeal('POST', {}, h)).code, 400);
+  assert.equal((await callMeal('POST', 'not json', h)).code, 400);
+  assert.equal((await callMeal('POST', { image: 'data:image/jpeg;base64,AAAA' }, h)).code, 400);   // no data-URL prefix
+  assert.equal((await callMeal('POST', { image: 'A'.repeat(3_000_001) }, h)).code, 413);
+});
+
+test('meal: estimate schema and prompts', () => {
+  const ok = meal.MealEstimate.safeParse({ is_food: true, name: 'Chicken & rice', label_read: false, comment: 'Solid protein.',
+    kcal_low: 500, kcal_high: 650,
+    items: [{ name: 'Chicken', portion: '~150 g', kcal: 250, protein_g: 45, carbs_g: 0, fat_g: 6, sodium_mg: 400, confidence: 'medium' }] });
+  assert.ok(ok.success);
+  assert.ok(!meal.MealEstimate.safeParse({ name: 'x' }).success);
+  assert.ok(meal.MEAL_SYSTEM_MINE.includes('sodium') && meal.MEAL_SYSTEM_MINE.startsWith(meal.MEAL_SYSTEM));
+  assert.ok(!/cardiolog/i.test(meal.MEAL_SYSTEM));
 });
