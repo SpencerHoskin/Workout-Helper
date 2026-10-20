@@ -33,6 +33,7 @@ export const MEAL_SYSTEM = `You estimate calories and macros from photos for "Ki
 
 - Identify each food and estimate its portion from visual cues (plate and cutlery size, packaging, hand size). Use typical restaurant/home preparation.
 - Add likely hidden calories as separate items (cooking oil, butter, dressings, sauces, sugar in drinks) and mark them low confidence.
+- Estimate sodium for every item: salt, sauces, cheese, bread, cured meats and restaurant or packaged food are the big sources.
 - If a nutrition label is readable, use its numbers (scaled to the serving shown or stated) and set label_read true.
 - Give a realistic total range in kcal_low/kcal_high (wider when portions are unclear). Item kcal should add up to roughly the middle of that range.
 - If the member adds a note (portion eaten, ingredients, "half of it"), it overrides what you see.

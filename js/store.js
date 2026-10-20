@@ -274,14 +274,19 @@ export function setEntryNote(exId, note) {
 // Meal photos are kept as small thumbnails for two weeks (so you can scroll back), then dropped to save
 // space; the numbers stay forever.
 const THUMB_DAYS = 14;
-export const getMeals = () => loadTyped('meals', []);
+const okMeal = m => isObj(m) && typeof m.date === 'string' && Array.isArray(m.items) && m.items.every(isObj) &&
+  (m.name === undefined || typeof m.name === 'string');
+/** Damaged entries (an old bug, a hand-edited backup) are skipped rather than breaking Today, Food or the coach. */
+export const getMeals = () => loadTyped('meals', []).filter(okMeal);
 function saveMeals(meals) {
   const cutoff = dayNum(todayStr()) - THUMB_DAYS;
   return save(KEYS.meals, meals.map(m => (m.thumb && (typeof m.date !== 'string' || dayNum(m.date) < cutoff) ? { ...m, thumb: null } : m)));
 }
 export function addMeal(meal) {
   const m = { id: uid('f'), ts: Date.now(), date: todayStr(), thumb: null, ...meal };
-  return saveMeals(getMeals().concat(m)) ? m : null;
+  if (saveMeals(getMeals().concat(m))) return m;
+  // Phone storage nearly full: the numbers matter more than the picture.
+  return m.thumb && saveMeals(getMeals().concat({ ...m, thumb: null })) ? { ...m, thumb: null } : null;
 }
 export const updateMeal = (id, patch) => saveMeals(getMeals().map(m => (m.id === id ? { ...m, ...patch } : m)));
 export const deleteMeal = id => saveMeals(getMeals().filter(m => m.id !== id));
@@ -318,7 +323,7 @@ export function importAll(obj) {
       throw new Error('Backup workout log is damaged');
     }
     if (name === 'weighins' && !v.every(w => isObj(w) && typeof w.date === 'string')) throw new Error('Backup weigh-ins are damaged');
-    if (name === 'meals' && !v.every(m => isObj(m) && typeof m.date === 'string' && Array.isArray(m.items))) throw new Error('Backup food log is damaged');
+    if (name === 'meals' && !v.every(okMeal)) throw new Error('Backup food log is damaged');
     writes.push([k, v]);
   }
   if (!writes.length) throw new Error('Backup is empty');

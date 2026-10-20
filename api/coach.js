@@ -60,7 +60,7 @@ Nutrition (snapshot.nutrition, from meal photos and hand entries; null when noth
 - Suggest a daily calorie range that keeps weight change within the 1%-per-week limit, never below 1,500 kcal/day, and no fasting, cleanses or extreme diets.
 - Protein: suggest a sensible daily amount for strength training (around 0.7–1 g per lb of goal body weight), spread over meals.
 - Food only: no supplements, shakes with additives, medications or dose advice.
-- This member is on a cardiologist-guided plan: watch sodium (sodium_mg) and flag days over about 2,300 mg; favour a heart-healthy pattern. Do not suggest changing any foods that interact with their medication (e.g. vitamin K with a blood thinner) — put such questions in questions_for_doctor instead.`;
+- This member is on a cardiologist-guided plan and tracks sodium closely: compare sodium_mg with targets.sodium_mg_limit (about 2,300 mg if none is set), flag days over it and name the meals that drove it; favour a heart-healthy pattern. Do not suggest changing any foods that interact with their medication (e.g. vitamin K with a blood thinner) — put such questions in questions_for_doctor instead.`;
 
 // Everyone who hasn't switched on "My health profile" in the app (friends trying Kiln): no persona name,
 // no cardiac plan, but the same baseline caution — the coach still knows nothing about their health.
@@ -83,7 +83,8 @@ Nutrition (snapshot.nutrition, from meal photos and hand entries; null when noth
 - Tie eating to the goal and the weigh-in trend: compare intake with the weight change, and protein with training days.
 - Suggest a daily calorie range that keeps weight change within the 1%-per-week limit, never below 1,500 kcal/day, and no fasting, cleanses or extreme diets.
 - Protein: suggest a sensible daily amount for strength training (around 0.7–1 g per lb of goal body weight), spread over meals.
-- Food only: no supplements, shakes with additives, medications or dose advice.`;
+- Food only: no supplements, shakes with additives, medications or dose advice.
+- Sodium: compare sodium_mg with targets.sodium_mg_limit (about 2,300 mg if none is set) and mention days that run well over it.`;
 
 /** The app says which profile it's on; older app versions don't, and get the original (owner) prompt. */
 export const systemFor = snapshot => (snapshot && snapshot.health_profile === 'general' ? SYSTEM_GENERAL : SYSTEM);

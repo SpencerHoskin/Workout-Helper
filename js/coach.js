@@ -75,23 +75,22 @@ export function buildSnapshot() {
     },
     adherence_last_8_weeks: weeks,
     recent_notes: notes,
-    nutrition: nutritionSnapshot(today, goal, mine)
+    nutrition: nutritionSnapshot(today, goal)
   };
 }
 
 /** Food log for the coach: daily totals for the last 14 days and today's meals. null when nothing is logged. */
-function nutritionSnapshot(today, goal, mine) {
+function nutritionSnapshot(today, goal) {
   const meals = getMeals();
   const days = lastDays(meals, today, 14);
   if (!days.some(d => d.meals)) return null;
-  const day = d => ({ date: d.date, meals: d.meals, kcal: d.kcal, protein_g: d.protein_g, carbs_g: d.carbs_g, fat_g: d.fat_g, ...(mine ? { sodium_mg: d.sodium_mg } : {}) });
-  const avg7 = average(days.slice(-7));
+  const day = d => ({ date: d.date, meals: d.meals, kcal: d.kcal, protein_g: d.protein_g, carbs_g: d.carbs_g, fat_g: d.fat_g, sodium_mg: d.sodium_mg });
   return {
     note: 'Logged from meal photos (Claude estimates, often ±25%) and by hand. Days with no meals were not logged, not fasted.',
-    targets: { kcal: Number(goal.kcalTarget) || null, protein_g: Number(goal.proteinTarget) || null },
+    targets: { kcal: Number(goal.kcalTarget) || null, protein_g: Number(goal.proteinTarget) || null, sodium_mg_limit: Number(goal.sodiumLimit) || null },
     logged_days: days.filter(d => d.meals).map(day),
-    avg_last_7_logged_days: avg7 && { ...avg7, ...(mine ? {} : { sodium_mg: undefined }) },
-    today_meals: mealsOn(meals, today).map(m => ({ name: m.name, ...mealTotals(m), ...(mine ? {} : { sodium_mg: undefined }) }))
+    avg_last_7_logged_days: average(days.slice(-7)),
+    today_meals: mealsOn(meals, today).map(m => ({ name: m.name, ...mealTotals(m) }))
   };
 }
 

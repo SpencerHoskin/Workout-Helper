@@ -9,12 +9,14 @@ const PAIRS = { today: { dir: -1, to: 'food' }, food: { dir: 1, to: 'today' } };
 const SKIP = 'input, textarea, select, .wswipe, [data-chart], .chart, .chips, .again-chips, .weekbars, .sheet, #safety, .tabs, .top';
 const EDGE = 16;   // leave the screen edges to the system's own back gestures
 
-let st = null, lastName = null, foodFromToday = false;
+let st = null, leaving = false;
+const FROM_TODAY = 'kilnFromToday';
 
-/** Called on every render: remembers whether Food was opened from Today, so swiping back can step back in history. */
-export function noteRoute(name) {
-  if (name === 'food' && lastName !== 'food') foodFromToday = lastName === 'today';
-  lastName = name;
+/** Open Food from Today. The history entry is marked, so swiping back on Food steps back to that same Today
+    entry; Food reached any other way (a link from Progress, Back, a reload) replaces itself with Today instead. */
+export function openFoodFromToday() {
+  go(PAIRS.today.to);
+  if (current().name === 'food') history.replaceState({ ...(history.state || {}), [FROM_TODAY]: 1 }, '', location.href);
 }
 
 function reset(view, animate) {
@@ -25,8 +27,8 @@ function reset(view, animate) {
 }
 
 function navigate(name) {
-  if (name === 'today') go(PAIRS.today.to);
-  else if (foodFromToday && history.length > 1) history.back();
+  if (name === 'today') openFoodFromToday();
+  else if (history.state && history.state[FROM_TODAY]) history.back();
   else go(PAIRS.food.to, { replace: true });
 }
 
@@ -35,7 +37,7 @@ export function initPageSwipe() {
   if (!view) return;
   document.addEventListener('touchstart', e => {
     st = null;
-    if (e.touches.length !== 1 || sheetOpen() || !$('#safety').hidden) return;
+    if (leaving || e.touches.length !== 1 || sheetOpen() || !$('#safety').hidden) return;
     const name = current().name;
     if (!PAIRS[name] || e.target.closest(SKIP)) return;
     const t = e.touches[0];
@@ -72,7 +74,12 @@ export function initPageSwipe() {
     view.style.transition = 'transform .14s ease-in, opacity .14s';
     view.style.transform = `translateX(${want * 35}%)`;
     view.style.opacity = '0';
-    setTimeout(() => { reset(view, false); navigate(s.name); }, 140);
+    leaving = true;
+    setTimeout(() => {
+      leaving = false;
+      reset(view, false);
+      if (current().name === s.name && !sheetOpen()) navigate(s.name);   // nothing else moved us meanwhile
+    }, 140);
   };
   document.addEventListener('touchend', end, { passive: true });
   document.addEventListener('touchcancel', end, { passive: true });

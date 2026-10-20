@@ -108,13 +108,15 @@ export const DEFAULT_GOAL = {
   strengthTarget: '',
   why: '',
   kcalTarget: '',            // daily calories (Food screen); blank = no target yet
-  proteinTarget: ''          // daily protein, grams
+  proteinTarget: '',         // daily protein, grams
+  sodiumLimit: ''            // daily sodium limit, mg
 };
 // Goal defaults for "My health profile" (the app's first user). Anything they've saved still wins.
 export const MY_GOAL = {
   type: 'recomp',
   targetWeight: 165,
-  why: 'Get to 165 lbs, or hold weight while losing fat / adding muscle.'
+  why: 'Get to 165 lbs, or hold weight while losing fat / adding muscle.',
+  sodiumLimit: 2300          // the general daily limit until the cardiologist gives a number (Food → Daily targets)
 };
 
 export const DEFAULT_SETTINGS = {

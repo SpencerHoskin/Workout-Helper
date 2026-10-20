@@ -32,9 +32,9 @@ function greeting() {
 // The way into Food (also a swipe left): today's calories and protein so far.
 function foodRow(date, goal) {
   const d = dayTotals(getMeals(), date);
-  const kT = Number(goal.kcalTarget) || 0;
-  return `<a class="food-row" href="#/food"><span class="fr-ic">${icon('flame', 20)}</span>
-    <span class="plan-main"><b>Food today</b><small>${d.meals ? `${d.kcal.toLocaleString()}${kT ? ' / ' + kT.toLocaleString() : ''} kcal · ${d.protein_g} g protein` : 'Snap a meal — Claude counts the calories'}</small></span>
+  const kT = Number(goal.kcalTarget) || 0, sL = Number(goal.sodiumLimit) || 0;
+  return `<a class="food-row" href="#/food" data-act="openFood"><span class="fr-ic">${icon('flame', 20)}</span>
+    <span class="plan-main"><b>Food today</b><small>${d.meals ? `${d.kcal.toLocaleString()}${kT ? ' / ' + kT.toLocaleString() : ''} kcal · ${d.protein_g} g protein · <span class="${sL && d.sodium_mg > sL ? 'salty' : ''}">${d.sodium_mg.toLocaleString()} mg sodium</span>` : 'Snap a meal — Claude counts the calories'}</small></span>
     <span class="fr-hint" aria-hidden="true">swipe ←</span><span class="chev">${icon('chevron', 18)}</span></a>`;
 }
 

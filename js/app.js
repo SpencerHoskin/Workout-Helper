@@ -7,7 +7,7 @@ import { current, setRenderer, go, rerender } from './router.js';
 import { addRest, stopRest } from './timer.js';
 import { applyTheme, applyProfile } from './theme.js';
 import { initMotion } from './motion.js';
-import { initPageSwipe, noteRoute } from './swipe.js';
+import { initPageSwipe, openFoodFromToday } from './swipe.js';
 import { icon } from './icons.js';
 import * as today from './views/today.js';
 import * as machines from './views/machines.js';
@@ -35,6 +35,7 @@ const merge = key => Object.assign({}, ...Object.values(VIEWS).map(v => v[key] |
 const ACTIONS = {
   ...merge('actions'),
   go: el => afterBeat(() => go(el.dataset.to)),
+  openFood: () => afterBeat(openFoodFromToday),
   closeSheet: () => closeSheet(),
   weighin: () => progress.openWeighin(),
   editMachine: el => machines.editMachine(el.dataset.id),
@@ -51,13 +52,14 @@ const SUBMITS = merge('submits');
 
 let active = null;
 let renderedHash = null;
+let renderedDay = null;
 
 function render({ keepScroll = false } = {}) {
   const ctx = current();
   const view = VIEWS[ctx.name] || today;
   if (active && active !== view && active.unmount) active.unmount();
   active = view;
-  noteRoute(VIEWS[ctx.name] ? ctx.name : 'today');
+  renderedDay = todayStr();
   if (location.hash !== renderedHash) clearPress(); // a new screen: no leftover press effect over it
   renderedHash = location.hash;
   const y = window.scrollY;
@@ -145,6 +147,11 @@ const onNav = () => {
   else if (!onLayerEntry()) { if (!$('#safety').hidden) closeSafety(); else closeSheet(); }
 };
 window.addEventListener('hashchange', onNav);
+// The installed app often resumes from the background without reloading: a Today or Food screen left open
+// overnight is redrawn for the new day (otherwise a morning snap would land on yesterday).
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && renderedDay && renderedDay !== todayStr() && !sheetOpen()) render({ keepScroll: false });
+});
 window.addEventListener('popstate', onNav);
 document.addEventListener('pointerdown', unlockAudio, { once: true, capture: true });
 document.addEventListener('pointerdown', sweep, { passive: true, capture: true });

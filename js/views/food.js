@@ -1,6 +1,6 @@
 // Food: swipe left from Today. Snap a meal (Claude estimates calories and macros from the photo), check and
 // save it, see the day against your targets and the last 7 days, and ask Coach Claude about your eating.
-import { getMeals, addMeal, updateMeal, deleteMeal, getGoal, setGoalField, getSettings, myHealth } from '../store.js';
+import { getMeals, addMeal, updateMeal, deleteMeal, getGoal, setGoalField, getSettings } from '../store.js';
 import { dayTotals, mealsOn, mealTotals, lastDays, average, recentMeals } from '../nutrition.js';
 import { preparePhoto, estimateMeal } from '../photo.js';
 import { askCoach, lastCoach } from '../coach.js';
@@ -14,7 +14,18 @@ const COACH_Q = 'Look at my food log next to my training and weigh-ins: am I eat
 const k = v => (v >= 10000 ? fmtNum(v / 1000, 1) + 'k' : Math.round(v).toLocaleString());
 const isDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s || '');
 
+const METRICS = { kcal: { f: 'kcal', label: 'Calories', unit: 'kcal' }, protein: { f: 'protein_g', label: 'Protein', unit: 'g protein' }, sodium: { f: 'sodium_mg', label: 'Sodium', unit: 'mg sodium' } };
+const bar = (v, of, what) => `<div class="kbar ${v > of ? 'is-over' : ''}" role="img" aria-label="${Math.round(v / of * 100)}% ${what}"><i style="--p:${Math.min(1, v / of)}"></i></div>`;
+
 let viewDate = todayStr();
+let viewToday = true;   // showing "today" (no ?d=): saves use the real date at save time, even after midnight
+/** Where a new meal goes: now for today; local noon for an earlier day. */
+const newMealAt = () => {
+  if (viewToday) return { date: todayStr(), ts: Date.now() };
+  const [y, m, d] = viewDate.split('-').map(Number);
+  return { date: viewDate, ts: new Date(y, m - 1, d, 12).getTime() };
+};
+let weekMetric = 'kcal';
 let pending = null;    // the photo being estimated: {preview, thumb, upload, estimate, token}
 
 function dayLabel(d) {
@@ -26,12 +37,12 @@ function dayLabel(d) {
 
 export function render(ctx) {
   const t = todayStr();
-  viewDate = isDate(ctx.query.d) && ctx.query.d <= t ? ctx.query.d : t;
+  viewDate = isDate(ctx.query.d) && ctx.query.d < t ? ctx.query.d : t;
+  viewToday = viewDate === t;
   const meals = getMeals();
   const day = dayTotals(meals, viewDate);
   const goal = getGoal();
-  const kT = num(goal.kcalTarget), pT = num(goal.proteinTarget);
-  const mine = myHealth();
+  const kT = num(goal.kcalTarget), pT = num(goal.proteinTarget), sL = num(goal.sodiumLimit);
   const list = mealsOn(meals, viewDate);
 
   let h = `<section class="card food-hero">
@@ -41,14 +52,18 @@ export function render(ctx) {
       <button type="button" class="day-btn" data-act="foodDay" data-d="1" aria-label="Next day" ${viewDate === t ? 'disabled' : ''}>${icon('chevron', 20)}</button>
     </div>
     <div class="food-kcal-row"><b class="food-kcal">${k(day.kcal)}</b><span>${kT ? `of ${k(kT)} kcal` : 'kcal'}</span></div>
-    ${kT ? `<div class="kbar" role="img" aria-label="${Math.round(day.kcal / kT * 100)}% of your calorie target"><i style="--p:${Math.min(1, day.kcal / kT)}"></i>${day.kcal > kT ? '<em>over</em>' : ''}</div>` : ''}
+    ${kT ? bar(day.kcal, kT, 'of your calorie target') : ''}
     <ul class="macros">
       <li><b>${k(day.protein_g)}</b><span>g protein${pT ? ' / ' + k(pT) : ''}</span></li>
       <li><b>${k(day.carbs_g)}</b><span>g carbs</span></li>
       <li><b>${k(day.fat_g)}</b><span>g fat</span></li>
-      ${mine ? `<li><b>${k(day.sodium_mg)}</b><span>mg sodium</span></li>` : ''}
     </ul>
-    <button type="button" class="hero-pill" data-act="foodTargets">${kT || pT ? 'Daily targets' : 'Set daily targets'} ${icon('edit', 13)}</button>
+    <div class="sodium ${sL && day.sodium_mg > sL ? 'over' : ''}">
+      <div class="sodium-row"><span class="lbl">Sodium</span><b>${k(day.sodium_mg)}</b><span>${sL ? `/ ${k(sL)} mg` : 'mg'}</span>
+        ${sL ? `<em>${day.sodium_mg > sL ? `${k(day.sodium_mg - sL)} mg over` : `${k(sL - day.sodium_mg)} mg left`}</em>` : ''}</div>
+      ${sL ? bar(day.sodium_mg, sL, 'of your sodium limit') : ''}
+    </div>
+    <button type="button" class="hero-pill" data-act="foodTargets">${kT || pT || sL ? 'Daily targets' : 'Set daily targets'} ${icon('edit', 13)}</button>
   </section>
 
   <label class="cta" for="mealCam"><span class="cta-ic">${icon('camera', 24)}</span><span><b>Snap a meal</b><small>Photo of a plate, snack or label</small></span></label>
@@ -72,7 +87,7 @@ export function render(ctx) {
       const time = new Date(m.ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
       return `<li><button type="button" class="meal-row" data-act="foodEdit" data-id="${esc(m.id)}">
         <span class="mthumb">${m.thumb ? `<img src="${esc(m.thumb)}" alt="">` : icon(m.source === 'photo' ? 'camera' : 'flame', 20)}</span>
-        <span class="plan-main"><b>${esc(m.name || 'Meal')}</b><small>${esc(time)} · ${k(mt.protein_g)} g protein${mine && mt.sodium_mg >= 1000 ? ` · ${k(mt.sodium_mg)} mg sodium` : ''}</small></span>
+        <span class="plan-main"><b>${esc(m.name || 'Meal')}</b><small>${esc(time)} · ${k(mt.protein_g)} g protein · <span class="${sL && mt.sodium_mg >= sL / 2 ? 'salty' : ''}">${k(mt.sodium_mg)} mg sodium</span></small></span>
         <span class="mkcal">${k(mt.kcal)}<small>kcal</small></span></button></li>`;
     }).join('')}</ul>`;
   } else {
@@ -82,12 +97,18 @@ export function render(ctx) {
 
   const days = lastDays(meals, t, 7);
   const avg = average(days);
-  const top = Math.max(kT || 0, ...days.map(d => d.kcal), 1);
-  h += `<section class="card"><h2>Last 7 days</h2>
-    <div class="weekbars" ${kT ? `style="--t:${kT / top}"` : ''}>${days.map(d => `<button type="button" class="wb ${d.date === viewDate ? 'on' : ''} ${kT && d.kcal > kT ? 'over' : ''}" data-act="foodGo" data-d="${d.date}" aria-label="${esc(dayLabel(d.date))}: ${d.kcal} kcal">
-      <span class="wb-bar"><i style="--h:${d.kcal / top}"></i></span><small>${DOW[new Date(dayNum(d.date) * 864e5).getUTCDay()].slice(0, 1)}</small></button>`).join('')}
-      ${kT ? '<span class="wb-target" aria-hidden="true"></span>' : ''}</div>
-    <p class="muted small">${avg ? `Average ${k(avg.kcal)} kcal · ${k(avg.protein_g)} g protein over ${avg.days} logged day${avg.days > 1 ? 's' : ''}.` : 'Log a few days to see your averages.'}${kT ? ' The line is your target.' : ''}</p>
+  const M = METRICS[weekMetric];
+  const tgt = { kcal: kT, protein_g: pT, sodium_mg: sL }[M.f] || 0;
+  const top = Math.max(tgt, ...days.map(d => d[M.f]), 1);
+  // Over the line is bad for calories and sodium, good for protein.
+  const over = d => tgt && d[M.f] > tgt && M.f !== 'protein_g';
+  h += `<section class="card"><div class="row-between week-head"><h2>Last 7 days</h2>
+      <div class="metric-seg" role="group" aria-label="Chart">${Object.entries(METRICS).map(([id, m]) =>
+        `<button type="button" data-act="foodMetric" data-m="${id}" aria-pressed="${id === weekMetric}">${m.label}</button>`).join('')}</div></div>
+    <div class="weekbars ${M.f === 'sodium_mg' ? 'is-sodium' : ''}" ${tgt ? `style="--t:${tgt / top}"` : ''}>${days.map(d => `<button type="button" class="wb ${d.date === viewDate ? 'on' : ''} ${over(d) ? 'over' : ''}" data-act="foodGo" data-d="${d.date}" aria-label="${esc(dayLabel(d.date))}: ${d[M.f]} ${M.unit}">
+      <span class="wb-bar"><i style="--h:${d[M.f] / top}"></i></span><small>${DOW[new Date(dayNum(d.date) * 864e5).getUTCDay()].slice(0, 1)}</small></button>`).join('')}
+      ${tgt ? '<span class="wb-target" aria-hidden="true"></span>' : ''}</div>
+    <p class="muted small">${avg ? `Average ${k(avg.kcal)} kcal · ${k(avg.protein_g)} g protein · ${k(avg.sodium_mg)} mg sodium over ${avg.days} logged day${avg.days > 1 ? 's' : ''}.` : 'Log a few days to see your averages.'}${tgt ? ` The line is your ${M.f === 'sodium_mg' ? 'limit' : 'target'}.` : ''}</p>
   </section>`;
 
   const c = lastCoach();
@@ -110,18 +131,20 @@ export function render(ctx) {
 /* ---------- Meal form (review an estimate, add by hand, edit) ---------- */
 function itemRow(it = {}) {
   const kc = num(it.kcal);
-  return `<div class="item-row" data-k0="${kc ?? ''}" data-carbs="${num(it.carbs_g) ?? 0}" data-fat="${num(it.fat_g) ?? 0}" data-sodium="${num(it.sodium_mg) ?? 0}" data-conf="${esc(it.confidence || '')}" data-portion="${esc(it.portion || '')}">
+  const so = num(it.sodium_mg);
+  return `<div class="item-row" data-k0="${kc ?? ''}" data-s0="${so ?? ''}" data-carbs="${num(it.carbs_g) ?? 0}" data-fat="${num(it.fat_g) ?? 0}" data-conf="${esc(it.confidence || '')}" data-portion="${esc(it.portion || '')}">
     <span class="item-name"><input name="iname" value="${esc(it.name || '')}" placeholder="Food" aria-label="Food" data-input="foodItem">
       ${it.portion ? `<small>${esc(it.portion)}${it.confidence === 'low' ? ' · rough guess' : ''}</small>` : ''}</span>
-    <label class="item-num"><input name="ikcal" inputmode="decimal" value="${kc ?? ''}" placeholder="0" data-input="foodItem" aria-label="Calories"><small>kcal</small></label>
-    <label class="item-num"><input name="iprot" inputmode="decimal" value="${num(it.protein_g) ?? ''}" placeholder="0" data-input="foodItem" aria-label="Protein grams"><small>g prot</small></label>
     <button type="button" class="icon-btn" data-act="foodDelItem" aria-label="Remove ${esc(it.name || 'item')}">${icon('close', 15, { stroke: 2.5 })}</button>
+    <label class="item-num"><input name="ikcal" inputmode="decimal" value="${kc ?? ''}" placeholder="0" data-input="foodItem" aria-label="Calories"><small>kcal</small></label>
+    <label class="item-num"><input name="iprot" inputmode="decimal" value="${num(it.protein_g) ?? ''}" placeholder="0" data-input="foodItem" aria-label="Protein grams"><small>g protein</small></label>
+    <label class="item-num"><input name="isod" inputmode="decimal" value="${so ?? ''}" placeholder="0" data-input="foodItem" aria-label="Sodium milligrams"><small>mg sodium</small></label>
   </div>`;
 }
 
 function sumText(t, est) {
   const range = est && est.kcal_high > est.kcal_low ? ` <span class="muted">(likely ${k(est.kcal_low)}–${k(est.kcal_high)})</span>` : '';
-  return `<b>${k(t.kcal)} kcal</b> · ${k(t.protein_g)} g protein${range}`;
+  return `<b>${k(t.kcal)} kcal</b> · ${k(t.protein_g)} g protein · ${k(t.sodium_mg)} mg sodium${range}`;
 }
 
 function mealForm(meal, { isNew, photo, est } = {}) {
@@ -134,27 +157,29 @@ function mealForm(meal, { isNew, photo, est } = {}) {
     <form id="foodMeal" data-id="${esc(meal.id || '')}" autocomplete="off">
       <label class="lbl" for="f_mname">Name</label>
       <input id="f_mname" name="mname" value="${esc(meal.name || '')}" placeholder="Breakfast, protein bar…" ${isNew && !photo ? 'autofocus' : ''}>
-      <div class="lbl items-head"><span>Items</span><span>kcal</span><span>protein</span><span></span></div>
+      <div class="lbl">Items</div>
       <div class="items" id="mealItems">${items.map(itemRow).join('')}</div>
       <button type="button" class="btn ghost small" data-act="foodAddItem">${icon('plus', 15)} Add item</button>
       <p class="meal-sum" id="mealSum" aria-live="polite">${sumText(mealTotals(meal), est)}</p>
-      ${photo ? '<p class="muted small">Fix anything that looks off — change calories and the carbs, fat and sodium follow.</p>' : ''}
+      ${photo ? '<p class="muted small">Fix anything that looks off. Change an item’s calories and its carbs and fat follow (and its sodium, unless you typed one in — e.g. from a label).</p>' : ''}
       <button class="btn primary wide" type="submit">${icon('check', 18, { stroke: 2.6 })} Save</button>
     </form>
     ${isNew ? '' : `<button type="button" class="btn ghost wide danger" data-act="foodDel" data-id="${esc(meal.id)}">${icon('close', 16)} Delete meal</button>`}`;
 }
 
-/** Read the form's item rows back. Editing an estimated item's calories scales its carbs, fat and sodium with it. */
+/** Read the form's item rows back. Editing an estimated item's calories scales its carbs and fat with it, and its
+    sodium too unless the sodium was changed by hand (then what you typed wins). */
 function readItems(form) {
   return $$('.item-row', form).map(r => {
     const name = r.querySelector('[name=iname]').value.trim();
     const kcal = num(r.querySelector('[name=ikcal]').value) ?? 0;
     const protein = num(r.querySelector('[name=iprot]').value) ?? 0;
-    const k0 = num(r.dataset.k0);
-    const f = k0 > 0 ? kcal / k0 : 1;
+    const sodium = num(r.querySelector('[name=isod]').value) ?? 0;
+    const k0 = num(r.dataset.k0), s0 = num(r.dataset.s0) ?? 0;
+    const f = k0 > 0 ? Math.max(0, kcal) / k0 : 1;
     const it = { name: name || 'Food', kcal: Math.max(0, Math.round(kcal)), protein_g: Math.max(0, Math.round(protein)),
       carbs_g: Math.round((num(r.dataset.carbs) || 0) * f), fat_g: Math.round((num(r.dataset.fat) || 0) * f),
-      sodium_mg: Math.round((num(r.dataset.sodium) || 0) * f) };
+      sodium_mg: Math.max(0, Math.round(sodium === s0 ? s0 * f : sodium)) };
     if (r.dataset.portion) it.portion = r.dataset.portion;
     if (r.dataset.conf) it.confidence = r.dataset.conf;
     return it;
@@ -162,11 +187,11 @@ function readItems(form) {
 }
 
 /* ---------- Photo → estimate ---------- */
-function photoSheet(err = '') {
+function photoSheet(err = '', note = '') {
   return `<div class="sheet-head"><h2>Snap a meal</h2><p class="muted">Add a note if the photo can’t show it — “half of it”, “no sauce”, “2 scoops”.</p></div>
     <img class="meal-photo" src="${esc(pending.preview)}" alt="Your photo">
     <label class="lbl" for="f_mnote">Note <span class="muted">(optional)</span></label>
-    <input id="f_mnote" placeholder="e.g. large bowl, oat milk" maxlength="200">
+    <input id="f_mnote" placeholder="e.g. large bowl, oat milk" maxlength="200" value="${esc(note)}">
     ${err ? `<p class="flag" role="alert">${icon('alert', 16)}<span>${esc(err)}</span></p>` : ''}
     <button type="button" class="btn primary wide" id="estimateBtn" data-act="foodEstimate">${icon('sparkle', 18)} Estimate calories</button>
     <button type="button" class="btn ghost wide" data-act="foodHand">${icon('keyboard', 18)} Add by hand instead</button>`;
@@ -180,12 +205,15 @@ async function handlePhoto(file) {
       <button type="button" class="btn ghost wide" data-act="go" data-to="me/settings">${icon('gear', 18)} Coach Claude setup</button>`);
     return;
   }
+  let ph;
   try {
-    pending = { ...(await preparePhoto(file)), token: Date.now() };
+    ph = await preparePhoto(file);
   } catch (e) {
     toast(e.message, 'warn');
     return;
   }
+  if (sheetOpen() || !location.hash.startsWith('#/food')) return;   // something else opened while the photo loaded
+  pending = { ...ph, token: Date.now() };
   openSheet(photoSheet(), { onClose: () => { pending = null; } });
 }
 
@@ -204,6 +232,10 @@ export const actions = {
     if (d > todayStr()) return;
     go('food' + (d === todayStr() ? '' : '?d=' + d), { replace: true });
   },
+  foodMetric(el) {
+    weekMetric = METRICS[el.dataset.m] ? el.dataset.m : 'kcal';
+    rerender({ keepScroll: true });
+  },
   foodGo(el) { go('food' + (el.dataset.d === todayStr() ? '' : '?d=' + el.dataset.d), { replace: true }); },
   foodHand() {
     pending = null;
@@ -217,7 +249,7 @@ export const actions = {
     const m = getMeals().find(x => x.id === el.dataset.id);
     if (!m) return;
     const { id, ts, date, thumb, ...rest } = m;
-    if (addMeal({ ...rest, date: viewDate, ts: viewDate === todayStr() ? Date.now() : dayNum(viewDate) * 864e5 + 12 * 36e5, source: 'again' })) {
+    if (addMeal({ ...rest, ...newMealAt(), source: 'again' })) {
       toast(`Logged ${m.name} again`);
       rerender({ keepScroll: true });
     }
@@ -231,13 +263,13 @@ export const actions = {
   foodDelItem(el) {
     const row = el.closest('.item-row'), form = el.closest('form');
     if (!row || !form) return;
-    if ($$('.item-row', form).length === 1) { row.querySelectorAll('input').forEach(i => { i.value = ''; }); row.dataset.k0 = ''; }
+    if ($$('.item-row', form).length === 1) row.outerHTML = itemRow({});   // a clean row: no leftover estimate behind it
     else row.remove();
     inputs.foodItem(form.querySelector('input'));
   },
   foodDel(el) {
     if (!confirm('Delete this meal?')) return;
-    deleteMeal(el.dataset.id);
+    if (!deleteMeal(el.dataset.id)) return;
     closeSheet();
     rerender({ keepScroll: true });
   },
@@ -248,6 +280,8 @@ export const actions = {
       <form id="foodTargets">
         <label class="lbl" for="f_kt">Calories per day</label><input id="f_kt" name="kcal" inputmode="numeric" value="${esc(g.kcalTarget)}" placeholder="e.g. 2200">
         <label class="lbl" for="f_pt">Protein per day (g)</label><input id="f_pt" name="protein" inputmode="numeric" value="${esc(g.proteinTarget)}" placeholder="e.g. 140">
+        <label class="lbl" for="f_sl">Sodium limit per day (mg)</label><input id="f_sl" name="sodium" inputmode="numeric" value="${esc(g.sodiumLimit)}" placeholder="e.g. 2300">
+        <p class="muted small">2,300 mg is the general daily limit. Heart patients are often given a lower one (1,500–2,000 mg) — use the number your doctor gave you.</p>
         <button class="btn primary wide" type="submit">Save targets</button>
       </form>`);
   },
@@ -266,13 +300,13 @@ export const actions = {
       if (!pending || pending.token !== token || !sheetOpen()) return; // closed or replaced meanwhile
       me.estimate = est;
       if (!est.is_food || !est.items.length) {
-        openSheet(photoSheet(est.comment || 'No food in that photo — try another angle.'), { onClose: () => { pending = null; } });
+        openSheet(photoSheet(est.comment || 'No food in that photo — try another angle.', note), { onClose: () => { pending = null; } });
         return;
       }
       openSheet(mealForm({ name: est.name, items: est.items }, { isNew: true, photo: me.preview, est }), { onClose: () => { pending = null; } });
     } catch (e) {
       if (!pending || pending.token !== token || !sheetOpen()) return;
-      openSheet(photoSheet(e.message), { onClose: () => { pending = null; } });
+      openSheet(photoSheet(e.message, note), { onClose: () => { pending = null; } });
     } finally {
       clearInterval(spin);
     }
@@ -318,13 +352,12 @@ export const submits = {
     const name = form.elements.mname.value.trim() || (items.length === 1 ? items[0].name : 'Meal');
     const id = form.dataset.id;
     if (id) {
-      updateMeal(id, { name, items });
+      if (!updateMeal(id, { name, items })) return;   // save() already said why (phone storage full)
       toast('Meal updated');
     } else {
       const est = pending && pending.estimate;
-      const ts = viewDate === todayStr() ? Date.now() : dayNum(viewDate) * 864e5 + 12 * 36e5;
       const saved = addMeal({
-        date: viewDate, ts, name, items,
+        ...newMealAt(), name, items,
         source: est ? 'photo' : 'hand',
         thumb: est ? pending.thumb : null,
         ...(est ? { kcal_low: est.kcal_low, kcal_high: est.kcal_high, label_read: !!est.label_read, comment: est.comment } : {})
@@ -337,9 +370,10 @@ export const submits = {
     rerender({ keepScroll: true });
   },
   foodTargets(form) {
-    const kc = num(form.elements.kcal.value), pr = num(form.elements.protein.value);
+    const kc = num(form.elements.kcal.value), pr = num(form.elements.protein.value), so = num(form.elements.sodium.value);
     setGoalField('kcalTarget', kc > 0 ? Math.round(kc) : '');
     setGoalField('proteinTarget', pr > 0 ? Math.round(pr) : '');
+    setGoalField('sodiumLimit', so > 0 ? Math.round(so) : '');
     closeSheet();
     toast('Targets saved');
     rerender({ keepScroll: true });

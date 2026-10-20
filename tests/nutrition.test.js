@@ -45,6 +45,10 @@ test('meals are stored, edited, deleted and backed up', () => {
   importAll(backup);
   assert.equal(getMeals()[0].name, 'Overnight oats');
   assert.throws(() => importAll({ app: '5am-workout', data: { [KEYS.meals]: [{ date: 1 }] } }), /food log/);
+  assert.throws(() => importAll({ app: '5am-workout', data: { [KEYS.meals]: [{ date: '2026-10-01', items: [null] }] } }), /food log/);
+  // damaged entries already on the phone are skipped, not fatal
+  localStorage.setItem(KEYS.meals, JSON.stringify([{ date: '2026-10-01', items: [null] }, { id: 'ok', date: '2026-10-01', name: 'Fine', items: [it(100)] }])); clearCache();
+  assert.deepEqual(getMeals().map(m => m.name), ['Fine']);
 });
 
 test('photo thumbnails are dropped after two weeks; the numbers stay', () => {
@@ -58,8 +62,13 @@ test('photo thumbnails are dropped after two weeks; the numbers stay', () => {
   assert.ok(b.thumb);
 });
 
-test('daily targets default to blank', () => {
+test('daily targets default to blank; the health profile gets a 2,300 mg sodium limit', () => {
   reset();
   assert.equal(getGoal().kcalTarget, '');
   assert.equal(getGoal().proteinTarget, '');
+  assert.equal(getGoal().sodiumLimit, '');
+  localStorage.setItem(KEYS.settings, JSON.stringify({ myHealth: true })); clearCache();
+  assert.equal(getGoal().sodiumLimit, 2300);
+  localStorage.setItem(KEYS.goal, JSON.stringify({ sodiumLimit: 1500 })); clearCache();
+  assert.equal(getGoal().sodiumLimit, 1500);   // the cardiologist's number wins
 });

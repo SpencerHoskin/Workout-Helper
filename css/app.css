@@ -679,7 +679,23 @@ body:not(.my-health) .mine, body.my-health .general { display: none; }
 .food-kcal-row > span { font: 600 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; }
 .kbar { position: relative; height: 10px; margin-top: 14px; background: rgba(14, 10, 22, .14); }
 .kbar i { position: absolute; inset: 0 auto 0 0; width: calc(var(--p, 0) * 100%); background: var(--ink); transition: width .5s var(--ease); }
-.kbar em { position: absolute; right: 0; top: 14px; font: 600 10px var(--mono); font-style: normal; letter-spacing: .1em; text-transform: uppercase; }
+.kbar.is-over i { background: repeating-linear-gradient(-45deg, var(--ink) 0 6px, transparent 6px 9px), var(--ink); }
+/* sodium: its own line under the macros, with a bar against the daily limit */
+.sodium { margin-top: 16px; padding-top: 10px; border-top: 1px solid rgba(14, 10, 22, .3); }
+.sodium-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.sodium-row .lbl { margin: 0; color: var(--ink); }
+.sodium-row b { font: 900 34px/1 var(--cond); font-stretch: 62%; font-variant-numeric: tabular-nums; }
+.sodium-row > span:not(.lbl) { font: 600 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.sodium-row em { margin-left: auto; font: 600 10.5px var(--mono); font-style: normal; letter-spacing: .08em; text-transform: uppercase; }
+.sodium .kbar { margin-top: 8px; height: 8px; }
+.sodium.over em { padding: 3px 6px; background: var(--ink); color: var(--aqua); }
+.salty { color: var(--coral-ink); font-weight: 700; }
+.metric-seg { display: flex; gap: 2px; }
+.week-head { flex-wrap: wrap; row-gap: 8px; }
+.week-head h2 { flex: 1 0 100%; margin: 0; }
+.meal-row .plan-main small, .food-row .plan-main small { white-space: normal; }
+.metric-seg button { min-height: 36px; padding: 6px 9px; border: 0; background: var(--panel-2); color: var(--muted); font: 600 10px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.metric-seg button[aria-pressed="true"] { background: var(--acid); color: var(--ink); }
 .macros { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 0; padding: 0; margin: 22px 0 0; border-top: 1px solid rgba(14, 10, 22, .3); }
 .macros li { min-width: 0; margin: 0; padding: 10px 6px 0 0; }
 .macros b { display: block; font: 900 34px/1 var(--cond); font-stretch: 62%; font-variant-numeric: tabular-nums; }
@@ -728,8 +744,9 @@ body:not(.my-health) .mine, body.my-health .general { display: none; }
 .meal-photo { display: block; width: calc(100% + 32px); max-height: 34vh; margin: 8px -16px 4px; object-fit: cover; }
 .meal-comment { display: flex; gap: 8px; align-items: flex-start; margin: 4px 0 0; font-size: 15px; }
 .meal-comment .i { margin-top: 2px; color: var(--acid-ink); }
-.items-head { display: grid; grid-template-columns: 1fr 72px 72px 40px; gap: 6px; }
-.item-row { display: grid; grid-template-columns: 1fr 72px 72px 40px; gap: 6px; align-items: start; padding: 6px 0; border-top: 1px solid var(--hair); }
+.item-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) 40px; gap: 6px; align-items: start; padding: 8px 0; border-top: 1px solid var(--hair); }
+.item-name { grid-column: 1 / 4; }
+.item-row .item-num { grid-row: 2; }
 .item-name small { display: block; margin-top: 4px; font: 500 10.5px var(--mono); letter-spacing: .04em; color: var(--muted); }
 .item-num { margin: 0; text-transform: none; letter-spacing: 0; }
 .item-num input { text-align: right; font: 800 18px var(--font); font-variant-numeric: tabular-nums; padding-left: 4px; padding-right: 4px; }
