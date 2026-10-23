@@ -154,7 +154,9 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('popstate', onNav);
 document.addEventListener('pointerdown', unlockAudio, { once: true, capture: true });
-document.addEventListener('pointerdown', sweep, { passive: true, capture: true });
+// The press effect plays when the tap lands (finger lifted), not on touch-down: a scroll that starts on a button
+// never flashes it, and a tap shows it on release. Links and "go" buttons still wait the tap beat after it.
+document.addEventListener('click', sweep, { passive: true, capture: true });
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 // Android/Chrome: keep the install dialog for the "Install Kiln" button on Today instead of the browser's mini-bar.
 window.addEventListener('beforeinstallprompt', e => {
