@@ -110,9 +110,9 @@ export function sweep(e) {
   (function frame(now) {
     if (done) return;
     if (now - t0 >= PRESS_MS || gen !== pressGen) return finish();
-    // Stay on the element if the page scrolled; hide if a re-render swapped the page element out.
-    if (el.isConnected) { if ((r = el.getBoundingClientRect()).width) place(r); }
-    else if (z === PAGE_LAYER) wrap.style.visibility = 'hidden';
+    // Stay on the element if the page scrolled. If a re-render on the same screen swapped it out (Log set,
+    // a chip), finish where it was; a screen change clears it (clearPress).
+    if (el.isConnected && (r = el.getBoundingClientRect()).width) place(r);
     requestAnimationFrame(frame);
   })(t0);
   setTimeout(finish, PRESS_MS + 400); // in case frames stop (app backgrounded mid-press)
