@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { e1rm, linreg, forecast, weeklyCap, movingAverage, weightPoints, suggestNext, isPR, exerciseHistory, weekStats, weekStreak } from '../js/analytics.js';
+import { e1rm, linreg, forecast, weeklyCap, movingAverage, weightPoints, suggestNext, isPR, exerciseHistory, weekStats, weekStreak, goalDatePassed, suggestGoalDate } from '../js/analytics.js';
 import { dayNum, fromDayNum } from '../js/util.js';
 import { EX } from '../js/catalog.js';
 
@@ -125,4 +125,23 @@ test('weekStats and weekStreak', () => {
   assert.deepEqual(s, { sessions: 1, sets: 2, volume: 2000, weighins: 1 });
   assert.equal(weekStreak(log, day(base, 3), 3), 3);
   assert.equal(weekStreak(log, day(base, 3), 1), 4); // this week already counts at goal 1
+});
+
+test('goal date: passed only once the day is behind us; a new date comes from the trend or a steady pace', () => {
+  assert.equal(goalDatePassed({ targetDate: '2026-10-20' }, '2026-10-30'), true);
+  assert.equal(goalDatePassed({ targetDate: '2026-10-30' }, '2026-10-30'), false);
+  assert.equal(goalDatePassed({ targetDate: '' }, '2026-10-30'), false);
+  // One weigh-in at 183, target 170: no trend yet → 13 lb at 0.75 lb/week = 18 weeks.
+  const one = [{ date: '2026-10-20', weight: 183 }];
+  assert.deepEqual(suggestGoalDate({ targetWeight: 170 }, one, '2026-10-30'), { date: '2027-03-05', how: 'pace' });
+  // A steady 1 lb/week trend down from 183 → the trend's own date.
+  const trend = Array.from({ length: 8 }, (_, i) => ({ date: day('2026-09-11', i * 7), weight: 190 - i }));
+  const s = suggestGoalDate({ targetWeight: 170 }, trend, '2026-10-30');
+  assert.equal(s.how, 'trend');
+  assert.ok(s.date > '2027-01-01' && s.date < '2027-03-01', s.date);
+  // Heading the wrong way → steady pace instead.
+  const up = trend.map((w, i) => ({ ...w, weight: 176 + i }));
+  assert.equal(suggestGoalDate({ targetWeight: 170 }, up, '2026-10-30').how, 'pace');
+  assert.equal(suggestGoalDate({ targetWeight: '' }, one, '2026-10-30'), null);
+  assert.equal(suggestGoalDate({ targetWeight: 183 }, one, '2026-10-30'), null);   // already there
 });

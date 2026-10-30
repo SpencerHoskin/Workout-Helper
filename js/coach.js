@@ -1,8 +1,8 @@
 // Coach Claude client: builds a compact training snapshot and asks the /api/coach function.
-import { SESSIONS, DAYS, SUPPS, PENDING } from './catalog.js';
-import { KEYS, load, save, getLog, getGoal, getSettings, getWeighins, allExercises, getChecklist, getLimits, getSupps, getDaily, myHealth, getMeals } from './store.js';
-import { lastDays, average, mealsOn, mealTotals } from './nutrition.js';
-import { exerciseHistory, forecast, weightPoints, movingAverage, suggestNext, weekStats } from './analytics.js';
+import { PLANS, DAYS, SUPPS, PENDING } from './catalog.js';
+import { KEYS, load, save, planId, getLog, getGoal, getSettings, getWeighins, allExercises, getChecklist, getLimits, getSupps, getDaily, myHealth, getMeals } from './store.js';
+import { lastDays, average, mealsOn, mealTotals, isFullDay } from './nutrition.js';
+import { exerciseHistory, forecast, weightPoints, movingAverage, suggestNext, weekStats, goalDatePassed } from './analytics.js';
 import { todayStr, dayNum, fromDayNum, weekKey } from './util.js';
 
 const fmtSet = s => s.min ? `${s.min} min${s.rpe ? ' @' + s.rpe : ''}` : `${s.w ?? 'BW'}x${s.r ?? '?'}${s.rpe ? '@' + s.rpe : ''}`;
@@ -57,6 +57,7 @@ export function buildSnapshot() {
     health_profile: mine ? 'mine' : 'general',
     goal: {
       type: goal.type, target_weight_lb: goal.targetWeight || null, target_date: goal.targetDate || null,
+      target_date_passed: goalDatePassed(goal, today),
       sessions_per_week: goal.sessionsPerWeek, strength_goal: goal.strengthTarget ? { exercise_id: goal.strengthEx, target_lb: +goal.strengthTarget } : null,
       why: goal.why
     },
@@ -65,7 +66,10 @@ export function buildSnapshot() {
       supplements: Object.fromEntries(SUPPS.map(s => [s.name, suppSt[s.id] || s.def])),
       open_doctor_questions: getChecklist().filter(c => !c.done).map(c => c.text)
     } : { note: 'No medical restrictions recorded in the app.' },
-    plan: Object.fromEntries(Object.entries(SESSIONS).map(([k, s]) => [k, { day: DAYS[s.day], exercise_ids: s.ex }])),
+    plan: {
+      style: PLANS[planId()].name,
+      ...Object.fromEntries(Object.entries(PLANS[planId()].sessions).map(([k, s]) => [k, { day: DAYS[s.day], ...(s.focus ? { focus: s.focus } : {}), exercise_ids: s.ex }]))
+    },
     exercises,
     bodyweight: {
       weighins,
@@ -84,12 +88,15 @@ function nutritionSnapshot(today, goal) {
   const meals = getMeals();
   const days = lastDays(meals, today, 14);
   if (!days.some(d => d.meals)) return null;
-  const day = d => ({ date: d.date, meals: d.meals, kcal: d.kcal, protein_g: d.protein_g, carbs_g: d.carbs_g, fat_g: d.fat_g, sodium_mg: d.sodium_mg });
+  const kT = Number(goal.kcalTarget) || 0;
+  const full = d => isFullDay(d, kT);
+  const day = d => ({ date: d.date, meals: d.meals, complete: full(d), kcal: d.kcal, protein_g: d.protein_g, carbs_g: d.carbs_g, fat_g: d.fat_g, sodium_mg: d.sodium_mg });
   return {
-    note: 'Logged from meal photos (Claude estimates, often ±25%) and by hand. Days with no meals were not logged, not fasted.',
+    note: 'Logged from meal photos (Claude estimates, often ±25%) and by hand. Days with no meals were not logged, not fasted. ' +
+      'complete: false means the day looks partly logged (under 3 meals and under 60% of the calorie target); those days are left out of the average.',
     targets: { kcal: Number(goal.kcalTarget) || null, protein_g: Number(goal.proteinTarget) || null, sodium_mg_limit: Number(goal.sodiumLimit) || null },
     logged_days: days.filter(d => d.meals).map(day),
-    avg_last_7_logged_days: average(days.slice(-7)),
+    avg_last_7_full_days: average(days.slice(-7).filter(full)),
     today_meals: mealsOn(meals, today).map(m => ({ name: m.name, ...mealTotals(m) }))
   };
 }

@@ -26,6 +26,9 @@ export function lastDays(meals, end, n = 7) {
   return Array.from({ length: n }, (_, i) => { const d = fromDayNum(e - (n - 1 - i)); return { date: d, ...dayTotals(meals, d) }; });
 }
 
+/** A day the log probably covers in full: 3+ meals, or at least 60% of the calorie target. Anything less is partial. */
+export const isFullDay = (d, kcalTarget = 0) => d.meals >= 3 || (kcalTarget > 0 && d.kcal >= kcalTarget * 0.6);
+
 /** Averages over the logged days only (a day with no meals logged says nothing about intake). */
 export function average(days) {
   const logged = days.filter(d => d.meals > 0);

@@ -1,7 +1,7 @@
 import './helpers/storage.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { totals, dayTotals, lastDays, average, recentMeals } from '../js/nutrition.js';
+import { totals, dayTotals, lastDays, average, recentMeals, isFullDay } from '../js/nutrition.js';
 import { KEYS, clearCache, getMeals, addMeal, updateMeal, deleteMeal, exportAll, importAll, getGoal } from '../js/store.js';
 import { todayStr, dayNum, fromDayNum } from '../js/util.js';
 
@@ -71,4 +71,15 @@ test('daily targets default to blank; the health profile gets a 2,300 mg sodium 
   assert.equal(getGoal().sodiumLimit, 2300);
   localStorage.setItem(KEYS.goal, JSON.stringify({ sodiumLimit: 1500 })); clearCache();
   assert.equal(getGoal().sodiumLimit, 1500);   // the cardiologist's number wins
+});
+
+test('full days: 3+ meals or 60% of the calorie target; partial days stay out of the average', () => {
+  const d = (meals, kcal) => ({ meals, kcal });
+  assert.equal(isFullDay(d(3, 900)), true);
+  assert.equal(isFullDay(d(1, 335), 2200), false);
+  assert.equal(isFullDay(d(2, 1320), 2200), true);   // two big meals
+  assert.equal(isFullDay(d(2, 1200), 2200), false);
+  assert.equal(isFullDay(d(2, 1200)), false);        // no target: meals decide
+  const days = [{ ...d(4, 1175), protein_g: 70, carbs_g: 0, fat_g: 0, sodium_mg: 0 }, { ...d(1, 335), protein_g: 26, carbs_g: 0, fat_g: 0, sodium_mg: 0 }];
+  assert.deepEqual([average(days.filter(x => isFullDay(x, 2200))).kcal, average(days.filter(x => isFullDay(x, 2200))).days], [1175, 1]);
 });

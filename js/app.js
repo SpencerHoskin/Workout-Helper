@@ -1,6 +1,6 @@
 // Boot, routing, and event delegation. Views export render/mount/unmount + handler maps.
 import { migrate, getLimits, rawDump, getMeta, save, KEYS } from './store.js';
-import { EX, SESSIONS, PENDING } from './catalog.js';
+import { EX, PLANS, PENDING } from './catalog.js';
 import { esc, todayStr } from './util.js';
 import { $, closeSheet, sheetOpen, unlockAudio, download, sweep, clearPress, reducedMotion, pushLayer, dropLayer, onLayerEntry, setInstallPrompt, PLATFORM, standalone } from './ui.js';
 import { current, setRenderer, go, rerender } from './router.js';
@@ -183,7 +183,7 @@ applyProfile();
 document.documentElement.classList.toggle('ios-app', PLATFORM === 'ios' && standalone());
 // Reloaded while a pop-up was open: nothing is open now, so step back off its entry onto this screen's own.
 if (onLayerEntry()) history.back();
-check(Object.values(SESSIONS).every(s => s.ex.every(id => EX[id])), 'Session references unknown exercise');
+check(Object.values(PLANS).every(p => Object.values(p.sessions).every(s => s.ex.every(id => EX[id]))), 'Session references unknown exercise');
 setRenderer(render);
 render();
 initMotion();

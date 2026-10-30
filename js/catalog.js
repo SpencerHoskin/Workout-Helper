@@ -46,10 +46,27 @@ export const EX = {
   rower:         { name: 'Rowing machine', kind: 'cardio', target: '5–10 min easy', icon: 'rower' }
 };
 
-export const SESSIONS = {
-  A: { name: 'Session A', day: 1, ex: ['bike', 'legpress', 'chestpress', 'seatedrow', 'legcurl', 'pallof', 'walk'] },
-  B: { name: 'Session B', day: 3, ex: ['bike', 'gobletbox', 'pulldown', 'shoulderpress', 'hipthrust', 'facepull', 'deadbug', 'walk'] },
-  C: { name: 'Session C', day: 5, ex: ['bike', 'legpress', 'inclinepress', 'assistpull', 'legext', 'cablecurl', 'pushdown', 'walk'] }
+// Weekly plans (Me → Weekly plan). Session ids are STABLE — logged sets point at them — and unique across plans.
+// day: 0 = Sunday. Both plans hit every muscle about twice a week and keep each session around 45 minutes.
+export const PLANS = {
+  full: {
+    name: 'Full body',
+    blurb: '3 full-body sessions. Every session works legs, a push, a pull and core, so each muscle gets about 3 visits a week.',
+    sessions: {
+      A: { name: 'Session A', day: 1, ex: ['bike', 'legpress', 'chestpress', 'seatedrow', 'legcurl', 'pallof', 'walk'] },
+      B: { name: 'Session B', day: 3, ex: ['bike', 'gobletbox', 'pulldown', 'shoulderpress', 'hipthrust', 'facepull', 'deadbug', 'walk'] },
+      C: { name: 'Session C', day: 5, ex: ['bike', 'legpress', 'inclinepress', 'assistpull', 'legext', 'cablecurl', 'pushdown', 'walk'] }
+    }
+  },
+  paired: {
+    name: 'Push · Pull · Full',
+    blurb: 'Muscles that work together share a day: chest, shoulders and triceps on Push; back and biceps on Pull. Friday is full body, so each muscle still gets 2 visits a week, and legs are spread over the week instead of one hard leg day.',
+    sessions: {
+      push: { name: 'Push day', focus: 'Chest, shoulders & triceps + quads', day: 1, ex: ['bike', 'legpress', 'chestpress', 'shoulderpress', 'pushdown', 'legext', 'walk'] },
+      pull: { name: 'Pull day', focus: 'Back & biceps + hamstrings & core', day: 3, ex: ['bike', 'pulldown', 'seatedrow', 'facepull', 'cablecurl', 'legcurl', 'deadbug', 'walk'] },
+      mix:  { name: 'Full body', focus: 'A bit of everything', day: 5, ex: ['bike', 'legpress', 'inclinepress', 'assistpull', 'hipthrust', 'abcrunch', 'walk'] }
+    }
+  }
 };
 export const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -125,6 +142,7 @@ export const DEFAULT_SETTINGS = {
   theme: 'candy',             // 'candy' | 'dark' | 'light' | 'auto' (Miami Heat) | 'neon' (Night Drive) — Candy Cloud is the default look
   coachUrl: '/api/coach',
   coachPass: '',
+  plan: 'full',               // a key of PLANS
   myHealth: false,            // "My health profile": cardiologist plan, supplement clearance, bleeding-risk notes, "Brother"
   health: { enabled: false, weightShortcut: 'WH Log Weight', workoutShortcut: 'WH Log Workout' }
 };

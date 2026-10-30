@@ -1,7 +1,7 @@
 // Food: swipe left from Today. Snap a meal (Claude estimates calories and macros from the photo), check and
 // save it, see the day against your targets and the last 7 days, and ask Coach Claude about your eating.
 import { getMeals, addMeal, updateMeal, deleteMeal, getGoal, setGoalField, getSettings } from '../store.js';
-import { dayTotals, mealsOn, mealTotals, lastDays, average, recentMeals } from '../nutrition.js';
+import { dayTotals, mealsOn, mealTotals, lastDays, average, recentMeals, isFullDay } from '../nutrition.js';
 import { preparePhoto, estimateMeal } from '../photo.js';
 import { askCoach, lastCoach } from '../coach.js';
 import { esc, num, todayStr, dayNum, fromDayNum, shortDate, fmtNum } from '../util.js';
@@ -96,7 +96,10 @@ export function render(ctx) {
   h += '</section>';
 
   const days = lastDays(meals, t, 7);
-  const avg = average(days);
+  // Half-logged days (one snack, a forgotten dinner) would drag the average down, so only full days count.
+  const partial = d => d.meals > 0 && !isFullDay(d, kT);
+  const avg = average(days.filter(d => !partial(d)));
+  const nPartial = days.filter(partial).length;
   const M = METRICS[weekMetric];
   const tgt = { kcal: kT, protein_g: pT, sodium_mg: sL }[M.f] || 0;
   const top = Math.max(tgt, ...days.map(d => d[M.f]), 1);
@@ -105,10 +108,10 @@ export function render(ctx) {
   h += `<section class="card"><div class="row-between week-head"><h2>Last 7 days</h2>
       <div class="metric-seg" role="group" aria-label="Chart">${Object.entries(METRICS).map(([id, m]) =>
         `<button type="button" data-act="foodMetric" data-m="${id}" aria-pressed="${id === weekMetric}">${m.label}</button>`).join('')}</div></div>
-    <div class="weekbars ${M.f === 'sodium_mg' ? 'is-sodium' : ''}" ${tgt ? `style="--t:${tgt / top}"` : ''}>${days.map(d => `<button type="button" class="wb ${d.date === viewDate ? 'on' : ''} ${over(d) ? 'over' : ''}" data-act="foodGo" data-d="${d.date}" aria-label="${esc(dayLabel(d.date))}: ${d[M.f]} ${M.unit}">
+    <div class="weekbars ${M.f === 'sodium_mg' ? 'is-sodium' : ''}" ${tgt ? `style="--t:${tgt / top}"` : ''}>${days.map(d => `<button type="button" class="wb ${d.date === viewDate ? 'on' : ''} ${over(d) ? 'over' : ''} ${partial(d) ? 'partial' : ''}" data-act="foodGo" data-d="${d.date}" aria-label="${esc(dayLabel(d.date))}: ${d[M.f]} ${M.unit}${partial(d) ? ', partly logged' : ''}">
       <span class="wb-bar"><i style="--h:${d[M.f] / top}"></i></span><small>${DOW[new Date(dayNum(d.date) * 864e5).getUTCDay()].slice(0, 1)}</small></button>`).join('')}
       ${tgt ? '<span class="wb-target" aria-hidden="true"></span>' : ''}</div>
-    <p class="muted small">${avg ? `Average ${k(avg.kcal)} kcal · ${k(avg.protein_g)} g protein · ${k(avg.sodium_mg)} mg sodium over ${avg.days} logged day${avg.days > 1 ? 's' : ''}.` : 'Log a few days to see your averages.'}${tgt ? ` The line is your ${M.f === 'sodium_mg' ? 'limit' : 'target'}.` : ''}</p>
+    <p class="muted small">${avg ? `Average ${k(avg.kcal)} kcal · ${k(avg.protein_g)} g protein · ${k(avg.sodium_mg)} mg sodium over ${avg.days} full day${avg.days > 1 ? 's' : ''}.` : 'Log a few full days to see your averages.'}${nPartial ? ` ${nPartial} partly logged day${nPartial > 1 ? 's' : ''} (faded) left out: a day counts once it has 3 meals${kT ? ' or 60% of your calories' : ''}.` : ''}${tgt ? ` The line is your ${M.f === 'sodium_mg' ? 'limit' : 'target'}.` : ''}</p>
   </section>`;
 
   const c = lastCoach();

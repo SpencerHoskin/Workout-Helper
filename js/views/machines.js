@@ -75,7 +75,7 @@ export function openNewMachine(code) {
       <label>Type</label>${typeGrid(pre ? pre.id : '')}
       <input type="hidden" name="type" value="${pre ? pre.id : ''}">
       <div class="custom-kind" ${pre && pre.id === 'other' ? '' : 'hidden'}>
-        <label>Logged as</label><select name="kind"><option value="strength">Weight × reps</option><option value="cardio">Minutes (cardio)</option><option value="bodyweight">Reps only</option></select></div>
+        <label>Logged as</label><select name="kind"><option value="strength">Weight × reps</option><option value="assisted">Weight × reps, assisted (less weight = harder)</option><option value="cardio">Minutes (cardio)</option><option value="bodyweight">Reps only</option></select></div>
       <label>Where is it? <span class="muted">(optional)</span></label><input name="zone" placeholder="e.g. Cable zone, back wall">
       ${isUrl(raw) ? `<label class="check-line"><input type="checkbox" name="video" checked> This code opens a training video — show a “Training&nbsp;video” button in the logger</label>` : ''}
       <button class="btn primary wide" type="submit">Save machine</button>
@@ -117,7 +117,7 @@ export const actions = {
   newExercise() {
     openSheet(`<div class="sheet-head"><h2>New exercise</h2><p class="muted small">For anything not in the library.</p></div>
       <form id="newExercise"><label class="lbl">Name</label><input name="name" placeholder="e.g. Cable lateral raise" required autofocus>
-      <label class="lbl">Logged as</label><select name="kind"><option value="strength">Weight × reps</option><option value="cardio">Minutes (cardio)</option><option value="bodyweight">Reps only</option></select>
+      <label class="lbl">Logged as</label><select name="kind"><option value="strength">Weight × reps</option><option value="assisted">Weight × reps, assisted (less weight = harder)</option><option value="cardio">Minutes (cardio)</option><option value="bodyweight">Reps only</option></select>
       <button class="btn primary wide" type="submit">Create &amp; log it</button></form>`);
   }
 };
