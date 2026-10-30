@@ -1,8 +1,8 @@
-import { BREATH, SESSIONS, MACHINE_TYPES } from '../catalog.js';
-import { getLog, getLimits, getMachines, getSettings, exById, addSet, removeSet, setEntryNote, getSetup, setSetup, myHealth } from '../store.js';
+import { BREATH, MACHINE_TYPES } from '../catalog.js';
+import { getSessions, isCustomExercise, updateCustomExercise, getLog, getLimits, getMachines, getSettings, exById, addSet, removeSet, setEntryNote, getSetup, setSetup, myHealth } from '../store.js';
 import { exerciseHistory, suggestNext, isPR, e1rm } from '../analytics.js';
 import { esc, todayStr, shortDate, num, fmtNum, safeUrl, parseRepRange } from '../util.js';
-import { $, $$, toast, confetti } from '../ui.js';
+import { $, $$, toast, confetti, openSheet, closeSheet } from '../ui.js';
 import { startRest } from '../timer.js';
 import { rerender } from '../router.js';
 import { activeSession } from './today.js';
@@ -47,7 +47,7 @@ export function render(ctx) {
   const best = prior.length && ex.kind === 'strength' ? Math.max(...prior.map(h => h.e1rm)) : null;
   const lastSet = sets[sets.length - 1];
   const sid = activeSession();
-  const plan = sid ? SESSIONS[sid].ex : [];
+  const plan = sid ? getSessions()[sid].ex : [];
   const nextId = plan.includes(ex.id) ? plan[plan.indexOf(ex.id) + 1] : null;
   const next = nextId && exById(nextId);
 
@@ -66,6 +66,7 @@ export function render(ctx) {
     }).join('')}</div>` : ''}
     <div class="lh-meta">${ex.kind === 'cardio' ? esc(ex.target || '') : `<span class="target">${ex.sets} × ${esc(ex.reps)}</span><span class="target">RPE 5–7</span>`}
       ${best ? `<span class="target">Best e1RM ${Math.round(best)} lb</span>` : ''}</div>
+    ${isCustomExercise(ex.id) ? `<button type="button" class="link small" data-act="editExercise">${icon('edit', 14)} Edit exercise${ex.assisted ? ' · assisted' : ''}</button>` : ''}
     ${m && safeUrl(m.video) ? `<a class="btn ghost small" href="${esc(safeUrl(m.video))}" target="_blank" rel="noopener">${icon('play', 14)} Training video</a>` : ''}
   </section>`;
 
@@ -191,10 +192,31 @@ export const actions = {
     if (!confirm('Delete this set?')) return;
     removeSet(el.dataset.entry, +el.dataset.i);
     rerender({ keepScroll: true });
+  },
+  // Exercises you created: rename, set the rep range, or mark an assist machine (less weight = harder).
+  editExercise() {
+    const ex = exById(ctxNow.arg);
+    if (!ex || !isCustomExercise(ex.id)) return;
+    openSheet(`<div class="sheet-head"><h2>Edit exercise</h2><p class="muted small">Your logged sets stay as they are.</p></div>
+      <form id="editExercise" data-id="${esc(ex.id)}">
+        <label class="lbl">Name</label><input name="name" value="${esc(ex.name)}" required>
+        ${ex.kind !== 'cardio' ? `<label class="lbl">Rep range</label><input name="reps" value="${esc(ex.reps || '')}" placeholder="10–12" inputmode="numeric">` : ''}
+        ${ex.kind === 'strength' ? `<label class="check-line"><input type="checkbox" name="assisted" ${ex.assisted ? 'checked' : ''}> Assisted machine: the weight helps me, so less weight is harder (assisted pull-up, chin-up or dip)</label>` : ''}
+        <button class="btn primary wide" type="submit">Save</button>
+      </form>`);
   }
 };
 
 export const submits = {
+  editExercise(form) {
+    const f = form.elements;
+    const reps = f.reps ? f.reps.value.trim().replace(/\s*-\s*/, '–') : '';
+    if (reps && !/^\d{1,3}(–\d{1,3})?$/.test(reps)) return toast('Rep range like 8–10 or 12', 'warn');
+    updateCustomExercise(form.dataset.id, { name: f.name.value, reps, ...(f.assisted ? { assisted: f.assisted.checked } : {}) });
+    closeSheet();
+    toast('Exercise saved');
+    rerender({ keepScroll: true });
+  },
   logSet(form) {
     if (dial) dial.settle();
     const ex = exById(ctxNow.arg);
@@ -213,7 +235,7 @@ export const submits = {
     const hist = exerciseHistory(getLog(), ex);
     const pr = isPR(ex, hist, set);
     const sid = activeSession();
-    addSet({ exId: ex.id, machineId: ctxNow.query.m || null, sessionId: sid && SESSIONS[sid].ex.includes(ex.id) ? sid : null, set });
+    addSet({ exId: ex.id, machineId: ctxNow.query.m || null, sessionId: sid && getSessions()[sid].ex.includes(ex.id) ? sid : null, set });
 
     if (set.rpe >= 9) {
       alert(`Heads up${myHealth() ? ', Brother' : ''}: RPE 9+ is near max effort.\nTake a longer rest, drop the weight a bit next set, and stay around RPE 6–7.`);

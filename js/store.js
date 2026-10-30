@@ -2,7 +2,7 @@
 //
 // Reads go through an in-memory cache (parsed once, invalidated on write), so callers get the
 // SAME object back each time: mutate it only if you save it straight after.
-import { EX, DEFAULT_CHECKLIST, DEFAULT_GOAL, MY_GOAL, DEFAULT_SETTINGS } from './catalog.js';
+import { EX, PLANS, DEFAULT_CHECKLIST, DEFAULT_GOAL, MY_GOAL, DEFAULT_SETTINGS } from './catalog.js';
 import { num, todayStr, uid, hashCode, normalizeCode, dayNum } from './util.js';
 
 export const KEYS = {
@@ -168,6 +168,10 @@ export function getSettings() {
 export const setSettings = s => save(KEYS.settings, s);
 export const myHealth = () => getSettings().myHealth === true;
 
+/** The weekly plan picked in Me → Weekly plan (an unknown id reads as the default). */
+export const planId = () => (Object.hasOwn(PLANS, getSettings().plan) ? getSettings().plan : DEFAULT_SETTINGS.plan);
+export const getSessions = () => PLANS[planId()].sessions;
+
 export const getGoal = () => ({ ...DEFAULT_GOAL, ...(myHealth() ? MY_GOAL : {}), ...loadTyped('goal', {}) });
 export const setGoal = g => save(KEYS.goal, g);
 /** Save one goal field. Only what you actually set is stored; the rest keeps following the profile defaults. */
@@ -198,12 +202,31 @@ export function allExercises() {
 }
 export const exById = id => allExercises()[id] || null;
 
+/** kind: 'strength' | 'assisted' (weight × reps where the stack helps you, so less is harder) | 'cardio' | 'bodyweight'. */
 export function addCustomExercise(name, kind = 'strength') {
   const all = { ...loadTyped('exercises', NO_CUSTOM) };
   const id = 'x_' + hashCode(name.toLowerCase() + Date.now());
-  all[id] = { name, kind, sets: kind === 'cardio' ? 1 : 3, reps: kind === 'cardio' ? '' : '10–12', inc: 5, group: 'Custom' };
+  const assisted = kind === 'assisted';
+  if (assisted) kind = 'strength';
+  all[id] = { name, kind, sets: kind === 'cardio' ? 1 : 3, reps: kind === 'cardio' ? '' : '10–12', inc: 5, group: 'Custom', ...(assisted ? { assisted: true } : {}) };
   save(KEYS.exercises, all);
   return id;
+}
+export const isCustomExercise = id => Object.hasOwn(loadTyped('exercises', NO_CUSTOM), id);
+
+/** Rename a custom exercise or change how it's read (assisted). Built-in exercises can't be changed. */
+export function updateCustomExercise(id, { name, assisted, reps } = {}) {
+  const all = { ...loadTyped('exercises', NO_CUSTOM) };
+  const x = all[id];
+  if (!isObj(x)) return false;
+  const next = { ...x };
+  if (typeof name === 'string' && name.trim()) next.name = name.trim();
+  if (typeof reps === 'string' && reps.trim()) next.reps = reps.trim();
+  if (typeof assisted === 'boolean' && (next.kind || 'strength') === 'strength') {
+    if (assisted) next.assisted = true; else delete next.assisted;
+  }
+  all[id] = next;
+  return save(KEYS.exercises, all);
 }
 
 /* ---------- Machines (QR codes) ---------- */

@@ -1,5 +1,5 @@
 // Pure training math: strength estimates, trends, forecasts, progression. No DOM/storage.
-import { dayNum, fromDayNum, weekKey, parseRepRange, roundTo } from './util.js';
+import { dayNum, fromDayNum, weekKey, parseRepRange, roundTo, todayStr } from './util.js';
 
 /** Estimated 1-rep max (Epley). Reps capped at 15 where the formula stops meaning much. */
 export function e1rm(w, r) {
@@ -217,4 +217,25 @@ export function weekStreak(log, date, goal) {
   const cur = perWeek.get(fromDayNum(thisWeek));
   if (cur && cur.size >= goal) streak++;
   return streak;
+}
+
+/** A goal date that is already behind us (the goal itself may still be open). */
+export const goalDatePassed = (goal, today = todayStr()) => /^\d{4}-\d{2}-\d{2}$/.test(goal.targetDate || '') && goal.targetDate < today;
+
+export const STEADY_LB_PER_WEEK = 0.75;
+/**
+ * A new date for a bodyweight goal: where the weigh-in trend gets you if it's heading there within a year,
+ * else a steady 0.75 lb a week from the latest 7-day average. null with no target weight or weigh-ins, or when you're there.
+ */
+export function suggestGoalDate(goal, weighins, today = todayStr()) {
+  const target = Number(goal.targetWeight);
+  if (!(target > 0)) return null;
+  const avg = movingAverage(weightPoints(weighins));
+  if (!avg.length) return null;
+  const gap = Math.abs(avg[avg.length - 1].y - target);
+  if (gap < 0.5) return null;
+  const t = dayNum(today);
+  const fc = forecast(avg, { target, windowDays: 42 });
+  if (fc && fc.eta != null && fc.eta > t && fc.eta - t <= 365) return { date: fc.etaDate, how: 'trend' };
+  return { date: fromDayNum(t + Math.ceil(gap / STEADY_LB_PER_WEEK) * 7), how: 'pace' };
 }

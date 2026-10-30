@@ -1,7 +1,7 @@
 // Offline support. Network-first for our own files (so a new deploy shows up on the next open),
 // falling back to the cache when offline or when the gym Wi-Fi is too slow (2.5 s).
 // Bump the version whenever SHELL changes: activate then deletes the old cache, files that were dropped included.
-const CACHE = 'wh-shell-v7';
+const CACHE = 'wh-shell-v8';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/app.js', 'js/catalog.js', 'js/store.js', 'js/util.js', 'js/analytics.js', 'js/ui.js', 'js/charts.js',

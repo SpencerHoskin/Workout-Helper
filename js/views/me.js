@@ -1,7 +1,8 @@
-import { SESSIONS, DAYS, SUPPS, AVOID, PENDING } from '../catalog.js';
-import { KEYS, save, getGoal, setGoalField, getSettings, setSettings, getChecklist, getLog, getDaily, getLimits, getSupps, allExercises, exportAll, importAll, setTodaySession, markBackedUp, myHealth } from '../store.js';
+import { PLANS, DAYS, SUPPS, AVOID, PENDING } from '../catalog.js';
+import { KEYS, save, planId, getGoal, setGoalField, getSettings, setSettings, getChecklist, getLog, getDaily, getLimits, getSupps, allExercises, exportAll, importAll, setTodaySession, markBackedUp, myHealth } from '../store.js';
 import { HEALTH_STEPS, sendWeight, sendWorkout } from '../health.js';
-import { esc, todayStr, csvCell } from '../util.js';
+import { esc, todayStr, csvCell, shortDate } from '../util.js';
+import { goalDatePassed } from '../analytics.js';
 import { toast, download, PLATFORM } from '../ui.js';
 import { go, rerender, current } from '../router.js';
 import { applyTheme, applyProfile } from '../theme.js';
@@ -27,6 +28,7 @@ export function render(ctx) {
       .map(([v, l]) => `<option value="${v}" ${goal.type === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
     <div class="row"><div><label class="lbl">Target weight (lb)</label><input data-change="goal" name="targetWeight" inputmode="decimal" value="${esc(goal.targetWeight ?? '')}"></div>
       <div><label class="lbl">By (optional)</label><input data-change="goal" name="targetDate" type="date" value="${esc(goal.targetDate)}"></div></div>
+    ${goalDatePassed(goal) ? `<div class="flag">${icon('alert', 16)}<span>${esc(shortDate(goal.targetDate))} has passed. Pick a new date, or clear it.</span></div>` : ''}
     <label class="lbl">Workouts per week</label>
     <select data-change="goal" name="sessionsPerWeek">${[2, 3, 4, 5].map(n => `<option ${+goal.sessionsPerWeek === n ? 'selected' : ''}>${n}</option>`).join('')}</select>
     <div class="row"><div><label class="lbl">Strength goal lift</label><select data-change="goal" name="strengthEx">${exs.map(x => `<option value="${x.id}" ${goal.strengthEx === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></div>
@@ -57,8 +59,11 @@ export function render(ctx) {
     <h3>Avoid / dropped</h3><ul class="muted small">${AVOID.map(a => `<li>${esc(a)}</li>`).join('')}</ul>`;
 
   const ex = allExercises();
-  const planHtml = `<p class="muted small">3 full-body sessions, ~45 min, machine &amp; cable heavy. Effort by <b>RPE</b>, not heart rate: aim for 5–7 — the last reps feel like work, but you could do 2–3 more and still talk in short sentences.</p>` +
-    Object.entries(SESSIONS).map(([id, s]) => `<h3>${DAYS[s.day]} — ${esc(s.name)}</h3><ul>${s.ex.map(e => `<li>${esc(ex[e].name)} <span class="muted small">— ${ex[e].kind === 'cardio' ? esc(ex[e].target) : ex[e].sets + ' × ' + esc(ex[e].reps)}</span></li>`).join('')}</ul>
+  const pid = planId();
+  const planHtml = `<label class="lbl">Plan style</label>
+    <select data-change="plan" aria-label="Plan style">${Object.entries(PLANS).map(([id, pl]) => `<option value="${id}" ${id === pid ? 'selected' : ''}>${esc(pl.name)}</option>`).join('')}</select>
+    <p class="muted small">${esc(PLANS[pid].blurb)} About 45 min, machine &amp; cable heavy. Effort by <b>RPE</b>, not heart rate: aim for 5–7 — the last reps feel like work, but you could do 2–3 more and still talk in short sentences.</p>` +
+    Object.entries(PLANS[pid].sessions).map(([id, s]) => `<h3>${DAYS[s.day]} — ${esc(s.name)}</h3>${s.focus ? `<p class="muted small">${esc(s.focus)}</p>` : ''}<ul>${s.ex.map(e => `<li>${esc(ex[e].name)} <span class="muted small">— ${ex[e].kind === 'cardio' ? esc(ex[e].target) : ex[e].sets + ' × ' + esc(ex[e].reps)}</span></li>`).join('')}</ul>
       <button class="btn small" data-act="startSession" data-sid="${id}">Do this session today</button>`).join('') +
     `<h3>Not in this plan (on purpose)</h3><ul class="muted small"><li>Box jumps / plyometrics — fall &amp; impact risk</li><li>Heavy overhead dumbbells without a spotter</li><li>Max-effort lifts or anything that makes you strain/hold your breath</li></ul>`;
 
@@ -99,6 +104,7 @@ export const changes = {
   goal(el) {
     setGoalField(el.name, ['targetWeight', 'sessionsPerWeek'].includes(el.name) ? (el.value === '' ? '' : Number(el.value)) : el.value);
     toast('Goal saved');
+    if (el.name === 'targetDate') rerender({ keepScroll: true });
   },
   clDone(el) {
     const cl = getChecklist();
@@ -117,6 +123,12 @@ export const changes = {
     setSettings(s);
     if (el.dataset.k === 'theme') applyTheme();
     toast('Saved');
+  },
+  plan(el) {
+    if (!PLANS[el.value]) return;
+    setSettings({ ...getSettings(), plan: el.value });
+    toast(`Plan: ${PLANS[el.value].name}`);
+    rerender({ keepScroll: true });
   },
   myHealth(el) {
     setSettings({ ...getSettings(), myHealth: el.checked });

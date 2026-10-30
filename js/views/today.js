@@ -1,23 +1,24 @@
-import { SESSIONS, DAYS } from '../catalog.js';
-import { KEYS, save, getLog, getGoal, getSettings, getWeighins, exById, todaySession, setTodaySession, getMeta, myHealth, getMeals } from '../store.js';
+import { DAYS } from '../catalog.js';
+import { KEYS, save, getSessions, getLog, getGoal, setGoalField, getSettings, getWeighins, exById, todaySession, setTodaySession, getMeta, myHealth, getMeals } from '../store.js';
 import { dayTotals } from '../nutrition.js';
-import { exerciseHistory, suggestNext, weekStats, weekStreak } from '../analytics.js';
+import { exerciseHistory, suggestNext, weekStats, weekStreak, goalDatePassed, suggestGoalDate } from '../analytics.js';
 import { ringsSvg } from '../charts.js';
 import { lastCoach } from '../coach.js';
 import { healthOn, sendWorkout, workoutMinutesToday } from '../health.js';
-import { esc, todayStr, fmtNum } from '../util.js';
+import { esc, todayStr, fmtNum, shortDate } from '../util.js';
 import { PLATFORM, standalone, canPromptInstall, promptInstall, toast } from '../ui.js';
 import { rerender } from '../router.js';
 import { icon } from '../icons.js';
 
 export function suggestedSession() {
   const dow = new Date().getDay();
-  for (const [id, s] of Object.entries(SESSIONS)) if (s.day === dow) return id;
+  for (const [id, s] of Object.entries(getSessions())) if (s.day === dow) return id;
   return null;
 }
+/** Today's session id, or null on a rest day. A pick from a plan you've since switched away from reads as not picked. */
 export function activeSession() {
   const picked = todaySession();
-  return picked === undefined ? suggestedSession() : picked;
+  return picked === undefined || (picked !== null && !getSessions()[picked]) ? suggestedSession() : picked;
 }
 
 function greeting() {
@@ -54,6 +55,19 @@ function installCard() {
       <button class="icon-btn" data-act="installHintOff" aria-label="Hide this tip">${icon('close', 15, { stroke: 2.5 })}</button></div>${how}</section>`;
 }
 
+// "Feb 26" this year, "Mar 5, 2027" otherwise.
+const dayText = d => shortDate(d) + (d.slice(0, 4) === todayStr().slice(0, 4) ? '' : ', ' + d.slice(0, 4));
+
+// A goal date that has gone by: offer a realistic new one (weigh-in trend, or a steady pace) or a trip to Me → Goal.
+function goalDateCard(goal, date) {
+  if (!goalDatePassed(goal, date)) return '';
+  const sug = suggestGoalDate(goal, getWeighins(), date);
+  return `<section class="card backup-card goal-card"><b>${icon('target', 18)} Your goal date has passed</b>
+    <p class="muted small">You aimed for ${esc(dayText(goal.targetDate))}${goal.targetWeight ? ` at ${esc(goal.targetWeight)} lb` : ''}. No problem: pick a new date so your forecast has a real target.${sug ? ` ${sug.how === 'trend' ? 'Your weigh-in trend gets you there around' : 'At a steady 0.75 lb a week you get there around'} <b>${esc(dayText(sug.date))}</b>.` : ''}</p>
+    <div class="row btn-row">${sug ? `<button class="btn small primary" data-act="goalDateUse" data-d="${sug.date}">Use ${esc(dayText(sug.date))}</button>` : ''}
+      <a class="btn small" href="#/me/goal">Choose a date</a></div></section>`;
+}
+
 const BACKUP_WHERE = { ios: 'Save a copy to Files or iCloud Drive.', android: 'It lands in Downloads; keep a copy in Google Drive too.', other: 'Keep the file somewhere safe.' };
 
 export function render() {
@@ -61,7 +75,7 @@ export function render() {
   const goal = getGoal();
   const log = getLog();
   const sid = activeSession();
-  const s = sid && SESSIONS[sid];
+  const s = sid && getSessions()[sid];
   const todayLog = log.filter(e => e.date === date);
   const ws = weekStats(log, getWeighins(), date);
   const streak = weekStreak(log, date, goal.sessionsPerWeek);
@@ -82,10 +96,11 @@ export function render() {
     <div class="ring-row">${ringsSvg(ringData, 112)}
       <ul class="ring-legend">${ringData.map(r => `<li><i style="background:${r.color}"></i><b>${r.value}/${r.goal}</b> ${esc(r.label)}</li>`).join('')}</ul>
     </div>
-    <div class="hero-pill">${s ? `${esc(s.name)} · ${planned.length} lifts · ~45 min` : 'Rest day — or pick a session below'}</div>
+    <div class="hero-pill">${s ? `${esc(s.name)}${s.focus ? ' · ' + esc(s.focus) : ''} · ${planned.length} lifts · ~45 min` : 'Rest day — or pick a session below'}</div>
   </section>
 
   ${installCard()}
+  ${goalDateCard(goal, date)}
 
   <button class="cta" data-act="go" data-to="scan"><span class="cta-ic">${icon('scan', 24)}</span><span><b>Scan a machine</b><small>Point at the QR code to log sets</small></span></button>
 
@@ -101,7 +116,7 @@ export function render() {
     <div class="row-between"><h2>Today's plan</h2>
       <select class="pill-select" data-change="pickSession" aria-label="Session">
         <option value="" ${!sid ? 'selected' : ''}>Rest day</option>
-        ${Object.entries(SESSIONS).map(([id, x]) => `<option value="${id}" ${id === sid ? 'selected' : ''}>${DAYS[x.day]} · ${esc(x.name)}</option>`).join('')}
+        ${Object.entries(getSessions()).map(([id, x]) => `<option value="${id}" ${id === sid ? 'selected' : ''}>${DAYS[x.day]} · ${esc(x.name)}</option>`).join('')}
       </select></div>`;
 
   if (s) {
@@ -173,6 +188,11 @@ export const actions = {
   async installApp() {
     const ok = await promptInstall();
     if (ok) toast('Installing Kiln…');
+    rerender({ keepScroll: true });
+  },
+  goalDateUse(el) {
+    setGoalField('targetDate', el.dataset.d);
+    toast(`Goal date: ${dayText(el.dataset.d)}`);
     rerender({ keepScroll: true });
   },
   installHintOff() {

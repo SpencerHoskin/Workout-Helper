@@ -1,8 +1,8 @@
 import './helpers/storage.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { KEYS, migrate, clearCache, allExercises, addCustomExercise, getLog, getWeighins, addSet, removeSet, importAll, exportAll, saveMachine, findMachineByCode, machineIdFor, getChecklist, save } from '../js/store.js';
-import { DEFAULT_CHECKLIST } from '../js/catalog.js';
+import { KEYS, migrate, clearCache, allExercises, addCustomExercise, isCustomExercise, updateCustomExercise, planId, getSessions, getLog, getWeighins, addSet, removeSet, importAll, exportAll, saveMachine, findMachineByCode, machineIdFor, getChecklist, save } from '../js/store.js';
+import { DEFAULT_CHECKLIST, PLANS, EX } from '../js/catalog.js';
 import { todayStr } from '../js/util.js';
 
 const reset = () => { localStorage.clear(); clearCache(); };
@@ -185,4 +185,35 @@ test('restoring a backup from before the switch existed: the owner gets the prof
   setGoalField('sessionsPerWeek', 4);
   assert.deepEqual(raw('wh_goal'), { sessionsPerWeek: 4 });
   assert.equal(getGoal().targetWeight, 165);
+});
+
+test('custom exercises can be assisted, and edited later without touching history', () => {
+  reset();
+  const a = addCustomExercise('Assisted dip', 'assisted');
+  assert.deepEqual([allExercises()[a].kind, allExercises()[a].assisted], ['strength', true]);
+  const c = addCustomExercise('Chin up');
+  assert.equal(isCustomExercise(c), true);
+  assert.equal(isCustomExercise('legpress'), false);
+  assert.equal(allExercises()[c].assisted, undefined);
+  assert.equal(updateCustomExercise(c, { name: ' Assisted chin-up ', assisted: true, reps: '8–10' }), true);
+  assert.deepEqual([allExercises()[c].name, allExercises()[c].assisted, allExercises()[c].reps], ['Assisted chin-up', true, '8–10']);
+  updateCustomExercise(c, { assisted: false, name: '  ' });            // blank name keeps the old one
+  assert.deepEqual([allExercises()[c].name, allExercises()[c].assisted], ['Assisted chin-up', undefined]);
+  const w = addCustomExercise('Swim', 'cardio');
+  updateCustomExercise(w, { assisted: true });                          // only weight × reps can be assisted
+  assert.equal(allExercises()[w].assisted, undefined);
+  assert.equal(updateCustomExercise('legpress', { name: 'x' }), false); // built-ins are fixed
+  assert.equal(allExercises().legpress.name, 'Leg press (machine)');
+});
+
+test('weekly plan: both plans use real exercises and unique session ids; an unknown pick reads as Full body', () => {
+  reset();
+  const ids = Object.values(PLANS).flatMap(p => Object.keys(p.sessions));
+  assert.equal(new Set(ids).size, ids.length);
+  for (const p of Object.values(PLANS)) for (const s of Object.values(p.sessions)) assert.ok(s.ex.every(id => EX[id]), s.name);
+  assert.equal(planId(), 'full');
+  save(KEYS.settings, { plan: 'paired' }); clearCache();
+  assert.deepEqual(Object.keys(getSessions()), ['push', 'pull', 'mix']);
+  save(KEYS.settings, { plan: 'toString' }); clearCache();
+  assert.equal(planId(), 'full');
 });
