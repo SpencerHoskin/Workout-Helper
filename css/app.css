@@ -394,19 +394,65 @@ label.btn { margin: 0; color: var(--text); }   /* .btn sets the face, caps and t
 .flag .i { color: var(--acid-ink); }
 .cue .i { color: var(--aqua-ink); }
 
-/* ---------- Logger ---------- */
-.lh-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.lh-top .back { color: var(--text); display: grid; place-items: center; width: 44px; height: 44px; margin-left: -12px; text-decoration: none; }
-.lh-machine { flex: 1; display: flex; align-items: center; gap: 6px; min-width: 0;
-  font: 500 10.5px/1.35 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-.lh-meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
-.target { font-size: 10.5px; padding: 4px 8px; background: var(--panel-2); color: var(--text); }
-.lh-meta .target:last-child { background: var(--aqua); color: var(--ink); }
-#view[data-view="log"] > .card:first-child { border-top: 0; padding-top: 6px; }
-#view[data-view="log"] > .card:first-child .big { font-size: clamp(40px, 12.4vw, 50px); margin: 2px 0 6px; }
+/* ---------- Logger: the set console. Target, dial, reps, effort and Log set share one screen above the tab bar
+   (js/views/logger.js sizes it), so a set never needs a scroll between turning the weight and logging it. ---------- */
+#view .console { display: flex; flex-direction: column; gap: 8px; }
+.con-head { display: flex; align-items: center; gap: 2px; min-height: 44px; }
+.con-head .back { flex: 0 0 auto; display: grid; place-items: center; width: 44px; height: 44px; margin-left: -12px; color: var(--text); text-decoration: none; }
+#view .con-title { flex: 1; min-width: 0; margin: 0; font-size: clamp(28px, 8.6vw, 36px); line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.con-target { display: flex; flex-direction: column; gap: 2px; }
+.con-sug { display: flex; align-items: baseline; gap: 8px; margin: 0; }
+.con-set { flex: 0 0 auto; font: 600 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--acid-ink); }
+.con-target.fixing .con-set { color: var(--coral-ink); }
+.con-sug b { min-width: 0; font: 900 21px/1.05 var(--cond); font-stretch: 62%; text-transform: uppercase;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.con-target.up .con-sug b { color: var(--acid-ink); }
+.con-target.caution .con-sug b { color: var(--coral-ink); }
+.con-coach, .con-limit { display: flex; align-items: center; gap: 5px; font: 500 11px/1.3 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.con-limit { color: var(--text); }
+.con-edits { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+/* rest countdown: replaces the floating bar on this screen, so nothing covers the console */
+.con-rest { display: inline-flex; align-items: center; gap: 2px; padding-left: 10px; background: var(--acid); color: var(--ink);
+  font: 600 10.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+.con-rest[hidden] { display: none; }
+.con-rest b { min-width: 40px; margin-left: 4px; font: 900 22px/1 var(--cond); font-stretch: 62%; letter-spacing: 0; }
+.con-rest button { min-width: 44px; min-height: 40px; border: 0; background: var(--ink); color: var(--acid); font: 650 12px var(--font);
+  display: inline-flex; align-items: center; justify-content: center; }
+#view[data-view="log"] ~ #rest { display: none; }
+#view[data-view="log"] ~ .toast { bottom: auto; top: calc(env(safe-area-inset-top) + 10px); }
+/* the dial takes whatever height is left; its readout scales with it */
+.console .wswipe { flex: 1 1 0; height: auto; min-height: 170px; max-height: 340px; margin: 0 -16px; container-type: size; }
+.console .wbig { font-size: clamp(56px, 32cqh, 88px); }
+.console .wcap { bottom: calc(18px + clamp(56px, 32cqh, 88px)); }
+/* one-step −/+ in the top-left corner, which the wheel's touch band never reaches */
+.wstep { position: absolute; left: 12px; top: 12px; z-index: 2; display: flex; gap: 2px; }
+.wstep button { width: 58px; height: 46px; border: 0; background: rgba(255, 255, 255, .16); color: var(--dial-read);
+  font: 900 21px/1 var(--cond); font-stretch: 80%; font-variant-numeric: tabular-nums; }
+.wstep button:active { background: rgba(255, 255, 255, .32); }
+.con-field { display: flex; flex-direction: column; gap: 4px; }
+.con-lbl { font: 600 10.5px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.con-lbl span { margin-left: 6px; letter-spacing: .06em; opacity: .85; }
+.console .repchips { display: grid; grid-template-columns: 46px repeat(5, 1fr) 46px; gap: 2px; margin: 0; }
+.repwin { display: contents; }
+.repstep { height: 50px; border: 0; background: var(--panel-2); color: var(--text); font: 900 26px/1 var(--cond); }
+.console .repchip, .console .rpe-chip { height: 50px; }
+.con-actions { display: flex; gap: 2px; margin: 2px -16px 0; }
+.con-actions .btn { min-height: 62px; margin: 0; }
+.con-log { flex: 1; font: 900 22px/1 var(--cond); font-stretch: 125%; letter-spacing: .01em; }
+.con-log .i { width: 24px; height: 24px; }
+.con-cancel { flex: 0 0 32%; }
+/* tight: the screen is short (iPhone SE, the home-screen app's taller header): every row slims. tighter: the labels go too. */
+.console.tight { gap: 5px; }
+.console.tight .wswipe { min-height: 150px; }
+.console.tight .con-field { gap: 2px; }
+.console.tighter .con-lbl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.console.tight :is(.repchip, .rpe-chip, .repstep) { height: 44px; }
+.console.tight .con-actions .btn { min-height: 54px; }
+.console.tight .wstep button { height: 40px; }
 /* "Leg press (machine)": motion.js drops the parenthetical into a small mono tag so the name holds one line */
 .big .title-tag { display: inline-block; vertical-align: top; margin-top: .12em; padding: 5px 6px; border: 1px solid currentColor;
   font: 600 11px/1 var(--mono); letter-spacing: .14em; color: var(--acid-ink); }
+.con-title .title-tag { vertical-align: middle; margin-top: 0; }
 /* exercise switcher: tabs with a pink underline */
 .chips { display: flex; overflow-x: auto; margin: 4px 0 6px; padding: 2px; scrollbar-width: none; border-bottom: 1px solid var(--hair-2); }
 .chip { flex: 0 0 auto; display: flex; align-items: center; min-height: 44px; padding: 12px 14px 10px; color: var(--muted);
@@ -414,21 +460,6 @@ label.btn { margin: 0; color: var(--text); }   /* .btn sets the face, caps and t
 .chip:first-child { padding-left: 0; }
 .chip.on { color: var(--text); box-shadow: inset 0 -4px 0 var(--acid-ink); }
 
-/* Today's target: a violet slab (orange when it says ease off) */
-#view .card.sug { margin: 12px -16px 0; padding: 14px 16px 12px; border: 0; background: var(--blue); color: var(--on-blue); }
-#view .card.sug.caution { background: var(--coral); color: var(--ink); }
-#view .card.sug + .card { border-top: 0; padding-top: 10px; }   /* the slab's edge is the boundary: no extra rule under it */
-.sug .eyebrow { color: var(--on-blue); }   /* pink on violet is 2.37:1 */
-.sug.caution .eyebrow { color: var(--ink); }
-.sug > b { display: block; margin: 6px 0 4px; font: 900 28px/.98 var(--cond); font-stretch: 62%; text-transform: uppercase; }
-.sug .flag { padding: 4px 0 4px 10px; margin-top: 8px; font-size: 13.5px; line-height: 1.4; color: var(--on-blue); border-left-color: var(--on-blue); }
-.sug .flag .i { color: var(--on-blue); }
-.sug.caution .flag, .sug.caution .flag .i { color: var(--ink); border-left-color: var(--ink); }
-/* Coach Claude's numbers: one ink line */
-.coach-tgt { display: flex; gap: 8px; align-items: center; margin: 8px 0 2px; padding: 8px 12px; font-size: 14px; line-height: 1.3;
-  background: var(--ink); color: var(--paper); }
-.coach-tgt .i { color: var(--acid); }
-.coach-tgt b { font: 600 10.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--acid); margin-right: 4px; }
 
 /* Under the form: why today's target, the breathing cue, last time. Each part has a mono label. */
 #view .card.notes { padding-top: 14px; }
@@ -443,6 +474,9 @@ label.btn { margin: 0; color: var(--text); }   /* .btn sets the face, caps and t
 
 .setlist { list-style: none; padding: 0; margin: 12px 0 6px; }
 .setlist li { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--hair); }
+.setlist li.on { box-shadow: inset 4px 0 0 var(--coral-ink); padding-left: 10px; }
+.set-fix { flex: 1; display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0; border: 0; background: none; color: inherit; text-align: left; }
+.set-edit { color: var(--muted); }
 .setlist b { flex: 1; font: 800 22px/1 var(--cond); font-stretch: 80%; text-transform: uppercase; }
 .sn { width: 28px; height: 28px; display: grid; place-items: center; font: 600 12px var(--mono); color: var(--ink); background: var(--aqua); }
 

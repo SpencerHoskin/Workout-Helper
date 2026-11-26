@@ -26,9 +26,10 @@ export function arcDial(wrap) {
     const cs = getComputedStyle(wrap);
     P = Object.fromEntries(TOKENS.map(t => [t, cs.getPropertyValue('--dial-' + t).trim() || '#fff']));
   }
-  // Centre off the bottom-right corner; the pointer sits mid-sweep, at -135°.
+  // Centre off the bottom-right corner; the pointer sits mid-sweep, at -135°. On a short band the wheel shrinks
+  // so the pointer and the number under it stay inside the box: pointer y = H - 0.447R - 51.
   function geo() {
-    const R = Math.max(330, Math.min(W, 430) * 0.86);
+    const R = Math.max(170, Math.min(Math.max(330, Math.min(W, 430) * 0.86), (H - 77) / 0.447));
     return { cx: W + R * 0.1, cy: H + R * 0.26, R, ap: -Math.PI * 0.75 };
   }
   const angleOf = (w, g) => g.ap - (w - v) / step * STEP_ANG;
@@ -187,6 +188,8 @@ export function arcDial(wrap) {
     fromInput() { stop(); v = fieldValue(); lastStep = Math.round(v / step); draw(); },
     /** Logging a set mid-spin: stop where it is and settle on that step first, so what's saved is what shows. */
     settle() { if (moving || drag) { drag = null; stop(); setV(Math.round(v / step) * step); } },
+    /** One step heavier (+1) or lighter (-1), from the step it's on. */
+    nudge(d) { if (drag) return; stop(); animateTo(Math.round(v / step) * step + d * step); },
     /** The theme changed: re-read the colours. */
     recolour() { colours(); draw(); },
     get value() { return v; }
