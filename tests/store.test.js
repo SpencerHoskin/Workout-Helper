@@ -1,7 +1,7 @@
 import './helpers/storage.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { KEYS, migrate, clearCache, allExercises, addCustomExercise, isCustomExercise, updateCustomExercise, planId, getSessions, getLog, getWeighins, addSet, removeSet, importAll, exportAll, saveMachine, findMachineByCode, machineIdFor, getChecklist, save } from '../js/store.js';
+import { KEYS, migrate, clearCache, allExercises, addCustomExercise, isCustomExercise, updateCustomExercise, planId, getSessions, getPhoto, setPhoto, deletePhoto, getLog, getWeighins, addSet, removeSet, importAll, exportAll, saveMachine, findMachineByCode, machineIdFor, getChecklist, save } from '../js/store.js';
 import { DEFAULT_CHECKLIST, PLANS, EX } from '../js/catalog.js';
 import { todayStr } from '../js/util.js';
 
@@ -216,4 +216,35 @@ test('weekly plan: both plans use real exercises and unique session ids; an unkn
   assert.deepEqual(Object.keys(getSessions()), ['push', 'pull', 'mix']);
   save(KEYS.settings, { plan: 'toString' }); clearCache();
   assert.equal(planId(), 'full');
+});
+
+test('machine photos: saved per exercise, kept in backups, bad ones refused', () => {
+  reset();
+  const jpg = 'data:image/jpeg;base64,/9j/AAAA';
+  assert.equal(getPhoto('legpress'), null);
+  assert.equal(setPhoto('legpress', { photo: jpg, thumb: jpg }), true);
+  assert.equal(getPhoto('legpress').photo, jpg);
+  assert.equal(setPhoto('legpress', { photo: 'javascript:alert(1)', thumb: jpg }), false);
+  const backup = exportAll();
+  assert.equal(backup.data.wh_photos.legpress.thumb, jpg);
+  deletePhoto('legpress');
+  assert.equal(getPhoto('legpress'), null);
+  importAll(backup);
+  assert.equal(getPhoto('legpress').photo, jpg);
+  assert.throws(() => importAll({ ...backup, data: { ...backup.data, wh_photos: { legpress: { photo: 'http://x', thumb: jpg } } } }), /photos are damaged/);
+});
+
+test('custom exercise muscles are saved; every catalog exercise has real muscles and a look-for line', async () => {
+  reset();
+  const id = addCustomExercise('Rotary torso');
+  updateCustomExercise(id, { mus: ['obliques', 'abs'] });
+  assert.deepEqual(allExercises()[id].mus, ['obliques', 'abs']);
+  const { ANATOMY } = await import('../js/catalog.js');
+  const { MUSCLES, anatomyOf } = await import('../js/muscles.js');
+  for (const id of Object.keys(EX)) {
+    const a = ANATOMY[id];
+    assert.ok(a && a.look, id);
+    assert.ok([...a.mus, ...a.also].every(m => MUSCLES[m]), id);
+  }
+  assert.deepEqual(anatomyOf({ id: 'x', mus: ['abs', 'nonsense'] }).mus, ['abs']);
 });

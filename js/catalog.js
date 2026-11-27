@@ -146,3 +146,40 @@ export const DEFAULT_SETTINGS = {
   myHealth: false,            // "My health profile": cardiologist plan, supplement clearance, bleeding-risk notes, "Brother"
   health: { enabled: false, weightShortcut: 'WH Log Weight', workoutShortcut: 'WH Log Workout' }
 };
+
+// What each exercise works and how to spot its machine on the floor. mus = the main muscles, also = the helpers
+// (ids from MUSCLES in js/muscles.js). Custom exercises carry their own `mus` (Edit exercise).
+export const ANATOMY = {
+  legpress:      { mus: ['quads', 'glutes'], also: ['hamstrings', 'adductors'], look: 'A big angled sled: you sit reclined and push a large foot plate away. Plates or a pin stack on the side.' },
+  chestpress:    { mus: ['chest'], also: ['front-delts', 'triceps'], look: 'Seated upright against a back pad, two handles at chest height that you push straight forward.' },
+  seatedrow:     { mus: ['upper-back', 'lats'], also: ['rear-delts', 'biceps'], look: 'Low cable with a foot plate (or a machine with a chest pad): you pull the handle in to your belly.' },
+  pulldown:      { mus: ['lats'], also: ['biceps', 'upper-back', 'rear-delts'], look: 'Tall frame with a long bar hanging from a cable overhead; you sit with pads holding your thighs down.' },
+  legcurl:       { mus: ['hamstrings'], also: ['calves'], look: 'Seated, legs straight out, a padded roller behind your ankles that you curl down and under.' },
+  shoulderpress: { mus: ['front-delts', 'side-delts'], also: ['triceps', 'upper-back'], look: 'Seated, handles beside your shoulders that you push straight up overhead.' },
+  gobletbox:     { mus: ['quads', 'glutes'], also: ['adductors', 'abs'], look: 'No machine: a bench or box behind you and one light dumbbell held at your chest.' },
+  legext:        { mus: ['quads'], also: [], look: 'Seated, a padded roller in front of your shins; you straighten your knees to lift it.' },
+  cablefly:      { mus: ['chest'], also: ['front-delts'], look: 'Two tall cable towers with a handle each; you bring the handles together in front of your chest.' },
+  facepull:      { mus: ['rear-delts', 'upper-back'], also: ['side-delts'], look: 'Cable tower with a rope set at face height; you pull the rope apart toward your eyes.' },
+  pallof:        { mus: ['abs', 'obliques'], also: [], look: 'Cable tower with one handle at chest height; stand side-on and press it straight out without twisting.' },
+  hipthrust:     { mus: ['glutes'], also: ['hamstrings'], look: 'A low seat with a padded belt across your hips (often labelled Glute Drive or Hip Thrust); you push your hips up.' },
+  assistpull:    { mus: ['lats'], also: ['biceps', 'upper-back'], look: 'Tall frame with high handles and a knee pad or foot bar that pushes you up: the weight helps you.' },
+  inclinepress:  { mus: ['chest', 'front-delts'], also: ['triceps'], look: 'Like the chest press, but the seat leans back so you push up and forward.' },
+  cablecurl:     { mus: ['biceps'], also: ['forearms'], look: 'Cable tower with a short bar or handle at the bottom; you curl it up, palms up.' },
+  pushdown:      { mus: ['triceps'], also: [], look: 'Cable tower with a rope or short bar at the top; you push it down to your thighs.' },
+  deadbug:       { mus: ['abs'], also: ['obliques'], look: 'No machine: a mat on the floor.' },
+  pecdeck:       { mus: ['chest'], also: ['front-delts'], look: 'Seated with two padded arms or handles out to your sides; you bring them together in front.' },
+  reversefly:    { mus: ['rear-delts', 'upper-back'], also: [], look: 'The pec deck, sitting facing the pad: you push the handles back and apart.' },
+  abductor:      { mus: ['abductors'], also: ['glutes'], look: 'Seated with pads on the outside of your knees; you push your knees apart. Same machine as hip adduction.' },
+  adductor:      { mus: ['adductors'], also: [], look: 'Seated with pads on the inside of your knees; you squeeze your knees together.' },
+  calfraise:     { mus: ['calves'], also: [], look: 'Shoulder pads or a seat over a step under the balls of your feet; you rise up onto your toes.' },
+  smithsquat:    { mus: ['quads', 'glutes'], also: ['hamstrings', 'adductors', 'lower-back'], look: 'A barbell fixed on vertical rails, with safety stops; you squat under it.' },
+  abcrunch:      { mus: ['abs'], also: ['obliques'], look: 'Seated with chest pads or handles by your head; you curl forward against the weight.' },
+  backext:       { mus: ['lower-back'], also: ['glutes', 'hamstrings'], look: 'A 45° bench with ankle pads (or a seated machine); you hinge forward and lift your chest back up.' },
+  bike:          { mus: [], also: ['quads', 'glutes', 'calves'], look: 'Any bike, or a treadmill at a walk.' },
+  walk:          { mus: [], also: ['quads', 'calves'], look: 'A treadmill at an easy walk, then a few stretches.' },
+  treadmill:     { mus: [], also: ['quads', 'hamstrings', 'calves'], look: 'A treadmill.' },
+  ubike:         { mus: [], also: ['quads', 'glutes'], look: 'An upright or recumbent bike.' },
+  elliptical:    { mus: [], also: ['quads', 'glutes', 'hamstrings'], look: 'Two long foot pedals and moving handles.' },
+  stairs:        { mus: [], also: ['glutes', 'quads', 'calves'], look: 'A machine with moving steps.' },
+  rower:         { mus: [], also: ['upper-back', 'lats', 'quads'], look: 'A long rail with a sliding seat, foot straps and a handle on a cord.' }
+};
