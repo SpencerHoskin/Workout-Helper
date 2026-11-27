@@ -278,6 +278,16 @@ export function addSet({ exId, machineId = null, sessionId = null, set }) {
   return entry;
 }
 
+/** Replace a logged set (fixing a typo): keeps its time stamp. false if it's gone. */
+export function updateSet(entryId, index, set) {
+  const log = getLog();
+  const e = log.find(x => x.id === entryId);
+  if (!e || !e.sets[index]) return false;
+  e.sets[index] = { ...set, ts: e.sets[index].ts };
+  setLog(log);
+  return true;
+}
+
 export function removeSet(entryId, index) {
   const log = getLog();
   const i = log.findIndex(e => e.id === entryId);

@@ -47,7 +47,7 @@ function typesetGoal() {
 
 /** Logger title: "Leg press (machine)" → the parenthetical drops to a small mono tag so the name holds one line. */
 function typesetTitle() {
-  const b = view.dataset.view === 'log' && view.querySelector(':scope > .card:first-child .big');
+  const b = view.dataset.view === 'log' && view.querySelector('.con-title');
   if (!b || b.children.length) return;
   const m = b.textContent.match(/^(.*?)\s*(\([^)]*\))$/);
   if (!m) return;
