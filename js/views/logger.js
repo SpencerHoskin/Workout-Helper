@@ -1,5 +1,5 @@
 import { BREATH } from '../catalog.js';
-import { getSessions, isCustomExercise, updateCustomExercise, getLog, getLimits, getMachines, getSettings, exById, addSet, updateSet, removeSet, setEntryNote, getSetup, setSetup, myHealth } from '../store.js';
+import { getSessions, isCustomExercise, updateCustomExercise, getPhoto, setPhoto, deletePhoto, getLog, getLimits, getMachines, getSettings, exById, addSet, updateSet, removeSet, setEntryNote, getSetup, setSetup, myHealth } from '../store.js';
 import { exerciseHistory, suggestNext, isPR, e1rm } from '../analytics.js';
 import { esc, todayStr, shortDate, num, fmtNum, safeUrl, parseRepRange } from '../util.js';
 import { $, $$, toast, confetti, openSheet, closeSheet } from '../ui.js';
@@ -9,6 +9,8 @@ import { activeSession } from './today.js';
 import { lastCoach } from '../coach.js';
 import { icon } from '../icons.js';
 import { arcDial } from '../dial.js';
+import { muscleMap, anatomyOf, MUSCLES } from '../muscles.js';
+import { prepareMachinePhoto } from '../photo.js';
 
 // Plain text — callers escape once.
 // Non-breaking spaces keep "120 lb × 12" from splitting across lines.
@@ -111,6 +113,21 @@ export function render(ctx) {
 
   if (next) h += `<a class="btn ghost wide" href="#/log/${nextId}">Next: ${esc(next.name)} ${icon('chevron', 16)}</a>`;
   else h += `<a class="btn ghost wide" href="#/today">Done — back to today</a>`;
+  // The machine: your own photo of it (to spot it next time), how to recognise it, and what it works.
+  const ph = getPhoto(ex.id), an = anatomyOf(ex);
+  h += `<section class="card machine-card"><div class="row-between"><h2>The machine</h2>
+      ${ph ? `<button type="button" class="link small" data-act="delMachinePhoto">Remove photo</button>` : ''}</div>
+    ${ph ? `<img class="mach-photo" src="${esc(ph.photo)}" alt="Your photo of the ${esc(ex.name)} machine">` : ''}
+    <div class="mach-shoot"><label class="btn ${ph ? 'ghost small' : ''}" for="machCam">${icon('camera', 18)} ${ph ? 'Retake photo' : 'Snap this machine'}</label>
+      <label class="btn ghost small" for="machLib">${icon('upload', 16)} From photos</label></div>
+    <input type="file" id="machCam" class="file-hidden" accept="image/*" capture="environment" data-change="machinePhoto" tabindex="-1" aria-hidden="true">
+    <input type="file" id="machLib" class="file-hidden" accept="image/*" data-change="machinePhoto" tabindex="-1" aria-hidden="true">
+    ${ph ? '' : `<p class="muted small">Snap it once and it shows here, in Today’s plan and in the exercise list, so you can match it next time.</p>`}
+    ${an.look ? `<p class="look"><b>Look for</b>${esc(an.look)}</p>` : ''}
+    ${muscleMap(ex)}
+    ${isCustomExercise(ex.id) && !an.mus.length ? `<p class="muted small">Pick the muscles it works in <b>Edit exercise</b> below to see them on the map.</p>` : ''}
+  </section>`;
+
   if (m || isCustomExercise(ex.id)) {
     h += `<div class="con-edits">${m ? `<button type="button" class="link small" data-act="editMachine" data-id="${esc(m.id)}">${icon('edit', 14)} Edit machine</button>` : ''}
       ${isCustomExercise(ex.id) ? `<button type="button" class="link small" data-act="editExercise">${icon('edit', 14)} Edit exercise${ex.assisted ? ' · assisted' : ''}</button>` : ''}</div>`;
@@ -231,6 +248,11 @@ export const actions = {
     rerender();
   },
   cancelFix() { editing = null; rerender(); },
+  delMachinePhoto() {
+    if (!confirm('Remove your photo of this machine?')) return;
+    deletePhoto(ctxNow.arg);
+    rerender({ keepScroll: true });
+  },
   rpe(el) {
     const f = el.closest('form');
     const on = el.getAttribute('aria-checked') !== 'true';
@@ -252,6 +274,8 @@ export const actions = {
         <label class="lbl">Name</label><input name="name" value="${esc(ex.name)}" required>
         ${ex.kind !== 'cardio' ? `<label class="lbl">Rep range</label><input name="reps" value="${esc(ex.reps || '')}" placeholder="10–12" inputmode="numeric">` : ''}
         ${ex.kind === 'strength' ? `<label class="check-line"><input type="checkbox" name="assisted" ${ex.assisted ? 'checked' : ''}> Assisted machine: the weight helps me, so less weight is harder (assisted pull-up, chin-up or dip)</label>` : ''}
+        ${ex.kind !== 'cardio' ? `<label class="lbl">Muscles it works</label><div class="ex-checks mus-checks">${Object.entries(MUSCLES).map(([id, name]) =>
+          `<label class="check-line"><input type="checkbox" name="mus" value="${id}" ${(ex.mus || []).includes(id) ? 'checked' : ''}> ${esc(name)}</label>`).join('')}</div>` : ''}
         <button class="btn primary wide" type="submit">Save</button>
       </form>`);
   }
@@ -262,7 +286,8 @@ export const submits = {
     const f = form.elements;
     const reps = f.reps ? f.reps.value.trim().replace(/\s*-\s*/, '–') : '';
     if (reps && !/^\d{1,3}(–\d{1,3})?$/.test(reps)) return toast('Rep range like 8–10 or 12', 'warn');
-    updateCustomExercise(form.dataset.id, { name: f.name.value, reps, ...(f.assisted ? { assisted: f.assisted.checked } : {}) });
+    const mus = [...form.querySelectorAll('input[name=mus]:checked')].map(i => i.value);
+    updateCustomExercise(form.dataset.id, { name: f.name.value, reps, ...(f.assisted ? { assisted: f.assisted.checked } : {}), ...(f.mus ? { mus } : {}) });
     closeSheet();
     toast('Exercise saved');
     rerender({ keepScroll: true });
@@ -304,6 +329,23 @@ export const submits = {
     }
     if (ex.kind !== 'cardio') startRest(getSettings().restSec);
     rerender();   // back to the top: the console is ready for the next set
+  }
+};
+
+export const changes = {
+  async machinePhoto(el) {
+    const file = el.files && el.files[0];
+    el.value = '';                                  // the same photo can be picked again
+    if (!file) return;
+    const exId = ctxNow.arg;
+    try {
+      const p = await prepareMachinePhoto(file);
+      if (!setPhoto(exId, p)) return;               // save() has already said the phone is out of room
+      toast('Machine photo saved');
+      if (ctxNow.arg === exId) rerender({ keepScroll: true });
+    } catch (e) {
+      toast(e.message, 'warn');
+    }
   }
 };
 

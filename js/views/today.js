@@ -1,5 +1,5 @@
 import { DAYS } from '../catalog.js';
-import { KEYS, save, getSessions, getLog, getGoal, setGoalField, getSettings, getWeighins, exById, todaySession, setTodaySession, getMeta, myHealth, getMeals } from '../store.js';
+import { KEYS, save, getSessions, getPhoto, getLog, getGoal, setGoalField, getSettings, getWeighins, exById, todaySession, setTodaySession, getMeta, myHealth, getMeals } from '../store.js';
 import { dayTotals } from '../nutrition.js';
 import { exerciseHistory, suggestNext, weekStats, weekStreak, goalDatePassed, suggestGoalDate } from '../analytics.js';
 import { ringsSvg } from '../charts.js';
@@ -68,6 +68,9 @@ function goalDateCard(goal, date) {
       <a class="btn small" href="#/me/goal">Choose a date</a></div></section>`;
 }
 
+// Your photo of the machine, if you've snapped one: the quickest way to match a plan row to the floor.
+const thumb = exId => { const p = getPhoto(exId); return p ? `<img class="plan-thumb" src="${esc(p.thumb)}" alt="">` : ''; };
+
 const BACKUP_WHERE = { ios: 'Save a copy to Files or iCloud Drive.', android: 'It lands in Downloads; keep a copy in Google Drive too.', other: 'Keep the file somewhere safe.' };
 
 export function render() {
@@ -128,14 +131,14 @@ export function render() {
       const done = todayLog.find(e => e.exId === exId);
       const nSets = done ? done.sets.length : 0;
       if (ex.kind === 'cardio') {
-        h += `<li><a href="#/log/${exId}" class="plan-row cardio ${nSets ? 'done' : ''}"><span class="num">${icon(nSets ? 'check' : (ex.icon || 'run'), 18, { stroke: nSets ? 2.5 : 2 })}</span>
+        h += `<li><a href="#/log/${exId}" class="plan-row cardio ${nSets ? 'done' : ''}"><span class="num">${icon(nSets ? 'check' : (ex.icon || 'run'), 18, { stroke: nSets ? 2.5 : 2 })}</span>${thumb(exId)}
           <span class="plan-main"><b>${esc(ex.name)}</b><small>${esc(ex.target || '')}</small></span><span class="chev">${icon('chevron', 18)}</span></a></li>`;
         continue;
       }
       n++;
       const sug = suggestNext(ex, exerciseHistory(log, ex));
       h += `<li><a href="#/log/${exId}" class="plan-row ${nSets >= ex.sets ? 'done' : nSets ? 'partial' : ''}">
-        <span class="num">${nSets >= ex.sets ? icon('check', 18, { stroke: 2.5 }) : n}</span>
+        <span class="num">${nSets >= ex.sets ? icon('check', 18, { stroke: 2.5 }) : n}</span>${thumb(exId)}
         <span class="plan-main"><b>${esc(ex.name)}</b><small>${nSets ? `${nSets}/${ex.sets} sets logged` : esc(sug.text)}</small></span>
         <span class="chev">${icon('chevron', 18)}</span></a></li>`;
     }

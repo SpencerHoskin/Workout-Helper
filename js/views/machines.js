@@ -1,10 +1,11 @@
 import { MACHINE_TYPES } from '../catalog.js';
-import { getMachines, saveMachine, deleteMachine, findMachineByCode, machineIdFor, allExercises, exById, addCustomExercise, getLog } from '../store.js';
+import { getPhoto, getMachines, saveMachine, deleteMachine, findMachineByCode, machineIdFor, allExercises, exById, addCustomExercise, getLog } from '../store.js';
 import { esc, guessName, isUrl, uid, shortDate, safeUrl } from '../util.js';
 import { $, $$, openSheet, closeSheet, toast } from '../ui.js';
 import { go, rerender } from '../router.js';
 import { openWeighin } from './progress.js';
 import { icon } from '../icons.js';
+import { mainMuscles } from '../muscles.js';
 
 const typeById = id => MACHINE_TYPES.find(t => t.id === id) || MACHINE_TYPES[MACHINE_TYPES.length - 1];
 
@@ -49,8 +50,11 @@ export function render() {
 
   h += `<section class="card"><h2>Exercise library</h2><p class="muted small">No QR code? Log straight from here.</p>`;
   for (const [g, list] of Object.entries(groups).sort()) {
-    h += `<h3 data-group>${esc(g)}</h3><ul class="xlist">${list.map(x =>
-      `<li data-search="${esc(x.name.toLowerCase())}"><a href="#/log/${x.id}">${esc(x.name)}<span class="chev">${icon('chevron', 18)}</span></a></li>`).join('')}</ul>`;
+    h += `<h3 data-group>${esc(g)}</h3><ul class="xlist">${list.map(x => {
+      const ph = getPhoto(x.id), mus = x.kind === 'cardio' ? '' : mainMuscles(x);
+      return `<li data-search="${esc((x.name + ' ' + mus).toLowerCase())}"><a href="#/log/${x.id}">${ph ? `<img class="xl-thumb" src="${esc(ph.thumb)}" alt="">` : ''}
+        <span class="xl-main"><span>${esc(x.name)}</span>${mus ? `<small>${esc(mus)}</small>` : ''}</span><span class="chev">${icon('chevron', 18)}</span></a></li>`;
+    }).join('')}</ul>`;
   }
   h += `<button class="btn ghost wide" data-act="newExercise">${icon('plus', 16)} Create an exercise</button></section>`;
   return h;

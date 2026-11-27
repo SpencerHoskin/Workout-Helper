@@ -39,6 +39,17 @@ export async function preparePhoto(file) {
   return { upload: preview.slice(preview.indexOf(',') + 1), preview, thumb };
 }
 
+/** Your photo of a machine: → { photo: ≤480px JPEG data URL, thumb: ~112px square } (small enough to keep on the phone). */
+export async function prepareMachinePhoto(file) {
+  if (!file || !/^image\//.test(file.type || 'image/')) throw new Error('That file is not a photo.');
+  let src;
+  try { src = await decode(file); } catch { throw new Error('Could not open that photo. Try taking it again.'); }
+  const photo = draw(src, 480, 0.72);
+  const thumb = draw(src, 112, 0.7, true);
+  if (src.close) src.close();
+  return { photo, thumb };
+}
+
 /** The meal endpoint lives next to the coach one (same Vercel deploy). */
 export const mealUrl = () => (getSettings().coachUrl || '/api/coach').replace(/coach\/?$/, 'meal');
 

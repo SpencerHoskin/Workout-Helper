@@ -23,6 +23,7 @@ export const KEYS = {
   today: 'wh_today',         // {date, sessionId} — which session is picked today
   setup: 'wh_setup',         // {exId: "seat 4, pin 3"} machine setup notes
   meta: 'wh_meta',           // {lastBackup: ms}
+  photos: 'wh_photos',       // {exId: {photo: jpeg data URL ≤480px, thumb: ~112px square data URL, ts}} your own machine photos
   meals: 'wh_meals'          // [{id, date, ts, name, items:[{name, portion, kcal, protein_g, carbs_g, fat_g, sodium_mg, confidence}],
                              //   kcal_low, kcal_high, label_read, comment, source:'photo'|'hand', thumb: jpeg data URL | null}]
 };
@@ -32,7 +33,7 @@ export const SCHEMA = 2;
 const SHAPE = {
   schema: 'number', log: 'array', daily: 'object', checklist: 'array', limits: 'object', supps: 'object',
   draft: 'object?', machines: 'object', exercises: 'object', weighins: 'array', goal: 'object', settings: 'object',
-  coach: 'object?', today: 'object?', setup: 'object', meta: 'object', meals: 'array'
+  coach: 'object?', today: 'object?', setup: 'object', meta: 'object', meals: 'array', photos: 'object'
 };
 const isObj = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 function fits(shape, v) {
@@ -215,13 +216,14 @@ export function addCustomExercise(name, kind = 'strength') {
 export const isCustomExercise = id => Object.hasOwn(loadTyped('exercises', NO_CUSTOM), id);
 
 /** Rename a custom exercise or change how it's read (assisted). Built-in exercises can't be changed. */
-export function updateCustomExercise(id, { name, assisted, reps } = {}) {
+export function updateCustomExercise(id, { name, assisted, reps, mus } = {}) {
   const all = { ...loadTyped('exercises', NO_CUSTOM) };
   const x = all[id];
   if (!isObj(x)) return false;
   const next = { ...x };
   if (typeof name === 'string' && name.trim()) next.name = name.trim();
   if (typeof reps === 'string' && reps.trim()) next.reps = reps.trim();
+  if (Array.isArray(mus)) next.mus = mus.filter(m => typeof m === 'string').slice(0, 8);
   if (typeof assisted === 'boolean' && (next.kind || 'strength') === 'strength') {
     if (assisted) next.assisted = true; else delete next.assisted;
   }
@@ -276,6 +278,23 @@ export function addSet({ exId, machineId = null, sessionId = null, set }) {
   entry.sets.push({ ...set, ts: Date.now() });
   setLog(log);
   return entry;
+}
+
+/* ---------- Machine photos ---------- */
+const isJpeg = s => typeof s === 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(s);
+const okPhoto = p => isObj(p) && isJpeg(p.photo) && isJpeg(p.thumb);
+const NO_PHOTOS = Object.freeze({});
+export const getPhotos = () => loadTyped('photos', NO_PHOTOS);
+export const getPhoto = exId => { const p = getPhotos()[exId]; return okPhoto(p) ? p : null; };
+/** Save your photo of an exercise's machine. false if the phone is out of room. */
+export function setPhoto(exId, { photo, thumb }) {
+  if (!isJpeg(photo) || !isJpeg(thumb)) return false;
+  return save(KEYS.photos, { ...getPhotos(), [exId]: { photo, thumb, ts: Date.now() } });
+}
+export function deletePhoto(exId) {
+  const all = { ...getPhotos() };
+  delete all[exId];
+  save(KEYS.photos, all);
 }
 
 /** Replace a logged set (fixing a typo): keeps its time stamp. false if it's gone. */
@@ -357,6 +376,7 @@ export function importAll(obj) {
     }
     if (name === 'weighins' && !v.every(w => isObj(w) && typeof w.date === 'string')) throw new Error('Backup weigh-ins are damaged');
     if (name === 'meals' && !v.every(okMeal)) throw new Error('Backup food log is damaged');
+    if (name === 'photos' && !Object.values(v).every(okPhoto)) throw new Error('Backup machine photos are damaged');
     writes.push([k, v]);
   }
   if (!writes.length) throw new Error('Backup is empty');
